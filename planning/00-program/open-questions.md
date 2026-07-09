@@ -1,6 +1,6 @@
 # Open Questions Log
 **Rule (charter §3):** ambiguities are logged here — never resolved by guessing, never resolved by inventing scope. Every entry names an owner and the artifact it blocks.
-**OQ-01…OQ-10** are source Appendix B verbatim ("Key Questions to Put to the Bank in Week 1"). **OQ-11…OQ-26** are ambiguities identified while building this working package. **OQ-27…OQ-31** are bootcamp-context unknowns raised by `../bootcamp-adaptation-review.md` (duration, team, tech rules, jury rubric, demo format) — never guessed. **OQ-32** is raised by `../ROADMAP.md` (team velocity vs. sprint load).
+**OQ-01…OQ-10** are source Appendix B verbatim ("Key Questions to Put to the Bank in Week 1"). **OQ-11…OQ-26** are ambiguities identified while building this working package. **OQ-27…OQ-31** are bootcamp-context unknowns raised by `../bootcamp-adaptation-review.md` (duration, team, tech rules, jury rubric, demo format) — never guessed. **OQ-32** is raised by `../ROADMAP.md` (team velocity vs. sprint load). **OQ-33…OQ-35** are raised by `/TECHSTACK.md` (auth choice, Stitch export format, Supabase/Upstash credentials).
 
 | ID | Question | Source ref | Why it matters / what it blocks | Answer owner | Needed by | Status |
 |---|---|---|---|---|---|---|
@@ -36,6 +36,9 @@
 | OQ-30 | **Official jury evaluation criteria and weights**? | review §5; `workstreams.md` jury-scoring table | The scoring-alignment table currently uses *inferred* dimensions (AI/agents, innovation, business value, execution quality, presentation, responsible-AI); must be reconciled with the real rubric | Bootcamp organizers | Before S3 | TODO |
 | OQ-31 | **Demo-day format** (live vs. recorded, time limit, any real-data/privacy rules)? | review §5; `ws4.md` T15/T16, `ws5.md` T13 | Shapes the BWS4 demo script/backup video and BWS5 deployment target and fallback plan | Bootcamp organizers | Before S3 | TODO |
 | OQ-32 | **Expected team velocity** (story points per sprint)? | `../ROADMAP.md` §4.2 | The roadmap totals 434 SP with S1 (128) and S2 (125) flagged REBALANCE-CANDIDATE (>40% over the 86.8 avg). Whether that is achievable — and whether to rebalance, add sprints, or parallelize — cannot be decided without a velocity assumption (derives from OQ-27 duration × OQ-28 team size × focus factor) | Team lead | Before S1 | TODO |
+| OQ-33 | **Supabase Auth vs. plain Django auth** for the bank panel login? | `/TECHSTACK.md` §7 | Affects the React login flow and whether the frontend holds SUPABASE_ANON_KEY. Backend already works without auth for the demo | Team lead + Product | Before frontend auth work | TODO |
+| OQ-34 | **Google Stitch export format** — plain HTML+Tailwind or React/JSX? | `/TECHSTACK.md` §7; `product/03-frontend` | Determines integration effort: HTML → port into React components; JSX → drop in more directly. Placeholder UI exists until then | Alperen (provides design) | Before UI build | TODO |
+| OQ-35 | **Supabase + Upstash project credentials** (DATABASE_URL, REDIS_URL, keys) — who creates the accounts? | `/TECHSTACK.md` §4; `product/04-backend/.env.example` | Code is ready and falls back to SQLite + local cache; live persistence/cache needs the accounts created and secrets filled in `.env` | Team lead | Before deploy | TODO |
 
 ## Handling rules
 

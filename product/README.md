@@ -1,3 +1,43 @@
+# AKS — Ürün (5 Bölümlü Yapı)
+
+> YZTA Bootcamp 2026 — Grup 74. Kök teknoloji planı: [`/TECHSTACK.md`](../TECHSTACK.md) · Yol haritası: [`/planning/ROADMAP.md`](../planning/ROADMAP.md)
+
+Proje, ROADMAP'teki 5 iş akışını (BWS1–5) yansıtan 5 bölüme ayrılmıştır:
+
+| Bölüm | İçerik | Workstream |
+|---|---|---|
+| **`01-data/`** | Sentetik veri üretici (`generator/`), veri setleri (`datasets/`), EDA, veri sözlüğü | BWS2 Veri & Simülasyon |
+| **`02-ai-agents/`** | `aks_core` paketi: özellik çıkarımı, ML modeli (XGBoost/SHAP), adalet, üç-agent orkestratör | BWS3 AI Çekirdek ★ |
+| **`03-frontend/`** | React + Vite + TS arayüz (Google Stitch tasarımı entegre edilecek) | BWS4 Ürün/UX |
+| **`04-backend/`** | Django + DRF API, Supabase kalıcılık, Redis cache, **denetim izi** (audit), testler, deploy | BWS5 Mühendislik |
+| **`05-business/`** | Persona, metrik, regülasyon notları, sprint dokümanları (`docs/`) | BWS1 İş & Alan |
+
+### Hızlı başlangıç (yerel geliştirme)
+
+```bash
+# 1) AI çekirdeğini kur
+pip install -e product/02-ai-agents
+# 2) Backend
+cd product/04-backend
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver            # API -> http://127.0.0.1:8000/api/bilgi
+# 3) Frontend (ayrı terminal)
+cd product/03-frontend
+npm install
+npm run dev                           # UI -> http://localhost:5173  (/api proxy -> :8000)
+```
+
+`.env` gerekmez: Supabase/Redis tanımlı değilse backend yerel SQLite + bellek-içi cache'e düşer; demo her koşulda çalışır. Üretim değişkenleri için `product/04-backend/.env.example`.
+
+> **Sınır (boundary):** AKS, bankanın klasik skorunu/segmentini **asla ezmez**, yalnızca tamamlar. Her skorlama, klasik skoru olduğu gibi koruyan **değiştirilemez bir denetim kaydı** yazar (`04-backend/audit/`). Bu, hem alan bütünlüğü hem de jüri için en güçlü hikâyemiz.
+
+> **Not:** `04-backend/_legacy_fastapi/` eski FastAPI + tek-dosya dashboard'u içerir — Django'ya taşınırken referans olarak tutuluyor, canlı değil.
+
+Aşağıdaki bölüm, ürünün detaylı anlatımı ve sprint geçmişidir (yapı yeniden düzenlenmeden önceki §5 klasör şeması tarihseldir).
+
+---
+
 # Gerçek Kapasite Skoru (GKS) — Alternatif Kredi Değerlendirme Sistemi
 
 > YZTA Bootcamp 2026 — 5. Akademi Dönemi · Yapay Zeka ve Veri Bilimi · Grup 74

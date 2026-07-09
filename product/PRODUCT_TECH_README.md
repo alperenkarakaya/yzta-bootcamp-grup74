@@ -236,6 +236,18 @@ python product/01-data/generator/veri/uretici.py --musteri-sayisi 2000 --gun 180
 python -c "from aks_core.model.is_etkisi import analiz; print(analiz())"
 ```
 
+### 5.4b İstatistiksel tanı araçları (araştırma — bkz. `/planning/RESEARCH_STRATEGY.md`)
+
+```bash
+# Değerlendirme harness'i: tekrarlı k-fold + %95 CI + kalibrasyon (Brier/ECE) + persona bazında AUC
+python -m aks_core.model.degerlendirme
+
+# Döngüsellik (circularity) kanıtı: mevcut benchmark'ın neden geçersiz olduğunu gösterir
+python -m aks_core.model.circularity_ablation
+```
+
+Bu iki modül, mandatın (statistical-validity-first) gerektirdiği değerlendirmeyi üretir ve `RESEARCH_STRATEGY.md` §4'teki bulguları basar. **Modelin ürettiği AUC/iş rakamlarını bu tanılar olmadan doğrulanmış saymayın.**
+
 ### 5.5 Django admin (denetim izini görüntüleme)
 
 ```bash
@@ -243,6 +255,15 @@ cd product/04-backend
 python manage.py createsuperuser
 python manage.py runserver
 # -> http://127.0.0.1:8000/admin/  (Denetim İzi bölümü salt-okunur)
+```
+
+### 5.6 Supabase / Upstash bağlantı doğrulaması
+
+```bash
+cd product/04-backend
+python manage.py check_connections
+# DATABASE_URL / REDIS_URL tanımlıysa Supabase/Upstash CANLI der;
+# tanımlı değilse SQLite / LocMemCache yedeğine düşüldüğünü açıkça belirtir.
 ```
 
 ## 6. Ortam Değişkenleri
@@ -338,6 +359,8 @@ curl http://localhost:8000/api/skorla/2
 Bunun yerine bu oturumda **manuel uçtan uca doğrulama** yapıldı: `aks_core` paketinin model yükleyip skorladığı, Django `manage.py check` + migrasyonların temiz geçtiği ve gerçek `runserver` üzerinden `curl` ile `/api/bilgi` ve `/api/skorla/{id}`'nin doğru sonuç döndürdüğü (`portfoy` sonucunun Sprint 2 ile birebir eşleştiği: 973/1084) doğrulandı.
 
 **Yapılacak (ROADMAP `BWS5-T9` / `BWS5-T8`):** `pytest` testlerini `aks_core` + Django `APIClient` ile yeniden yazmak; boundary testleri eklemek (klasik skorun hiçbir agent tarafından değiştirilemediğini doğrulayan testler).
+
+**İstatistiksel değerlendirme (fonksiyonel testlerden ayrı, ondan daha öncelikli — mandat #1–#3):** `aks_core/model/degerlendirme.py` (CV + CI + kalibrasyon + persona bazında) ve `aks_core/model/circularity_ablation.py` (benchmark geçerlilik tanısı) bu oturumda eklendi ve çalıştırıldı. Bulgular: LojistikRegresyon ≥ XGBoost (basit model tercih edilmeli), hedef segmentte (öğrenci) AUC zayıf (0.61–0.68), ve mevcut benchmark döngüsel. Detay: `/planning/RESEARCH_STRATEGY.md` §2, §4.
 
 ## 12. Deploy
 

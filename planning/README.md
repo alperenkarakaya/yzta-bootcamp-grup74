@@ -196,6 +196,13 @@ Proje, YZTA Bootcamp kapsamında bir **capstone** olarak yeniden çerçevelendi 
 - Tüm mimari kararlar `/TECHSTACK.md`'de belgelendi.
 - **Bilinen boşluk:** eski 22 testlik pytest paketi hâlâ `from src.*`/FastAPI'ye bağımlı, Django'ya taşınmadı — `PRODUCT_TECH_README.md` §11'de açıkça işaretlendi, ROADMAP `BWS5-T8/T9`'a bağlandı.
 
+**(c) Araştırma-titizliği dönüşü (bu oturumun en önemli kısmı).** Proje, uzun vadeli venture-fundable bir ürün olarak yeniden çerçevelendi ve **istatistiksel geçerlilik > AI** mandatı benimsendi (`RESEARCH_STRATEGY.md`). Kod-temelli denetimle kritik bir bulgu ortaya çıktı: mevcut modelin manşet AUC/iş/adalet rakamları **döngüsel** ölçülüyor (etiket, modelin gördüğü özelliklerden üretiliyor). Ablasyon + değerlendirme harness'i ile doğrulandı:
+- LojistikRegresyon ≥ XGBoost (0.852 vs 0.842, daha iyi kalibre) → ensemble karmaşıklığı gereksiz; XGBoost geçici olarak korunuyor ama gerekçesiz.
+- Agregat AUC 0.84, kolay negatif-kontrol grubundan geliyor; **asıl hedef segmentte (öğrenci) AUC yalnızca 0.61–0.68** — ürünün değer kattığını iddia ettiği yerde en zayıf.
+- Agent denetimi: 5 "agent"tan yalnızca 1'i (LLM asistanı) gerçek agent testini geçiyor.
+- **Hedef tanımı kararı (OQ-39, §7 RESEARCH_STRATEGY):** ürün "default tahmini" değil, **kalibre edilmiş davranışsal kapasite sinyali + PD-gap overlay** (Formülasyon B) olarak tanımlandı; manşet metrik AUC'den "sabit kötü-oranında ek onaylanan thin-file müşteri sayısı"na kaydırıldı.
+- Açık kararlar: OQ-36 (gerçek veri seti — Home Credit önerisi), OQ-37 (düzeltme sırası), OQ-38 (agent anlatısı), OQ-39 (hedef — B önerildi).
+
 ## 8. Etik ve Regülasyon Notu
 
 - Bu repo gerçek banka verisi içermez; tüm veriler sentetiktir.
@@ -332,7 +339,9 @@ All 50 original planning artifacts are **built and internally consistent**; all 
 - **[INFERRED] placements** — 9, all listed with reasoning in `ROADMAP.md` §7.4.
 - **Undecidable → OQ** — team velocity vs. sprint load logged as **OQ-32** (not guessed); frontend export format, auth choice, and Supabase/Upstash credentials logged as **OQ-33…OQ-35**.
 
-**Build-vs-plan reconciliation (Part A ↔ Part B, added this revision):** Sprint 3's Django migration, `aks_core` extraction, and audit-trail implementation are real, verified work (manual end-to-end curl tests against a live `runserver`, `portfoy` result matching Sprint 2's 973/1084 exactly) but are **not yet reflected as DONE statuses in `ROADMAP.md`** — the roadmap's task-status column is the operational source per §16 rule 4 below and should be updated in the next session to mark the relevant `BWS5`/`BWS3`/`BWS4` tasks in progress/done. Flagged here rather than silently left stale.
+**Build-vs-plan reconciliation (Part A ↔ Part B):** Sprint 3's Django migration, `aks_core` extraction, and audit-trail implementation are real, verified work (manual end-to-end curl tests against a live `runserver`, `portfoy` result matching Sprint 2's 973/1084 exactly). **`ROADMAP.md` now carries a status banner** (added 2026-07-10) explaining that its task tables are *not* the live source of truth: it predates both the actual AKS codebase (which diverges from the idealized bridge-layer decomposition it plans) and the research-rigor pivot. Live build status lives in `TECHSTACK.md` §6 + `PRODUCT_TECH_README.md`; live priorities live in `RESEARCH_STRATEGY.md`. This is a deliberate honesty choice — the roadmap's `TODO` statuses were *not* cosmetically flipped, because many describe components (policy-guard agent, sim-engine seam) that were never built by design.
+
+**Model-validity reconciliation (added 2026-07-10):** the headline model numbers cited in Part A §6 are flagged (there and in `PRODUCT_TECH_README.md` §9) as circularly measured, per `RESEARCH_STRATEGY.md`. The evaluation harness (`aks_core/model/degerlendirme.py`) and circularity diagnostic (`circularity_ablation.py`) exist and are reproducible; the target-definition decision (OQ-39 → Formulation B) is recorded in `RESEARCH_STRATEGY.md §7`. Do not present Part A §6 numbers as validated without reading those first.
 
 ## 16. Rules for Future Sessions
 

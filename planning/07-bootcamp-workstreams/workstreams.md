@@ -1,6 +1,8 @@
 # Bootcamp Workstreams — Master File
 ## Intelligent Offer Optimization Bridge Layer — build restructured into 5 owned workstreams
 
+> **⚠️ Superseded on priorities (2026-07-10).** The BWS3 framing below ("★ highest jury weight, multi-agent architecture") is contradicted by the agent audit in `../RESEARCH_STRATEGY.md §2.3` (only the LLM assistant is a real agent) and by the statistical-rigor mandate (AI is priority #9, below model validity). The 5-workstream *ownership/dependency structure* remains useful; the *AI-weighting and jury-optics rationale* is historical. Current priorities: `../RESEARCH_STRATEGY.md`.
+
 **Read order:** this file first, then `ws1.md … ws5.md`. Grounded in the source of truth (`../early-phase-plan-credit-offer-optimization.md`) and the delta layer (`../bootcamp-adaptation-review.md`). Every task in every ws file traces to a source ID (P/A/H/O/D/E/§7/§8) or to a bootcamp-adaptation delta (K/A/L/R). See `../TRACEABILITY.md` §8 for the item→workstream map.
 
 **ID convention (to avoid collision):** bootcamp workstreams are **BWS1–BWS5** in traceability; the source's Appendix-A workstreams are **source-WS1…6**. They are different partitions of the work (see `../bootcamp-adaptation-review.md` §6).

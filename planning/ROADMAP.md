@@ -1,6 +1,21 @@
 # ROADMAP — Master Delivery Plan
 ## Intelligent Offer Optimization Bridge Layer (Bootcamp Build)
 
+> ## ⚠️ STATUS BANNER — read before trusting anything below (updated 2026-07-10)
+>
+> This roadmap was written **before** two things happened: (1) the discovery that the actual product (`product/`, the AKS alternative-scoring codebase) diverges from the idealized "bridge layer + policy-guard agent + simulated bank engine" this roadmap decomposes, and (2) the adoption of the statistical-rigor-first operating mandate in **`RESEARCH_STRATEGY.md`**.
+>
+> **Consequently:** the 84 task rows and their `TODO` statuses below are **NOT the live source of truth** and are deliberately *not* being cosmetically flipped to "done" — many describe components (deterministic policy-guard agent, sim-engine interception seam) that were never built because the real product is a different (alternative-capacity-signal) design.
+>
+> **Where truth actually lives now:**
+> - **What's built & its state** → `TECHSTACK.md` §6 (migration steps) + `product/PRODUCT_TECH_README.md` + git log. In short: 5-section restructure ✅, Django+DRF backend at parity ✅, audit trail ✅, React scaffold ✅, Supabase/Redis code-ready (blocked on credentials, OQ-35).
+> - **Priorities & what to build next** → `RESEARCH_STRATEGY.md`. The agentic-architecture framing below (BWS3 "★ highest jury weight, multi-agent") is **explicitly contradicted** by the agent audit in `RESEARCH_STRATEGY.md §2.3`: only 1 of the 5 named "agents" (the LLM assistant) passes the justification bar. Do not staff toward "more agents."
+> - **Open decisions** → `00-program/open-questions.md` OQ-36…OQ-39 (real data, fix sequencing, agent narrative, target definition) now outrank everything in the sprint tables below.
+>
+> This document is **retained** as the original story-pointed workstream decomposition (still useful for the ownership/dependency structure and the sizing discipline), but it is **superseded on priorities** by `RESEARCH_STRATEGY.md`. Treat the tables below as historical planning, not a live task board.
+
+---
+
 This is the **single master roadmap** the whole team works from. It consolidates — it does **not** invent — the 83 tasks defined in `07-bootcamp-workstreams/workstreams.md` + `ws1.md`–`ws5.md`, sized with story points and sequenced across sprints S0–S4. Definitions live in the ws files; **operational status lives here** (see §6 Update Rules).
 
 **Sources consolidated:** `07-bootcamp-workstreams/ws1.md`–`ws5.md` (all tasks), `07-bootcamp-workstreams/workstreams.md` (sprint sequencing S0–S4, dependency graph, gates), `TRACEABILITY.md` §8, `00-program/open-questions.md`.

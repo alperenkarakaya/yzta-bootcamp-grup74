@@ -153,14 +153,16 @@ For an integrated single-port preview (demo): `npm run build` in the frontend, D
 |---|---|---|
 | 0 | git init + baseline snapshot (restore point) | ✅ done |
 | 1 | This TECHSTACK.md | ✅ done |
-| 2 | Restructure `product/frontend/` → 5 sections; `src`→`aks_core`; fix imports; tests green | ⏳ next |
-| 3 | Scaffold Django + DRF; port endpoints; keep behavior parity with FastAPI | ⏳ |
-| 4 | Supabase ORM (customers/assessments/audit_log) + audit middleware | ⏳ |
-| 5 | Upstash Redis cache (portfoy/adalet) + assistant rate-limit | ⏳ |
-| 6 | React (Vite+TS) scaffold; integrate Google Stitch design when provided | ⏳ |
-| 7 | Docker/Render update (Django serves React build); CI | ⏳ |
+| 2 | Restructure `product/frontend/` → 5 sections; `src`→`aks_core`; fix imports; smoke-tested | ✅ done (commit `9a91413`) |
+| 3 | Scaffold Django + DRF; port endpoints; parity with FastAPI verified (portfoy 973/1084 matches) | ✅ done (`6000643`) |
+| 4 | Supabase ORM (customers/assessments/audit_log) + audit write path | ◑ **code done + verified on SQLite fallback**; live Supabase blocked on credentials (OQ-35). `python manage.py check_connections` reports live-vs-fallback |
+| 5 | Upstash Redis cache (portfoy/adalet) | ◑ **code done** (django-redis, graceful LocMem fallback); live Upstash blocked on credentials (OQ-35) |
+| 6 | React (Vite+TS) scaffold wired to API | ✅ scaffold done (`fb90c79`); Google Stitch design integration pending (OQ-34) |
+| 7 | Docker/Render update (Django serves React build); CI | ⏳ deferred until Stitch design lands |
 
 **Reversibility:** step 0 gives a clean baseline commit; each step lands as its own commit so any migration step can be rolled back independently.
+
+**⚠️ Priority note (added post-migration):** per `planning/RESEARCH_STRATEGY.md`, the project now operates under a statistical-rigor-first mandate where this entire stack migration is **priority #8 (engineering quality)** — below the unresolved model-validity work (#1–#3). Steps 4/5/7 are intentionally *not* being pushed further until the higher-priority research items (circularity fix, target definition OQ-39, real-data decision OQ-36) are addressed. The stack is production-ready; it is not the bottleneck.
 
 ---
 

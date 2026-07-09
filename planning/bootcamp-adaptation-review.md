@@ -1,3 +1,5 @@
+> **⚠️ Superseded on priorities (2026-07-10).** This review's "LIFT" argument — that AI/agentic architecture is now in-scope and high-value for jury scoring — is **partially overridden** by `RESEARCH_STRATEGY.md`, which subordinates AI to priority #9 (below statistical validity, calibration, robustness, and engineering quality) and found that only 1 of the 5 named "agents" survives a justification audit. This document remains valid for the KEEP/ADAPT/RISK analysis and the synthetic-data/persona/regulatory-awareness reasoning; treat its AI-enthusiasm framing as historical. Read `RESEARCH_STRATEGY.md` for current priorities.
+
 # Bootcamp-Lens Adaptation Review
 ## Re-reading the Early Phase Working Package for an AI & Technology Bootcamp
 

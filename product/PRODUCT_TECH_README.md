@@ -325,6 +325,8 @@ curl http://localhost:8000/api/skorla/2
 
 **İş etkisi** (`aks_core/model/is_etkisi.py`, doğrulanmış canlı sonuç): klasik skorun "prime" eşiğinin altında bıraktığı kredibl kişilerden **%90'ı (973/1084) model tarafından doğru şekilde kurtarılıyor**. Görsel: `05-business/docs/sprints/sprint2/model_sonuclari.png`. İş sonuçlarının tam yorumu için bkz. `/planning/README.md`.
 
+> ⚠️ **Metodolojik uyarı (bkz. `/planning/RESEARCH_STRATEGY.md`):** yukarıdaki AUC karşılaştırması ve iş etkisi rakamı, etiketin (`temerrut`) sentetik üretim mekanizmasıyla döngüsel (circular) bir ilişkisi olduğu tespit edilene kadar doğrulanmış sayılmamalıdır — ablasyon testi, XGBoost'un lojistik regresyondan farkının istatistiksel olarak anlamsız olduğunu (0.0004 AUC) ve etiketin gerçek nedensel yapısının sentetik üreticinin persona-koşullu tasarımına gömülü olduğunu gösteriyor. Rakamlar boru hattının uçtan uca çalıştığını kanıtlar, iş tezini henüz kanıtlamaz. Detay ve düzeltme planı: `/planning/RESEARCH_STRATEGY.md` §2.1, §4.
+
 ## 10. Adalet / Önyargı Analizi
 
 `aks_core/model/adalet.py` — equal-opportunity metriği: kredibl kişilerin onaylanma oranı gruplar arası karşılaştırılır (`/api/adalet` uç noktası). Sonuç: klasik skorda kredibl bir öğrencinin onaylanma oranı **%0.4** iken AKS'de **%97.8**; adalet boşluğu **1.00'den 0.39'a** iner. Model, ayrımcı sinyalleri (yaş, cinsiyet vb.) doğrudan kullanmaz — yalnızca davranışsal/finansal özelliklere dayanır.

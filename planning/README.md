@@ -1,6 +1,8 @@
 # AKS / Early Phase Working Package — Master Index
 **This is the master file for the entire repository. Read it first in any future session.** It covers the product itself (problem, solution, team, results, sprint history) *and* the consulting-style Early Phase planning package built on top of it. Technical/engineering detail lives in [`/product/PRODUCT_TECH_README.md`](../product/PRODUCT_TECH_README.md); this file is the narrative and program-management home.
 
+> **Read [`RESEARCH_STRATEGY.md`](RESEARCH_STRATEGY.md) immediately after this file, before trusting any AUC/business/fairness number cited below.** The project now operates under a statistical-rigor-first mandate (venture-fundable product, not bootcamp demo); a code-grounded audit found the current headline model results are measured circularly. §6 below carries the caveat inline, but the full finding, the ablation evidence, and three open decisions (OQ-36…38) live there.
+
 **Note on language:** the planning package (source doc, artifacts, IDs) is English throughout. The product narrative, team, and sprint history below are kept in the team's original **Turkish**, as authored by YZTA Bootcamp Grup 74 — this is preserved for authenticity rather than translated.
 
 ---
@@ -37,6 +39,7 @@ The repo root has no single README; orientation starts here. Three top-level thi
 | Location | What it is | Read this for |
 |---|---|---|
 | **`/planning/README.md`** (this file) | Master index: product narrative + planning package | Everything — start here |
+| **`/planning/RESEARCH_STRATEGY.md`** | **Operating mandate + critical statistical assessment of the current system.** Supersedes "bootcamp demo" framing wherever they conflict. | The quality bar every model/AI/eng decision is now held to; the circularity finding; open decisions OQ-36…38 |
 | **`/planning/`** | Early Phase consulting-style package (Part B below) + bootcamp adaptation + `ROADMAP.md` | Problem framing, hypotheses, governance, sprint/task roadmap |
 | **`/TECHSTACK.md`** | Whole-project technology decisions & target architecture | Why React/Django/Supabase/Redis were chosen |
 | **`/product/`** | The actual AKS build, split into 5 workstream sections (`01-data` … `05-business`) | The code |
@@ -114,6 +117,8 @@ Davranışsal model klasik skoru **+0.10 AUC** ile geçiyor.
 **Adalet/önyargı analizi (sorumlu YZ).** Equal-opportunity metriği: kredibl kişilerin onaylanma oranı gruplar arası karşılaştırılır. Sonuç çarpıcı — klasik skorda kredibl bir öğrencinin onaylanma oranı **%0.4** iken AKS'de **%97.8**; adalet boşluğu **1.00'den 0.39'a** iner.
 
 Görsel: `product/05-business/docs/sprints/sprint2/model_sonuclari.png`. Teknik detay ve metrik dosyası: `PRODUCT_TECH_README.md` §9–10.
+
+> ⚠️ **Metodolojik uyarı — bu bölümdeki tüm sayılar (AUC, %90 kurtarma, adalet boşluğu) aynı döngüsel ölçüm sorununu paylaşır.** `RESEARCH_STRATEGY.md`'de kod-temelli tespit + ablasyon testiyle doğrulandı: etiket, modelin gördüğü özelliklerden üretiliyor (XGBoost ile lojistik regresyon farkı 0.0004 AUC — anlamsız), ve döngüsellik yalnızca 4 "nedensel" özellikle sınırlı değil, sentetik üreticinin persona-koşullu tasarımına yapısal olarak gömülü (5 "nedensel olmayan" özellik bile tek başına 0.82 AUC veriyor). **Bu rakamlar boru hattının uçtan uca çalıştığını doğrular; "davranışsal veri gizli ödeme kapasitesini ortaya çıkarır" tezini henüz doğrulamaz.** Düzeltme planı, gerçek veri seti ihtiyacı (OQ-36) ve karar noktaları (OQ-37, OQ-38) için: [`RESEARCH_STRATEGY.md`](RESEARCH_STRATEGY.md).
 
 ## 7. Sprint Geçmişi
 

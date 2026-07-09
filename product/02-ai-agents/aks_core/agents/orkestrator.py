@@ -6,14 +6,14 @@ HAFIZA tutar: her değerlendirme kaydedilir, geçmiş skorlarla kıyaslanabilir.
 Bu, "AI agent kullanımı, hafıza, orkestrasyon" kriterini karşılar.
 """
 from datetime import datetime
-from src.agents.veri_agent import VeriAgent
-from src.agents.skorlama_agent import SkorlamaAgent
-from src.agents.danisman_agent import DanismanAgent
-from src.model.aciklama import Aciklayici
+from aks_core.agents.veri_agent import VeriAgent
+from aks_core.agents.skorlama_agent import SkorlamaAgent
+from aks_core.agents.danisman_agent import DanismanAgent
+from aks_core.model.aciklama import Aciklayici
 
 
 class Orkestrator:
-    def __init__(self, model_yolu="models/aks_model.joblib", llm_fonksiyonu=None):
+    def __init__(self, model_yolu=None, llm_fonksiyonu=None):
         self.veri_agent = VeriAgent()
         self.skorlama_agent = SkorlamaAgent(model_yolu)
         self.aciklayici = Aciklayici(self.skorlama_agent.model, self.skorlama_agent.ozellikler)

@@ -7,9 +7,9 @@ yeniden kazandığını ölçer. Projenin bankaya değer önerisi buradan çıka
 """
 import numpy as np
 import joblib
-from src.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
-from src.model.etiketleme import etiketle
-from src.model.egitim import klasik_risk_skoru
+from aks_core.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
+from aks_core.model.etiketleme import etiketle
+from aks_core.model.egitim import klasik_risk_skoru
 
 
 def olasilik_to_aks(p):
@@ -17,8 +17,10 @@ def olasilik_to_aks(p):
     return int(max(300, min(850, round(850 - 550 * p))))
 
 
-def analiz(islem_csv="data/sentetik_islemler.csv", klasik_esik=560, aks_esik=560):
-    paket = joblib.load("models/aks_model.joblib")
+def analiz(islem_csv=None, klasik_esik=560, aks_esik=560):
+    from aks_core import paths
+    islem_csv = islem_csv or paths.data("sentetik_islemler.csv")
+    paket = joblib.load(paths.model_path())
     model, ozellikler = paket["model"], paket["ozellikler"]
     musteriler = etiketle(tum_musteriler(islem_csv), hedef_temerrut_orani=0.18)
     X = np.array([[m[o] for o in ozellikler] for m in musteriler], dtype=float)

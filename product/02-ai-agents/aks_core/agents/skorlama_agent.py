@@ -32,8 +32,9 @@ def limit_oner(aks_skor, ozellikler):
 class SkorlamaAgent:
     ad = "skorlama_agent"
 
-    def __init__(self, model_yolu="models/aks_model.joblib"):
-        paket = joblib.load(model_yolu)
+    def __init__(self, model_yolu=None):
+        from aks_core import paths
+        paket = joblib.load(model_yolu or paths.model_path())
         self.model = paket["model"]
         self.model_adi = paket["model_adi"]
         self.ozellikler = paket["ozellikler"]

@@ -4,7 +4,7 @@ Agent 1 — Veri/Özellik Agent
 Sorumluluk: Ham banka işlem (transaction) kayıtlarını alır, davranışsal
 özellik vektörüne dönüştürür. Pipeline'ın giriş katmanı.
 """
-from src.ozellik.cikarim import ozellik_cikar, OZELLIK_ADLARI
+from aks_core.ozellik.cikarim import ozellik_cikar, OZELLIK_ADLARI
 from datetime import datetime
 
 

@@ -17,8 +17,8 @@ import xgboost as xgb
 import lightgbm as lgb
 import joblib
 
-from src.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
-from src.model.etiketleme import etiketle
+from aks_core.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
+from aks_core.model.etiketleme import etiketle
 
 
 def klasik_risk_skoru(m):
@@ -44,8 +44,11 @@ def veri_hazirla(islem_csv, egitim_csv_cikti=None, hedef_oran=0.18):
     return musteriler
 
 
-def egit(islem_csv="data/sentetik_islemler.csv", model_cikti="models/aks_model.joblib"):
-    musteriler = veri_hazirla(islem_csv, "data/egitim_verisi.csv")
+def egit(islem_csv=None, model_cikti=None):
+    from aks_core import paths
+    islem_csv = islem_csv or paths.data("sentetik_islemler.csv")
+    model_cikti = model_cikti or paths.model_path()
+    musteriler = veri_hazirla(islem_csv, paths.data("egitim_verisi.csv"))
     X = np.array([[m[o] for o in OZELLIK_ADLARI] for m in musteriler], dtype=float)
     y = np.array([m["temerrut"] for m in musteriler])
     klasik = np.array([klasik_risk_skoru(m) for m in musteriler], dtype=float)
@@ -91,15 +94,16 @@ def egit(islem_csv="data/sentetik_islemler.csv", model_cikti="models/aks_model.j
     # Kaydet
     os.makedirs(os.path.dirname(model_cikti), exist_ok=True)
     joblib.dump({"model": en_iyi[1], "model_adi": en_iyi[0], "ozellikler": OZELLIK_ADLARI}, model_cikti)
-    with open("models/metrikler.json", "w", encoding="utf-8") as f:
+    with open(paths.METRICS_PATH, "w", encoding="utf-8") as f:
         json.dump({k: {m: round(v, 4) for m, v in val.items()} for k, val in sonuc.items()}, f, ensure_ascii=False, indent=2)
     print(f"\nModel kaydedildi -> {model_cikti}")
     return sonuc
 
 
 if __name__ == "__main__":
+    from aks_core import paths
     p = argparse.ArgumentParser()
-    p.add_argument("--girdi", default="data/sentetik_islemler.csv")
-    p.add_argument("--model-cikti", default="models/aks_model.joblib")
+    p.add_argument("--girdi", default=paths.data("sentetik_islemler.csv"))
+    p.add_argument("--model-cikti", default=paths.model_path())
     a = p.parse_args()
     egit(a.girdi, a.model_cikti)

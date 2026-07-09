@@ -109,11 +109,36 @@ Implemented as `product/02-ai-agents/aks_core/model/circularity_ablation.py` (5-
 
 XGBoost reaches 94.7% of the oracle AUC (0.8525 / 0.9006) — consistent with "recovering a known, roughly-linear generating rule reasonably well," not "discovering hidden nonlinear structure via ML."
 
+### A3 (generalization) + A4 (calibration) — DONE, results below
+
+Built as `product/02-ai-agents/aks_core/model/degerlendirme.py` — a model-/data-agnostic evaluation harness (repeated stratified k-fold, bootstrap 95% CI, Brier, ECE, reliability curve, **per-persona subgroup breakdown**), reusable regardless of how OQ-36/37 resolve. Run: `python -m aks_core.model.degerlendirme`. Results on the current data (2000 customers, base default rate 0.195):
+
+| Model | ROC-AUC (95% CI) | PR-AUC | Brier | ECE |
+|---|---|---|---|---|
+| XGBoost (current production) | 0.842 [0.832, 0.853] | 0.698 | 0.098 | 0.032 |
+| Logistic regression (9 feats) | **0.852 [0.841, 0.864]** | 0.709 | 0.098 | **0.018** |
+
+**Finding A3.1 — XGBoost is affirmatively unjustified.** Logistic regression equals-or-beats XGBoost on AUC, PR-AUC, and calibration (ECE 0.018 vs 0.032), while being simpler (priority #8), more interpretable (#5), and better calibrated (#3). CIs overlap heavily. Per the mandate ("if a classical method performs better, always choose it"), the standing recommendation is **replace XGBoost with logistic regression** — but *executing* the swap is deliberately gated on the benchmark fix (OQ-36/37): choosing a model to optimize a metric already shown to be circular (§2.1) would repeat the same methodological error. What is safe to conclude *now* is the negative: there is no evidence-based case for XGBoost's complexity over a GLM on this problem.
+
+**Finding A4.1 — XGBoost is overconfident in the mid-risk band.** Reliability curve: predicted 0.66 → observed 0.45; predicted 0.86 → observed 0.74. It systematically overstates risk for mid-probability customers. This matters because the product converts probability into a *specific credit-limit number* — overconfidence in the ambiguous band is precisely where limit errors are most costly. Logistic regression's reliability curve is markedly tighter.
+
+**Finding A3.2 (most important) — the aggregate AUC is carried by the easy control group, not the target segment.** Per-persona out-of-fold ROC-AUC:
+
+| Persona | XGBoost AUC | LR AUC | n | Read |
+|---|---|---|---|---|
+| `dusuk_hacim_riskli` (negative control) | 0.898 | 0.883 | 301 | Model separates the genuinely-risky well — good, but this is the *easy* task |
+| `klasik_maasli` (prime baseline) | 0.710 | 0.721 | 608 | Moderate |
+| `stajyer_degisken_gelir` (target) | 0.716 | 0.790 | 497 | Moderate |
+| **`ogrenci_yuksek_hacim` (PRIMARY target)** | **0.681** | **0.615** | 594 | **Weak — this is the segment the entire thesis is about** |
+
+The headline 0.84 aggregate AUC is dominated by cleanly separating the negative-control group from everyone else — which is (a) the *between-persona* separation that §2.1/§4 already showed is confounded/tautological, and (b) *not* the product's actual job. Within the thin-file target segments (students, interns) the model's ability to rank repayment risk is 0.61–0.79 — weakest exactly where the product claims to "discover hidden repayment capacity."
+
+**Rigor caveat (do not overclaim this):** within-persona AUC is partly depressed by mechanically narrower feature spread inside a single archetype, so 0.61 within students is not directly comparable to 0.84 across all. The honest, defensible claim is narrower and still damaging: *the aggregate number advertises a capability (separating good from bad) that is demonstrated mostly on the group the product doesn't need help with, and only weakly on the group it targets.* This also exposes a prior unanswered question — **what is the productized prediction target?** "Discover hidden repayment capacity" is a mission statement, not an operational label; whether the right objective is within-segment risk ranking, cross-segment calibrated PD, or a reject-inference/uplift formulation is itself undecided and shapes which of these metrics is the one that matters (added as a research question, §6).
+
 ### Remaining items (not yet done)
 
-- **A3 — CV + CI in production training.** Port the k-fold + bootstrap-CI methodology from `circularity_ablation.py` into `aks_core/model/egitim.py` itself, replacing the single holdout. Cheap, no design change, immediately more defensible.
-- **A4 — Calibration report.** Add Brier/ECE/reliability-diagram reporting to `egitim.py` output.
 - **A2 — Simulator redesign** (structural fix). Blocked on **OQ-36** (real data access) — if real data exists, prefer it over redesigning the simulator; if not, redesign per the corrected diagnosis above (decouple persona-conditioned feature generation from label generation, not just from the 4 causal columns).
+- **A5 — Target definition.** Before A2, define the operational prediction target and the decision it feeds (see §6) — this determines which evaluation metric (aggregate AUC vs within-segment ranking vs calibrated PD vs uplift) is the acceptance criterion.
 
 ## 5. Decisions requiring your input (not guessed)
 
@@ -121,4 +146,16 @@ XGBoost reaches 94.7% of the oracle AUC (0.8525 / 0.9006) — consistent with "r
 - **OQ-37 — Sequencing vs. bootcamp deadline.** The circularity fix (§4 + a simulator redesign) will change the headline AUC/business/fairness numbers currently published in `product/PRODUCT_TECH_README.md` and `planning/README.md`. Do you want this done now (before further UI/agent work, per the priority order), or sequenced to land right after the current bootcamp deadline, with the existing numbers kept but explicitly caveated in the meantime?
 - **OQ-38 — Agent narrative.** Given §2.3's finding (1 real agent, not 3–5), do you want the jury-facing narrative corrected to "one well-justified agent, honestly scoped" now, or do you want to invest in making one additional component (most plausible candidate: an explanation/recommendation *ranker* that does genuine constrained optimization over candidate interventions, not just a template lookup) into something that actually passes the five-question test before demo day?
 
-These are logged as OQ-36…OQ-38 in `00-program/open-questions.md` for traceability with the rest of the project's open-questions discipline.
+These are logged as OQ-36…OQ-39 in `00-program/open-questions.md` for traceability with the rest of the project's open-questions discipline.
+
+## 6. Open research questions (distinct from the §5 decisions)
+
+These are questions the *research* must answer, not choices only the user can make. Listed so they aren't lost.
+
+- **RQ-1 — Operational target definition (also OQ-39, because it needs a product decision).** "Discover hidden repayment capacity" is a mission, not a label. The system's actual prediction target and the decision it feeds must be pinned down, because it changes which metric is the acceptance criterion:
+  - *within-segment risk ranking* (rank customers inside the thin-file group) → per-segment AUC is the metric (currently weak, A3.2);
+  - *cross-segment calibrated PD* (is this student as safe as a prime salaried customer at the same PD?) → calibration + a segment-blind PD is the metric;
+  - *uplift / reject-inference* (would extending credit to this currently-rejected customer be repaid?) → needs a counterfactual/uplift framing and cannot be evaluated with plain AUC at all.
+  These are materially different products with different evaluation regimes. A2 (simulator redesign) and any real-data work must not start before this is chosen.
+- **RQ-2 — Is between-segment separation even in scope?** The mission explicitly says *not* to replace the bank's model and *not* to predict default. If so, the aggregate default-AUC benchmark (0.84) may be measuring the wrong thing entirely — the bank already separates `dusuk_hacim_riskli` from `klasik_maasli`. The product's value is *within* the segments the bank scores poorly. This argues for making within-target-segment performance the primary metric and demoting aggregate AUC to a sanity check.
+- **RQ-3 — Feature leakage / gaming surface.** Of the 4 label-causal features, which are user-manipulable (e.g. can a customer structure transfers to inflate `gelir_duzenliligi`)? A production capacity signal must be robust to strategic behavior; this needs an adversarial analysis before any real deployment.

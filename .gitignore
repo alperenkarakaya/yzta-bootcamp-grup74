@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+.mypy_cache/
+
+# Node / React
+node_modules/
+dist/
+build/
+.next/
+*.local
+
+# Env & secrets (Supabase / Upstash / Gemini keys)
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Django
+*.sqlite3
+staticfiles/
+media/

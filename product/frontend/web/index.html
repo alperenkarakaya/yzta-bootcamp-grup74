@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS · Kredi Değerlendirme Paneli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0C1118; --panel:#131B25; --panel2:#1A2430; --panel3:#212D3B;
+  --line:#25313F; --line2:#1E2833;
+  --txt:#E9EEF4; --txt2:#B4BECC; --mut:#7C8899;
+  --yesil:#25C98D; --yesil2:#17A574; --yesil-bg:rgba(37,201,141,.13);
+  --slate:#66738A; --slate-bg:rgba(120,134,155,.15);
+  --amber:#E3A93F; --amber-bg:rgba(227,169,63,.14);
+  --kirmizi:#E36B62; --kirmizi-bg:rgba(227,107,98,.14);
+  --disp:'Space Grotesk',system-ui,sans-serif;
+  --body:'Inter',system-ui,-apple-system,sans-serif;
+  --r:14px; --golge:0 8px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;line-height:1.5}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.uygulama{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* Sidebar */
+.kenar{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
+.marka{display:flex;align-items:center;gap:11px;padding:6px 8px 20px}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--yesil),var(--yesil2));display:grid;place-items:center;color:#06231a;font-family:var(--disp);font-weight:700;font-size:17px}
+.marka b{font-family:var(--disp);font-weight:600;font-size:1.1rem;letter-spacing:-.01em;display:block;line-height:1.1}
+.marka small{color:var(--mut);font-size:.72rem}
+.nav{display:flex;flex-direction:column;gap:3px;margin-top:8px}
+.nav-baslik{font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);padding:14px 10px 6px}
+.nav a{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:10px;color:var(--txt2);font-size:.9rem;font-weight:500;cursor:pointer;transition:.15s}
+.nav a:hover{background:var(--panel2);color:var(--txt)}
+.nav a.aktif{background:var(--yesil-bg);color:var(--yesil)}
+.nav a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;flex-shrink:0}
+.kenar-alt{margin-top:auto;padding:12px;background:var(--panel2);border-radius:12px;border:1px solid var(--line)}
+.kenar-alt .et{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.kenar-alt .v{font-family:var(--disp);font-weight:600;font-size:.92rem;margin-top:3px}
+.kenar-alt .v span{color:var(--yesil)}
+
+/* Topbar + içerik */
+.icerik{display:flex;flex-direction:column;min-width:0}
+.ust{display:flex;justify-content:space-between;align-items:center;padding:18px 32px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(12,17,24,.85);backdrop-filter:blur(10px);z-index:10}
+.ust h1{font-family:var(--disp);font-size:1.15rem;font-weight:600;letter-spacing:-.01em}
+.gorevli{display:flex;align-items:center;gap:10px;font-size:.86rem;color:var(--txt2)}
+.gorevli .av{width:32px;height:32px;border-radius:50%;background:var(--panel3);display:grid;place-items:center;font-family:var(--disp);font-weight:600;font-size:.85rem;color:var(--yesil)}
+.govde{padding:28px 32px 60px;max-width:1080px;width:100%}
+
+.kart{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.kart h2{font-family:var(--disp);font-size:.74rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:15px}
+.izgara{display:grid;gap:18px}
+@media(min-width:880px){.iki{grid-template-columns:1fr 1fr}.girdi-hero{grid-template-columns:.82fr 1.18fr}}
+.sayfa{display:none}.sayfa.aktif{display:block;animation:filiz .4s ease}
+@keyframes filiz{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.giris{color:var(--txt2);font-size:.98rem;max-width:60ch;margin-bottom:22px}
+.giris b{color:var(--yesil);font-weight:600}
+
+/* Girdi */
+select,input[type=file]{font-family:var(--body);font-size:.9rem;color:var(--txt);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;width:100%}
+select:focus,input:focus{outline:2px solid var(--yesil);outline-offset:1px}
+.dugme{font-family:var(--body);font-weight:600;font-size:.9rem;cursor:pointer;border:none;border-radius:10px;padding:12px 18px;transition:.15s;width:100%}
+.dugme.birincil{background:var(--yesil);color:#06231a}
+.dugme.birincil:hover{background:var(--yesil2)}
+.dugme.ikincil{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+.dugme.ikincil:hover{border-color:var(--mut)}
+.ayrac{display:flex;align-items:center;gap:12px;color:var(--mut);font-size:.78rem;margin:16px 0}
+.ayrac::before,.ayrac::after{content:"";height:1px;background:var(--line);flex:1}
+.ipucu{color:var(--mut);font-size:.78rem;margin-top:8px}
+.hata{color:var(--kirmizi);font-size:.85rem;margin-top:8px;font-weight:500}
+label.et{display:block;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:9px}
+
+/* Skor yayı */
+.gauge-sarmal{display:flex;flex-direction:column;align-items:center;padding:4px 0}
+.gauge{position:relative;width:270px;max-width:100%}
+.gauge svg{width:100%;height:auto;overflow:visible}
+.gauge-track{stroke:var(--panel3)}
+.gauge-deger{stroke:var(--yesil);stroke-linecap:round;transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1),stroke 1s}
+.gauge-merkez{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:12px}
+.gauge-sayi{font-family:var(--disp);font-weight:700;font-size:3.3rem;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.gauge-max{font-family:var(--disp);color:var(--mut);font-weight:500}
+.gauge-et{font-size:.74rem;color:var(--mut);margin-top:6px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.klasik-tik{stroke:var(--slate);stroke-width:3}
+.kiyas{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.kiyas .d{font-family:var(--disp);font-weight:600;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.kiyas .e{font-size:.72rem;color:var(--mut);margin-top:2px;text-align:center}
+.kiyas .klasik .d{color:var(--slate)}.kiyas .aks .d{color:var(--yesil)}
+.rozet{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:9px 17px;border-radius:100px;font-weight:600;font-size:.88rem}
+.rozet .nokta{width:8px;height:8px;border-radius:50%}
+.serit{margin-top:15px;text-align:center;font-size:.88rem;color:var(--txt2);background:var(--yesil-bg);border-radius:10px;padding:11px 14px}
+.serit b{color:var(--yesil);font-family:var(--disp)}
+
+/* Faktör / öneri */
+.faktor{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2)}
+.faktor:last-child{border:none}
+.faktor .ik{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-family:var(--disp);font-weight:700;flex-shrink:0}
+.faktor.arti .ik{background:var(--yesil-bg);color:var(--yesil)}.faktor.eksi .ik{background:var(--amber-bg);color:var(--amber)}
+.faktor .ad{flex:1;font-size:.9rem;color:var(--txt2)}
+.faktor .rz{font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:100px}
+.faktor.arti .rz{background:var(--yesil-bg);color:var(--yesil)}.faktor.eksi .rz{background:var(--amber-bg);color:var(--amber)}
+.oneri{display:flex;gap:10px;padding:12px 14px;background:var(--panel2);border-radius:11px;margin-bottom:8px;font-size:.88rem;color:var(--txt2)}
+.oneri::before{content:"→";color:var(--yesil);font-weight:700;flex-shrink:0}
+.ozet{color:var(--mut);font-size:.88rem;margin-bottom:14px;line-height:1.55}
+
+/* Simülasyon */
+.kaydirici{margin:16px 0}
+.kaydirici label{display:flex;justify-content:space-between;font-size:.86rem;color:var(--txt2);margin-bottom:9px}
+.kaydirici label b{font-family:var(--disp);color:var(--yesil)}
+input[type=range]{width:100%;height:6px;border-radius:4px;-webkit-appearance:none;background:var(--panel3);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--yesil);cursor:pointer;border:3px solid var(--panel)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--yesil);cursor:pointer;border:3px solid var(--panel)}
+.sim-sonuc{margin-top:16px;padding:15px;background:var(--panel2);border-radius:12px;text-align:center;min-height:54px;display:flex;align-items:center;justify-content:center;color:var(--mut)}
+.sim-sonuc b{font-family:var(--disp);font-variant-numeric:tabular-nums}
+
+/* Metrikler */
+.metrik-izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.metrik{background:var(--panel);padding:22px 16px;text-align:center}
+.metrik .d{font-family:var(--disp);font-weight:700;font-size:2rem;letter-spacing:-.02em;color:var(--yesil);font-variant-numeric:tabular-nums;line-height:1}
+.metrik .e{font-size:.78rem;color:var(--mut);margin-top:8px;line-height:1.35}
+.segment{margin-bottom:14px}
+.segment .u{display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:7px}
+.segment .u b{font-family:var(--disp)}
+.bar{height:9px;border-radius:6px;background:var(--panel3);overflow:hidden}
+.bar>div{height:100%;border-radius:6px;background:var(--yesil);width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{text-align:left;color:var(--mut);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:10px 8px;border-bottom:1px solid var(--line)}
+td{padding:12px 8px;border-bottom:1px solid var(--line2);color:var(--txt2)}
+td.tpr{font-family:var(--disp);font-weight:600;font-variant-numeric:tabular-nums}
+.tpr.d1{color:var(--slate)}.tpr.d2{color:var(--yesil)}
+.adalet-ozet{margin-top:14px;padding:14px;background:var(--panel2);border-radius:11px;font-size:.9rem}
+.adalet-ozet b{font-family:var(--disp)}
+.dipnot{color:var(--mut);font-size:.76rem;margin-top:14px;line-height:1.5}
+.yukleniyor{text-align:center;color:var(--mut);padding:44px}
+.gizli{display:none}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--yesil);border-radius:50%;animation:don .7s linear infinite;vertical-align:middle}
+@keyframes don{to{transform:rotate(360deg)}}
+
+/* Asistan */
+.as-buton{position:fixed;right:26px;bottom:26px;z-index:40;width:56px;height:56px;border-radius:50%;background:var(--yesil);border:none;cursor:pointer;box-shadow:0 8px 24px rgba(37,201,141,.4);display:grid;place-items:center;transition:.2s}
+.as-buton:hover{transform:scale(1.06)}
+.as-buton svg{width:26px;height:26px;stroke:#06231a;fill:none;stroke-width:2}
+.as-panel{position:fixed;right:26px;bottom:96px;z-index:40;width:370px;max-width:calc(100vw - 40px);height:520px;max-height:calc(100vh - 130px);background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--golge);display:none;flex-direction:column;overflow:hidden}
+.as-panel.acik{display:flex;animation:filiz .25s ease}
+.as-ust{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.as-ust .halka{width:34px;height:34px;border-radius:10px;background:var(--yesil-bg);display:grid;place-items:center;color:var(--yesil);font-family:var(--disp);font-weight:700}
+.as-ust b{font-family:var(--disp);font-size:.98rem}
+.as-ust small{color:var(--mut);font-size:.74rem;display:block}
+.as-kapat{margin-left:auto;background:none;border:none;color:var(--mut);cursor:pointer;font-size:1.3rem;line-height:1}
+.as-akis{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.mesaj{max-width:82%;padding:11px 14px;border-radius:14px;font-size:.88rem;line-height:1.5;white-space:pre-wrap}
+.mesaj.bot{background:var(--panel2);color:var(--txt);align-self:flex-start;border-bottom-left-radius:4px}
+.mesaj.ben{background:var(--yesil);color:#06231a;align-self:flex-end;border-bottom-right-radius:4px;font-weight:500}
+.oneri-cip{display:flex;flex-wrap:wrap;gap:7px;padding:0 16px 12px}
+.oneri-cip button{font-family:var(--body);font-size:.78rem;color:var(--txt2);background:var(--panel2);border:1px solid var(--line);border-radius:100px;padding:7px 12px;cursor:pointer;transition:.15s}
+.oneri-cip button:hover{border-color:var(--yesil);color:var(--yesil)}
+.as-girdi{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.as-girdi input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;color:var(--txt);font-family:var(--body);font-size:.88rem}
+.as-girdi input:focus{outline:2px solid var(--yesil);outline-offset:1px}
+.as-girdi button{background:var(--yesil);border:none;border-radius:11px;width:44px;cursor:pointer;display:grid;place-items:center}
+.as-girdi button svg{width:18px;height:18px;stroke:#06231a;fill:none;stroke-width:2}
+.mod-etiket{font-size:.66rem;color:var(--mut);text-align:center;padding:0 0 8px}
+</style>
+</head>
+<body>
+<div class="uygulama">
+  <!-- SIDEBAR -->
+  <aside class="kenar">
+    <div class="marka">
+      <div class="logo">A</div>
+      <div><b>AKS</b><small>Kredi Değerlendirme</small></div>
+    </div>
+    <div class="nav" id="nav">
+      <div class="nav-baslik">Panel</div>
+      <a data-s="genel" class="aktif" onclick="nav('genel')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Genel Bakış</a>
+      <a data-s="musteri" onclick="nav('musteri')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Müşteri Değerlendirme</a>
+      <a data-s="portfoy" onclick="nav('portfoy')"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Portföy Etkisi</a>
+      <a data-s="adalet" onclick="nav('adalet')"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14M7 8l-3 6h6zM17 8l-3 6h6z"/></svg>Adalet Analizi</a>
+    </div>
+    <div class="kenar-alt">
+      <div class="et">Aktif model</div>
+      <div class="v">XGBoost · <span id="auc-rozet">AUC 0.83</span></div>
+    </div>
+  </aside>
+
+  <!-- İÇERİK -->
+  <div class="icerik">
+    <div class="ust">
+      <h1 id="ust-baslik">Genel Bakış</h1>
+      <div class="gorevli"><span>Banka Görevlisi</span><div class="av">BG</div></div>
+    </div>
+    <div class="govde">
+
+    <!-- GENEL BAKIŞ -->
+    <section class="sayfa aktif" id="s-genel">
+      <p class="giris">AKS, hesap hareketlerindeki davranışı okuyarak <b>gelirin gizlediği gerçek ödeme kapasitesini</b> ortaya çıkarır. Klasik skorlamanın haksızca elediği disiplinli kişileri geri kazandırır — riski büyütmeden.</p>
+      <div class="metrik-izgara" id="genel-metrik" style="margin-bottom:18px">
+        <div class="metrik"><div class="d"><span class="spin"></span></div><div class="e">yükleniyor</div></div>
+      </div>
+      <div class="izgara iki">
+        <div class="kart"><h2>Nasıl çalışır</h2>
+          <div class="oneri">Hesap hareketlerinden 9 davranışsal özellik çıkarılır</div>
+          <div class="oneri">XGBoost modeli 300–850 arası skor üretir</div>
+          <div class="oneri">SHAP ile her faktörün etkisi açıklanır</div>
+          <div class="oneri">Üç agent + hafıza tüm süreci yürütür</div>
+        </div>
+        <div class="kart"><h2>Hızlı başla</h2>
+          <p class="ozet">Bir müşteri profilini değerlendirmek ya da kendi hesap dökümünü skorlamak için Müşteri Değerlendirme'ye geç. Sağ alttaki asistana istediğini sorabilirsin.</p>
+          <button class="dugme birincil" onclick="nav('musteri')">Müşteri değerlendirmeye geç</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÜŞTERİ -->
+    <section class="sayfa" id="s-musteri">
+      <div class="izgara girdi-hero" style="margin-bottom:18px">
+        <div class="kart">
+          <label class="et">Bir profil seç</label>
+          <div style="margin-bottom:12px"><select id="musteri-sec"></select></div>
+          <button class="dugme birincil" onclick="skorla()">Skoru hesapla</button>
+          <div class="ayrac">veya</div>
+          <label class="et">Kendi hesap dökümünü yükle</label>
+          <div style="margin-bottom:12px"><input type="file" id="csv-dosya" accept=".csv"></div>
+          <button class="dugme ikincil" onclick="csvSkorla()">CSV'den skorla</button>
+          <div class="ipucu">Kolonlar: tarih, islem_tipi (gelir/gider), kategori, tutar</div>
+          <div id="csv-hata" class="hata"></div>
+        </div>
+        <div class="kart">
+          <div id="skor-bos" class="yukleniyor">Bir profil seç ve skoru hesapla.</div>
+          <div id="skor-icerik" class="gizli gauge-sarmal">
+            <div class="gauge">
+              <svg viewBox="0 0 200 170">
+                <path class="gauge-track" id="yay-track" fill="none" stroke-width="14"/>
+                <path class="gauge-deger" id="yay-deger" fill="none" stroke-width="14"/>
+                <line class="klasik-tik" id="klasik-tik" x1="0" y1="0" x2="0" y2="0"/>
+              </svg>
+              <div class="gauge-merkez">
+                <div class="gauge-sayi" id="aks-sayi">—</div>
+                <div class="gauge-max">/ 850</div>
+                <div class="gauge-et" id="persona-et"></div>
+              </div>
+            </div>
+            <div class="kiyas">
+              <div class="klasik"><div class="d" id="klasik-d">—</div><div class="e">Klasik skor</div></div>
+              <div class="aks"><div class="d" id="aks-d">—</div><div class="e">AKS skoru</div></div>
+              <div class="limit"><div class="d" id="limit-d" style="color:var(--txt)">—</div><div class="e">Önerilen limit</div></div>
+            </div>
+            <div id="rozet" class="rozet"><span class="nokta"></span><span id="karar-metin"></span></div>
+            <div id="serit" class="serit gizli"></div>
+          </div>
+        </div>
+      </div>
+      <div id="detay" class="gizli">
+        <div class="izgara iki" style="margin-bottom:18px">
+          <div class="kart"><h2>Skoru etkileyen faktörler</h2><div id="faktorler"></div>
+            <div class="dipnot">XGBoost + SHAP ile kişiye özel. Model kara kutu değil.</div></div>
+          <div class="kart"><h2>Öneriler</h2><div id="oneri-ozet" class="ozet"></div><div id="oneriler"></div></div>
+        </div>
+        <div class="kart"><h2>Ne değişirdi — canlı simülasyon</h2>
+          <div class="kaydirici"><label>Gider / gelir oranı <b id="sg-v">0.70</b></label><input type="range" id="sg" min="0.3" max="1.3" step="0.05" value="0.7" oninput="simGoster()"></div>
+          <div class="kaydirici"><label>Fatura ödeme düzeni <b id="sf-v">1.0</b></label><input type="range" id="sf" min="0" max="1" step="0.1" value="1" oninput="simGoster()"></div>
+          <button class="dugme birincil" style="width:auto;padding:12px 22px" onclick="simule()">Senaryoyu hesapla</button>
+          <div id="sim-sonuc" class="sim-sonuc">Değerleri değiştir, skorun yanıtını gör.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PORTFÖY -->
+    <section class="sayfa" id="s-portfoy">
+      <p class="giris">Klasik eşiğin altında kalan <b>kredibl müşterileri</b> AKS geri kazanır — risk iştahını bozmadan.</p>
+      <div id="portfoy-yukleniyor" class="yukleniyor"><span class="spin"></span> Portföy analiz ediliyor…</div>
+      <div id="portfoy-icerik" class="gizli">
+        <div class="metrik-izgara" style="margin-bottom:18px">
+          <div class="metrik"><div class="d" id="m-kredibl">—</div><div class="e">Klasik skorun elediği<br>kredibl müşteri</div></div>
+          <div class="metrik"><div class="d" id="m-kurtarilan">—</div><div class="e">AKS'nin geri<br>kazandığı müşteri</div></div>
+          <div class="metrik"><div class="d" id="m-oran">—</div><div class="e">Geri kazanım<br>oranı</div></div>
+          <div class="metrik"><div class="d" id="m-net">—</div><div class="e">İllüstratif net<br>getiri (örneklem)</div></div>
+        </div>
+        <div class="kart"><h2>Geri kazanılan segment</h2><div id="segmentler"></div>
+          <div class="dipnot">Varsayımlar: ort. kredi 25.000 TL · net getiri %12 · zarar %55 · eşikler klasik&lt;680, AKS≥650. Veriler sentetiktir.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADALET -->
+    <section class="sayfa" id="s-adalet">
+      <p class="giris">AKS kararı resmi statüye göre değil <b>gerçek davranışa</b> göre verir; klasik skorun ayrımcılığını düzeltir.</p>
+      <div id="adalet-yukleniyor" class="yukleniyor"><span class="spin"></span> Hesaplanıyor…</div>
+      <div id="adalet-icerik" class="gizli">
+        <div class="kart"><h2>Kredibl kişinin onaylanma şansı (fırsat eşitliği)</h2>
+          <div id="adalet"></div>
+          <div class="dipnot">TPR = kredibl kişilerin onaylanma oranı. Gruplar arası fark ne kadar küçükse o kadar adil.</div>
+        </div>
+      </div>
+    </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ASİSTAN -->
+<button class="as-buton" onclick="asistanAc()" aria-label="Asistanı aç">
+  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+</button>
+<div class="as-panel" id="as-panel">
+  <div class="as-ust">
+    <div class="halka">A</div>
+    <div><b>AKS Asistanı</b><small id="as-mod">skor ve limit soruları</small></div>
+    <button class="as-kapat" onclick="asistanKapat()">×</button>
+  </div>
+  <div class="as-akis" id="as-akis"></div>
+  <div class="oneri-cip" id="as-cip">
+    <button onclick="asistanSor('Skoru nasıl yükseltirim?')">Skoru nasıl yükseltirim?</button>
+    <button onclick="asistanSor('Ne kadar limit verilebilir?')">Ne kadar limit?</button>
+    <button onclick="asistanSor('Neden bu skor?')">Neden bu skor?</button>
+    <button onclick="asistanSor('Bu sistem adil mi?')">Adil mi?</button>
+  </div>
+  <div class="as-girdi">
+    <input id="as-input" placeholder="Bir şey sor…" onkeydown="if(event.key==='Enter')asistanGonder()">
+    <button onclick="asistanGonder()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const TL=n=>n.toLocaleString("tr-TR")+" TL";
+const personaAd={ogrenci_yuksek_hacim:"Öğrenci · yüksek hacim",stajyer_degisken_gelir:"Stajyer · değişken gelir",klasik_maasli:"Klasik maaşlı",dusuk_hacim_riskli:"Düşük hacim · riskli"};
+const basliklar={genel:"Genel Bakış",musteri:"Müşteri Değerlendirme",portfoy:"Portföy Etkisi",adalet:"Adalet Analizi"};
+let seciliMusteri=null; window.sonBaglam={};
+const A0=135,ASWEEP=270,SMIN=300,SMAX=850;
+const kutup=(cx,cy,r,d)=>{const a=(d-90)*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)]};
+const yayYolu=(cx,cy,r,d1,d2)=>{const[x1,y1]=kutup(cx,cy,r,d1),[x2,y2]=kutup(cx,cy,r,d2);return`M ${x1} ${y1} A ${r} ${r} 0 ${d2-d1<=180?0:1} 1 ${x2} ${y2}`};
+const skorAci=s=>A0+ASWEEP*(Math.max(SMIN,Math.min(SMAX,s))-SMIN)/(SMAX-SMIN);
+const skorRenk=s=>s>=720?"var(--yesil)":s>=620?"var(--amber)":"var(--kirmizi)";
+
+function nav(s){
+  document.querySelectorAll(".sayfa").forEach(x=>x.classList.remove("aktif"));
+  $("s-"+s).classList.add("aktif");
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("aktif",a.dataset.s===s));
+  $("ust-baslik").textContent=basliklar[s];
+  if(s==="portfoy")portfoyYukle();
+  if(s==="adalet")adaletYukle();
+  if(s==="genel")genelYukle();
+}
+
+function sayac(el,hedef){let t=0;const a=t=>{t+=1/45;el.textContent=Math.round(hedef*Math.min(1,t));if(t<1)requestAnimationFrame(()=>a(t))};a(0)}
+
+async function demoYukle(){
+  const d=await(await fetch("/api/demo-musteriler")).json();
+  const s=$("musteri-sec");s.innerHTML="";
+  const sira=["ogrenci_yuksek_hacim","stajyer_degisken_gelir","dusuk_hacim_riskli","klasik_maasli"];
+  Object.entries(d).sort((a,b)=>sira.indexOf(a[0])-sira.indexOf(b[0])).forEach(([p,ids])=>ids.forEach(id=>{
+    const o=document.createElement("option");o.value=id;o.textContent=`#${id} — ${personaAd[p]||p}`;s.appendChild(o);
+  }));
+}
+
+function skorGoster(d,ptext){
+  $("skor-bos").classList.add("gizli");$("skor-icerik").classList.remove("gizli");$("detay").classList.remove("gizli");
+  const cx=100,cy=110,r=78,cev=2*Math.PI*r;
+  $("yay-track").setAttribute("d",yayYolu(cx,cy,r,A0,A0+ASWEEP));
+  const yay=$("yay-deger");yay.setAttribute("d",yayYolu(cx,cy,r,A0,A0+ASWEEP));
+  const dolu=cev*(ASWEEP/360)*((skorAci(d.aks_skor)-A0)/ASWEEP);
+  yay.style.stroke=skorRenk(d.aks_skor);yay.style.strokeDasharray=`${cev} ${cev}`;yay.style.strokeDashoffset=cev;
+  requestAnimationFrame(()=>{yay.style.strokeDasharray=`${dolu} ${cev}`;yay.style.strokeDashoffset=0});
+  if(d.klasik_skor){const[x1,y1]=kutup(cx,cy,r-11,skorAci(d.klasik_skor)),[x2,y2]=kutup(cx,cy,r+11,skorAci(d.klasik_skor));
+    const t=$("klasik-tik");t.setAttribute("x1",x1);t.setAttribute("y1",y1);t.setAttribute("x2",x2);t.setAttribute("y2",y2);t.style.display="block";}
+  else $("klasik-tik").style.display="none";
+  sayac($("aks-sayi"),d.aks_skor);$("aks-sayi").style.color=skorRenk(d.aks_skor);
+  $("persona-et").textContent=ptext||"";
+  $("klasik-d").textContent=d.klasik_skor??"—";$("aks-d").textContent=d.aks_skor;
+  $("limit-d").textContent=d.onerilen_limit!=null?TL(d.onerilen_limit):"—";
+  const rz=$("rozet"),iyi=d.aks_skor>=620;
+  rz.style.background=iyi?"var(--yesil-bg)":"var(--amber-bg)";rz.style.color=iyi?"var(--yesil)":"var(--amber)";
+  rz.querySelector(".nokta").style.background=iyi?"var(--yesil)":"var(--amber)";$("karar-metin").textContent=d.karar;
+  const sr=$("serit");
+  if(d.klasik_skor&&d.aks_skor-d.klasik_skor>0){sr.classList.remove("gizli");sr.innerHTML=`Klasik sistem <b>${d.klasik_skor}</b> verirken AKS <b>${d.aks_skor}</b> görüyor — <b>+${d.aks_skor-d.klasik_skor} puan</b> gizli kapasite.`;}
+  else sr.classList.add("gizli");
+  const fk=$("faktorler");fk.innerHTML="";
+  d.aciklama.riski_azaltan.forEach(x=>fk.innerHTML+=`<div class="faktor arti"><div class="ik">+</div><div class="ad">${x.faktor}</div><div class="rz">yükseltiyor</div></div>`);
+  d.aciklama.riski_artiran.forEach(x=>fk.innerHTML+=`<div class="faktor eksi"><div class="ik">–</div><div class="ad">${x.faktor}</div><div class="rz">düşürüyor</div></div>`);
+  $("oneri-ozet").textContent=d.danisman.ozet;
+  const o=$("oneriler");o.innerHTML="";d.danisman.oneriler.forEach(t=>o.innerHTML+=`<div class="oneri">${t}</div>`);
+  window.sonBaglam={aks_skor:d.aks_skor,klasik_skor:d.klasik_skor,risk_seviyesi:d.risk_seviyesi,onerilen_limit:d.onerilen_limit,aciklama:d.aciklama,danisman:d.danisman,persona:d.persona};
+}
+
+async function skorla(){
+  const id=$("musteri-sec").value;seciliMusteri=id;
+  $("skor-bos").classList.remove("gizli");$("skor-bos").innerHTML='<span class="spin"></span> Hesaplanıyor…';$("skor-icerik").classList.add("gizli");
+  const d=await(await fetch(`/api/skorla/${id}`)).json();
+  skorGoster(d,personaAd[d.persona]||d.persona);
+  if(d.ozellikler){$("sg").value=Math.min(1.3,Math.max(0.3,d.ozellikler.gider_gelir_orani));$("sf").value=d.ozellikler.fatura_odeme_duzeni;simGoster();}
+  $("sim-sonuc").textContent="Değerleri değiştir, skorun yanıtını gör.";
+}
+async function csvSkorla(){
+  const f=$("csv-dosya").files[0];$("csv-hata").textContent="";
+  if(!f){$("csv-hata").textContent="Önce bir CSV dosyası seç.";return;}
+  const fd=new FormData();fd.append("dosya",f);
+  const r=await fetch("/api/csv-skorla",{method:"POST",body:fd});const d=await r.json();
+  if(!r.ok){$("csv-hata").textContent=d.detail||"CSV işlenemedi.";return;}
+  seciliMusteri=null;d.klasik_skor=null;skorGoster(d,`Yüklenen döküm · ${d.islem_sayisi} işlem`);
+  $("sim-sonuc").textContent="Bu skor yüklediğin döküme aittir.";
+}
+function simGoster(){$("sg-v").textContent=(+$("sg").value).toFixed(2);$("sf-v").textContent=(+$("sf").value).toFixed(1);}
+async function simule(){
+  if(!seciliMusteri){$("sim-sonuc").textContent="Simülasyon için önce bir profil seç.";return;}
+  const r=await(await fetch("/api/simulasyon",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({musteri_id:+seciliMusteri,degisiklikler:{gider_gelir_orani:+$("sg").value,fatura_odeme_duzeni:+$("sf").value}})})).json();
+  const i=r.skor_degisimi>=0?"+":"";
+  $("sim-sonuc").innerHTML=`Mevcut <b style="color:var(--slate)">${r.mevcut_skor}</b> → Senaryo <b style="color:${skorRenk(r.senaryo_skor)}">${r.senaryo_skor}</b> <b style="color:${r.skor_degisimi>=0?'var(--yesil)':'var(--kirmizi)'}">(${i}${r.skor_degisimi})</b>`;
+}
+
+async function genelYukle(){
+  if($("genel-metrik").dataset.y)return;
+  const d=await(await fetch("/api/portfoy")).json();
+  $("genel-metrik").innerHTML=`
+    <div class="metrik"><div class="d">${d.kurtarilan}</div><div class="e">geri kazanılan<br>kredibl müşteri</div></div>
+    <div class="metrik"><div class="d">%${Math.round(d.kurtarma_orani*100)}</div><div class="e">geri kazanım<br>oranı</div></div>
+    <div class="metrik"><div class="d">${(d.illustratif_getiri.net/1000).toFixed(0)}B ₺</div><div class="e">illüstratif net<br>getiri</div></div>
+    <div class="metrik"><div class="d">%${Math.round(d.yanlis_onay_orani*100)}</div><div class="e">yanlış onay<br>oranı</div></div>`;
+  $("genel-metrik").dataset.y="1";
+}
+async function portfoyYukle(){
+  if($("portfoy-icerik").dataset.y)return;
+  const d=await(await fetch("/api/portfoy")).json();
+  $("portfoy-yukleniyor").classList.add("gizli");$("portfoy-icerik").classList.remove("gizli");
+  sayac($("m-kredibl"),d.kredibl_red);sayac($("m-kurtarilan"),d.kurtarilan);
+  $("m-oran").textContent="%"+Math.round(d.kurtarma_orani*100);$("m-net").textContent=(d.illustratif_getiri.net/1000).toFixed(0)+"B ₺";
+  const seg=$("segmentler");seg.innerHTML="";const mx=Math.max(...Object.values(d.persona_kirilimi));
+  Object.entries(d.persona_kirilimi).sort((a,b)=>b[1]-a[1]).forEach(([p,v])=>seg.innerHTML+=`<div class="segment"><div class="u"><span>${personaAd[p]||p}</span><b>${v}</b></div><div class="bar"><div data-w="${100*v/mx}"></div></div></div>`);
+  requestAnimationFrame(()=>seg.querySelectorAll(".bar>div").forEach(b=>b.style.width=b.dataset.w+"%"));
+  $("portfoy-icerik").dataset.y="1";
+}
+async function adaletYukle(){
+  if($("adalet-icerik").dataset.y)return;
+  const d=await(await fetch("/api/adalet")).json();
+  $("adalet-yukleniyor").classList.add("gizli");$("adalet-icerik").classList.remove("gizli");
+  let h=`<table><tr><th>Grup</th><th>Klasik</th><th>AKS</th></tr>`;
+  for(const g of Object.keys(d.aks_skor.gruplar))h+=`<tr><td>${personaAd[g]||g}</td><td class="tpr d1">%${Math.round(100*d.klasik_skor.gruplar[g].kredibl_onay_orani_tpr)}</td><td class="tpr d2">%${Math.round(100*d.aks_skor.gruplar[g].kredibl_onay_orani_tpr)}</td></tr>`;
+  h+=`</table><div class="adalet-ozet">Fırsat eşitliği boşluğu: <b style="color:var(--slate)">klasik ${d.klasik_skor.equal_opportunity_boslugu}</b> → <b style="color:var(--yesil)">AKS ${d.aks_skor.equal_opportunity_boslugu}</b> <span style="color:var(--mut)">(0'a yakın = adil)</span></div>`;
+  $("adalet").innerHTML=h;$("adalet-icerik").dataset.y="1";
+}
+
+/* Asistan */
+function asistanAc(){$("as-panel").classList.add("acik");if(!$("as-akis").dataset.y){botMesaj("Merhaba! Skorlama, limit, faktörler ya da adalet hakkında sorabilirsin. Bir müşteri skorlarsan sana özel yanıt veririm.");$("as-akis").dataset.y="1";}}
+function asistanKapat(){$("as-panel").classList.remove("acik");}
+function botMesaj(t){const d=document.createElement("div");d.className="mesaj bot";d.textContent=t;$("as-akis").appendChild(d);$("as-akis").scrollTop=9e9;return d;}
+function benMesaj(t){const d=document.createElement("div");d.className="mesaj ben";d.textContent=t;$("as-akis").appendChild(d);$("as-akis").scrollTop=9e9;}
+function asistanSor(t){$("as-input").value=t;asistanGonder();}
+async function asistanGonder(){
+  const t=$("as-input").value.trim();if(!t)return;$("as-input").value="";benMesaj(t);
+  const bekle=botMesaj("…");
+  try{
+    const r=await(await fetch("/api/asistan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({soru:t,baglam:window.sonBaglam})})).json();
+    bekle.textContent=r.yanit;$("as-mod").textContent=r.mod==="llm"?"yapay zeka · Gemini":"skor ve limit soruları";
+  }catch(e){bekle.textContent="Bir hata oldu, tekrar dener misin?";}
+}
+
+demoYukle();genelYukle();
+</script>
+</body>
+</html>

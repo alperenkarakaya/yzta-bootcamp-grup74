@@ -159,3 +159,57 @@ These are questions the *research* must answer, not choices only the user can ma
   These are materially different products with different evaluation regimes. A2 (simulator redesign) and any real-data work must not start before this is chosen.
 - **RQ-2 — Is between-segment separation even in scope?** The mission explicitly says *not* to replace the bank's model and *not* to predict default. If so, the aggregate default-AUC benchmark (0.84) may be measuring the wrong thing entirely — the bank already separates `dusuk_hacim_riskli` from `klasik_maasli`. The product's value is *within* the segments the bank scores poorly. This argues for making within-target-segment performance the primary metric and demoting aggregate AUC to a sanity check.
 - **RQ-3 — Feature leakage / gaming surface.** Of the 4 label-causal features, which are user-manipulable (e.g. can a customer structure transfers to inflate `gelir_duzenliligi`)? A production capacity signal must be robust to strategic behavior; this needs an adversarial analysis before any real deployment.
+
+---
+
+## 7. DECISION — Operational target definition (resolves RQ-1 / OQ-39)
+
+**Status: RECOMMENDED, proceeding unless the founder objects.** This is the product's spine; per the mandate it must be fixed before any modeling. I am taking a position rather than leaving it open.
+
+### 7.1 The mission, read literally
+
+The mandate's constraints are unusually precise and must be honored, not paraphrased:
+- NOT replace the bank's model · NOT predict default · NOT generate a new credit score
+- IS: *"discover hidden repayment capacity that the traditional pipeline **fails to recognize**"* for thin-file / behaviorally-disciplined-but-weak-traditional-signal customers.
+
+The operative words are **hidden** (not visible to the traditional file) and **fails to recognize** (the traditional model commits an *error of omission* — it underrates capacity). This is explicitly **not** a better default predictor and **not** a standalone score. It is a **residual / disagreement** problem: *where does behavioral evidence contradict the thin traditional file, in the direction of more capacity than the file implies?*
+
+### 7.2 Three candidate formulations, compared
+
+| Axis | A: Within-segment risk ranking | B: Calibrated behavioral capacity + PD-gap overlay | C: Uplift / reject-inference |
+|---|---|---|---|
+| What it outputs | PD rank inside a thin-file band | Calibrated behavioral PD + the gap vs. traditional-band-implied PD | Causal effect of extending credit (would a reject repay?) |
+| Statistical machinery | Supervised ranking | Calibrated probabilistic model + delta | Causal/uplift model, Qini/uplift curves |
+| Data required | Default labels *on the thin-file population* — barely exists (rejects have no outcome → selective labels) | Outcomes from the *broad* population to calibrate general behavioral features, transferred to thin-file | Treatment/outcome pairs, ideally experimental (champion/challenger) |
+| Offline evaluable today? | Weakly (within-segment AUC = 0.61–0.68, §4 A3.2; and it's arguably the wrong metric) | **Yes** — calibration (Brier/ECE) + incremental-approval-at-fixed-bad-rate on any outcome dataset | **No** — needs experimental data; reject inference alone is too fragile to stake the product on |
+| Regulatory posture | De-facto PD model on a subpopulation → full model-governance + adverse-action + fair-lending burden; contradicts "not predict default" | **Supplementary capacity evidence** used to upgrade *within* the bank's existing policy; bank keeps its model; matches the already-built audit-trail boundary | Cutting-edge, hard to explain to a supervisor; high burden |
+| Business object a bank buys | Re-rank a decline band | **Incremental approvals of good thin-file customers at controlled, fixed risk** (the foregone-revenue recovery story) | Same, higher ceiling, much higher risk |
+| Mission fit | Partial — finds underrated customers but *by predicting default*, which the mandate forbids | **Strong — "hidden capacity the pipeline fails to recognize" == behavioral-PD materially better than traditional-implied PD** | Purest in theory (a counterfactual), but operationally premature |
+
+### 7.3 Recommendation: **B now, explicitly engineered to graduate into C.**
+
+- **Reject A:** it violates the stated mission (it *is* default prediction), inherits the heaviest regulatory load, and its natural metric (within-segment AUC) is both weak in our own tests and conceptually the wrong objective — the bank does not need help ranking its easy groups.
+- **Adopt B:** it uses the *same* calibrated-probability machinery (calibration is already priority #3 and the eval harness for it exists, §4 A4), but **reframes the output as a supplementary capacity signal and a PD-gap**, which (i) matches the mission's exact words, (ii) preserves the "never replace the bank's model" boundary already enforced architecturally via the audit trail, (iii) makes **calibration, not raw AUC, the headline metric** — more honest and more defensible, and (iv) is precisely what a bank pays for: incremental approvals at a fixed bad-rate.
+- **North Star C:** B's output (a calibrated capacity PD + gap per customer) is exactly the input a champion/challenger pilot needs. So B → C is a **graduation, not a rewrite**: once a design-partner bank runs a controlled challenger on B's flagged population, we obtain the experimental data that makes the uplift/causal formulation estimable. Do not attempt C before that data exists.
+
+### 7.4 Consequence — the metric changes (this is the point)
+
+The headline number is no longer "AUC 0.84." It becomes a **policy/decision-curve metric**:
+
+> At a fixed portfolio bad-rate tolerance, how many **additional thin-file customers** can be safely approved by combining the behavioral capacity signal with the traditional band, versus the traditional band alone — reported on the thin-file subpopulation, with bootstrap CIs and a calibration guarantee (ECE below threshold, per-segment).
+
+This is (a) evaluable offline on any dataset with outcomes, (b) the number a bank and an investor actually care about, and (c) directly resolves the §4 A3.2 finding — aggregate default-AUC was never the right objective.
+
+### 7.5 Pre-registered evaluation design (before we build)
+
+- **Baseline:** traditional-band-only approval policy (approve by traditional score to a fixed bad-rate budget).
+- **Hypothesis:** adding the calibrated behavioral capacity signal approves *materially more* thin-file customers at the *same or lower* realized bad rate.
+- **Primary metric:** incremental approval rate at fixed bad-rate on the thin-file subpopulation (a point on the combined-policy decision curve), bootstrap 95% CI.
+- **Secondary:** per-segment ECE/Brier (calibration acceptance), stability across time/folds (robustness), reason-code coverage (interpretability).
+- **Acceptance criteria (to be set with a number, not vibes):** e.g. ≥ X% incremental approvals at ≤ baseline bad rate, ECE ≤ Y on thin-file, CIs excluding zero. X and Y to be fixed *before* results land (anti-goal-seeking).
+- **Offline proving ground:** a real dataset with outcomes and behavioral/alternative features. **Home Credit Default Risk (Kaggle)** is the strongest immediate candidate — it has bureau + behavioral + application data, documented thin-file/new-to-credit population, and real outcomes; simulate "traditional-thin" by masking rich features, train the behavioral model on the remainder, measure incremental approvals at fixed bad rate. Honest caveat throughout: approved-only outcomes are themselves selected (the selective-labels problem is the field's core difficulty, not a flaw we introduced).
+
+### 7.6 What this unblocks / re-gates
+- **OQ-39: proposed answer = Formulation B.** Awaiting founder ratification; proceeding on B unless redirected.
+- **A2 (simulator redesign)** now has a target: the synthetic generator must produce a population where a *calibratable* behavioral capacity signal exists and diverges from a traditional-thin signal for a knowable subpopulation — and, critically, must **not** let persona determine both features and label (the §2/§4 circularity). If real data (Home Credit, OQ-36) is available, prefer it and demote the simulator to unit-test fixtures.
+- **The "capacity signal + PD-gap overlay" framing is fully consistent** with the existing product architecture (bridge layer, audit trail, "never override the segment") — B is not a pivot, it is the rigorous restatement of what the product was already gesturing at.

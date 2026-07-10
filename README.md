@@ -141,6 +141,10 @@ Progress / Done) olarak takip edilmektedir.
 
 ---
 
+# Product Backlog URL
+
+[Miro linki](https://miro.com/app/board/uXjVH9d7vBk=/?share_link_id=459493776909)
+
 # Sprint 1
 
 **Sprint Notu:** Bu sprintte hedef, projenin veri temelini ve kavram kanıtını
@@ -167,8 +171,6 @@ aynı klasörde (`slack_01_fikir_tartismasi.png`, `slack_02_fikir_form_gorev.png
 **Sprint Board Update:**
 
 ![Sprint 1 Board](sprints/docs/sprint1/board_sprint1.png)
-
-[Miro linki](https://miro.com/app/board/uXjVH9d7vBk=/?share_link_id=459493776909)
 
 **Ürün Durumu:**
 

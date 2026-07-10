@@ -38,7 +38,6 @@ Nihai fikir yazıya döküldü ve başvuru formu gönderildi:
 - **Ahmet (SM):** Fikri onayladı ("eline sağlık"), süreç dokümantasyonunu üstlendi.
 - **Havva (Dev):** Bilgisayarı bozulmuş; çalışmaya devam ediyor, üzerine düşen
   görevi tamamlayacağını bildirdi.
-- **Begüm (Dev):** Slack bildirimleri gelmediği için gecikmiş; fark edince aktifleşti.
 - **Engel:** Slack bildirimlerinin güvenilmez olması. → Ekip, koordinasyonu
   huddle ve ek kanal üzerinden de sürdürme kararı aldı.
 

@@ -3,7 +3,7 @@ Django ayarları — AKS backend.
 
 Ortam değişkeni yoksa güvenli yerel varsayılanlara düşer, böylece demo
 Supabase/Redis olmadan da çalışır (orijinal projenin "demo her koşulda çalışır"
-ilkesi). Üretimde .env doldurulur (bkz. .env.example ve /TECHSTACK.md §4).
+ilkesi). Üretimde .env doldurulur (bkz. .env.example ve architecture.md §11).
 """
 import os
 from pathlib import Path

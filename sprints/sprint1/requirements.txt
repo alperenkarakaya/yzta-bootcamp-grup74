@@ -1,0 +1,9 @@
+# Sprint 1: yalnızca Python standart kütüphanesi kullanılır (ek bağımlılık yok).
+# Sprint 2'de eklenecekler:
+# scikit-learn
+# xgboost
+# lightgbm
+# shap
+# fastapi
+# uvicorn
+# pandas

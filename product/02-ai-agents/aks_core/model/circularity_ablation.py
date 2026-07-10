@@ -1,5 +1,5 @@
 """
-Döngüsellik (circularity) tanı testi — RESEARCH_STRATEGY.md §4 A1.
+Döngüsellik (circularity) tanı testi — architecture.md §5.1.
 --------------------------------------------------------------------
 Bu bir üretim modülü DEĞİLDİR; ana tez şu iddiayı sayısal olarak sınar:
 

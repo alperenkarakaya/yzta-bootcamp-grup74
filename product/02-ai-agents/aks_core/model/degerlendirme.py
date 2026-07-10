@@ -1,5 +1,5 @@
 """
-Değerlendirme Harness'i — RESEARCH_STRATEGY.md §4 A3 (genelleme) + A4 (kalibrasyon).
+Değerlendirme Harness'i — architecture.md §6 (genelleme + kalibrasyon).
 -----------------------------------------------------------------------------------
 Model- ve veri-agnostik. Verilen (model_fn, X, y, persona) için tam bir istatistiksel
 rapor üretir. Amaç: mandatte istenen "design the evaluation before the implementation"

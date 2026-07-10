@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fairness &amp; Bias Audit Terminal | AKS Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Geist:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#918fa1",
+                    "on-tertiary": "#3c0091",
+                    "on-secondary-container": "#00344e",
+                    "surface-container-low": "#1c1b1d",
+                    "tertiary": "#d0bcff",
+                    "surface-bright": "#39393b",
+                    "surface-container": "#201f22",
+                    "secondary-fixed": "#c9e6ff",
+                    "surface-container-high": "#2a2a2c",
+                    "on-tertiary-container": "#e3d5ff",
+                    "outline-variant": "#464555",
+                    "inverse-primary": "#4d44e3",
+                    "on-error": "#690005",
+                    "surface-container-lowest": "#0e0e10",
+                    "primary-container": "#4f46e5",
+                    "surface-container-highest": "#353437",
+                    "on-primary": "#1d00a5",
+                    "tertiary-fixed-dim": "#d0bcff",
+                    "secondary-container": "#00a2e6",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "primary-fixed": "#e2dfff",
+                    "secondary": "#89ceff",
+                    "on-primary-fixed": "#0f0069",
+                    "surface-dim": "#131315",
+                    "on-secondary": "#00344d",
+                    "secondary-fixed-dim": "#89ceff",
+                    "surface-variant": "#353437",
+                    "primary": "#c3c0ff",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#23005c",
+                    "surface": "#131315",
+                    "on-surface": "#e5e1e4",
+                    "inverse-on-surface": "#313032",
+                    "on-tertiary-fixed-variant": "#5516be",
+                    "on-secondary-fixed-variant": "#004c6e",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed": "#e9ddff",
+                    "background": "#131315",
+                    "surface-tint": "#c3c0ff",
+                    "tertiary-container": "#6f3dd9",
+                    "on-secondary-fixed": "#001e2f",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-primary-container": "#dad7ff",
+                    "inverse-surface": "#e5e1e4",
+                    "error-container": "#93000a",
+                    "on-surface-variant": "#c7c4d8",
+                    "on-background": "#e5e1e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "container-padding": "24px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "stack-lg": "32px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "display-sm-mobile": ["Geist"],
+                    "label-mono": ["JetBrains Mono"],
+                    "display-lg": ["Geist"],
+                    "body-lg": ["Geist"],
+                    "headline-md": ["Geist"],
+                    "body-sm": ["Geist"],
+                    "display-sm": ["Geist"]
+            },
+            "fontSize": {
+                    "display-sm-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "label-mono": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "display-sm": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #020617; /* Brand foundational dark */
+            color: #e5e1e4;
+            font-family: 'Geist', sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 0.5px solid rgba(145, 143, 161, 0.2);
+        }
+        .ai-glow {
+            box-shadow: 0 0 15px -5px rgba(79, 70, 229, 0.4);
+        }
+        .terminal-header {
+            background: linear-gradient(to bottom, rgba(30, 41, 59, 0.5), transparent);
+            border-bottom: 0.5px solid rgba(145, 143, 161, 0.2);
+        }
+        .adalet-gauge-clip {
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #464555;
+            border-radius: 10px;
+        }
+        .active-glow {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { border-color: rgba(79, 70, 229, 0.3); }
+            50% { border-color: rgba(79, 70, 229, 0.8); }
+        }
+    </style>
+</head>
+<body class="dark selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-background/80 dark:bg-background/80 backdrop-blur-xl border-b border-outline-variant/30 dark:border-outline-variant/20 shadow-sm">
+<div class="flex justify-between items-center h-16 px-container-padding max-w-[1440px] mx-auto">
+<div class="flex items-center gap-stack-md">
+<span class="font-display-sm text-display-sm font-bold tracking-tighter text-on-background dark:text-on-background">AKS Intelligence</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-label-mono font-label-mono text-[10px] uppercase tracking-widest text-primary border border-outline-variant/40">Audit Terminal v2.4</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1 font-body-lg text-body-lg" href="#">Intelligence</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1 font-body-lg text-body-lg" href="#">Portfolio</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary font-semibold pb-1 font-body-lg text-body-lg" href="#">Audit</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1 font-body-lg text-body-lg" href="#">Customers</a>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container/50 p-2 rounded-full transition-all active:scale-95" data-icon="bolt">bolt</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container/50 p-2 rounded-full transition-all active:scale-95" data-icon="settings">settings</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female financial compliance auditor in her late 40s, wearing minimalist eyewear and a charcoal blazer. She is in a high-tech office environment with soft blue and indigo ambient lighting. The style is cinematic and hyper-realistic, reflecting a high-performance corporate atmosphere with focused intensity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQ8iW2a5ue3TbwkbaEUbU4jdAh49rYKaBdYwLYDlH4Q1cXWjsYS0hooFy4Q-hVllcNHk__WV78ttz-nD4-m37P5fBNEqx6B2IR4ayJISg6G1qkulX-C1_aMV5VRUSeZjEgq0n95smAvCG1K0cAH8DizoBtoZCkHUIuRuY-iqRqm9G8rHIfa-EdkdcL4mYedvKTtpFKl4-JCOrejyOhv7mGpQQPqSqVDBsccG_VJA7sptitEhd8oN1n2WBTmht0upjajAKRhMl7-zwp"/>
+</div>
+</div>
+</div>
+</nav>
+<main class="pt-24 pb-32 px-container-padding max-w-[1440px] mx-auto min-h-screen">
+<!-- Dashboard Header -->
+<header class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-background mb-2">Fairness &amp; Bias Audit</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Terminal monitoring for real-time compliance parity, regulatory explainability, and foundational policy integrity across all agentic credit scoring nodes.</p>
+</div>
+<div class="flex items-center gap-stack-sm bg-surface-container rounded-lg p-2 border border-outline-variant/30">
+<div class="flex flex-col items-end px-3">
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">Audit Frequency</span>
+<span class="font-label-mono text-label-mono text-primary">REAL-TIME / 100ms</span>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div class="flex flex-col items-end px-3">
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">Compliance Status</span>
+<span class="font-label-mono text-label-mono text-secondary flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                        ACTIVE
+                    </span>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Adalet Parity Gauge (Hero Component) -->
+<section class="md:col-span-4 glass-panel rounded-xl p-6 relative overflow-hidden flex flex-col justify-between ai-glow border-primary/20">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h2 class="font-headline-md text-headline-md">Adalet Parity</h2>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Signature Fairness Gauge</p>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="balance">balance</span>
+</div>
+<div class="relative py-12 flex flex-col items-center justify-center">
+<!-- Gauge Visualization -->
+<div class="relative w-48 h-48">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-high" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary transition-all duration-1000" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" stroke-dasharray="552.92" stroke-dashoffset="38" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-display-sm text-display-sm text-on-background">98.4%</span>
+<span class="font-label-mono text-label-mono text-secondary">OPTIMIZED</span>
+</div>
+</div>
+<!-- Legend -->
+<div class="mt-8 grid grid-cols-2 gap-4 w-full">
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">Current Bias</span>
+<span class="font-headline-md text-headline-md text-on-surface">0.012</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">Target Range</span>
+<span class="font-headline-md text-headline-md text-on-surface">&lt; 0.05</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-highest/30 rounded p-3 mt-4 border border-outline-variant/20">
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">
+<span class="text-primary font-bold italic">Adalet Analysis:</span> Statistical parity confirmed across all 14 demographic proxies. Predictive accuracy remains stable at 99.8% precision.
+                    </p>
+</div>
+</section>
+<!-- Equal Opportunity Monitor -->
+<section class="md:col-span-8 glass-panel rounded-xl p-6 flex flex-col">
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center text-secondary border border-secondary/20">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md">Equal Opportunity Monitor</h2>
+<p class="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">Demographic Parity Tracking</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1 rounded bg-surface-container-high border border-outline-variant/30 font-label-mono text-label-mono hover:bg-surface-container-highest transition-colors">EXPORT</button>
+<button class="px-3 py-1 rounded bg-primary-container text-on-primary-container font-label-mono text-label-mono hover:brightness-110 transition-all">AUDIT ALL</button>
+</div>
+</div>
+<div class="flex-grow space-y-6">
+<!-- Demographic Bar 1 -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-body-lg text-body-lg text-on-surface">Age Cohorts (18-65+)</span>
+<span class="font-label-mono text-label-mono text-secondary">0.99 Delta</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="h-full bg-secondary-container w-[99%]"></div>
+<div class="h-full bg-error w-[1%]"></div>
+</div>
+</div>
+<!-- Demographic Bar 2 -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-body-lg text-body-lg text-on-surface">Geographic Proxies (ZIP Analysis)</span>
+<span class="font-label-mono text-label-mono text-primary">1.00 Parity</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[100%]"></div>
+</div>
+</div>
+<!-- Demographic Bar 3 -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-body-lg text-body-lg text-on-surface">Gender Identity Proxies</span>
+<span class="font-label-mono text-label-mono text-secondary">0.98 Delta</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="h-full bg-secondary-container w-[98%]"></div>
+<div class="h-full bg-error w-[2%]"></div>
+</div>
+</div>
+<!-- Demographic Bar 4 -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-body-lg text-body-lg text-on-surface">Socio-economic Indicator Parity</span>
+<span class="font-label-mono text-label-mono text-primary">0.99 Delta</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="h-full bg-primary-container w-[99.4%]"></div>
+<div class="h-full bg-error w-[0.6%]"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 rounded bg-surface-container-lowest border border-outline-variant/10 flex items-center gap-stack-md">
+<span class="material-symbols-outlined text-secondary animate-pulse" data-icon="verified_user">verified_user</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">Regulatory Oversight: Compliant with ECOA and GDPR Article 22 requirements for automated decisioning.</p>
+</div>
+</section>
+<!-- Reason Code Coverage -->
+<section class="md:col-span-5 glass-panel rounded-xl p-6 flex flex-col">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="psychology">psychology</span>
+<h2 class="font-headline-md text-headline-md">Reason Code Coverage</h2>
+</div>
+<div class="space-y-4 overflow-y-auto custom-scrollbar pr-2 flex-grow max-h-[360px]">
+<!-- Code Item 1 -->
+<div class="p-3 rounded bg-surface-container border-l-2 border-primary">
+<div class="flex justify-between mb-1">
+<span class="font-label-mono text-label-mono text-primary">RC-4022-A</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">92% Cover</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Dynamic Credit Rescue via Alternative Cash-Flow Analysis</p>
+</div>
+<!-- Code Item 2 -->
+<div class="p-3 rounded bg-surface-container border-l-2 border-secondary">
+<div class="flex justify-between mb-1">
+<span class="font-label-mono text-label-mono text-secondary">RC-1099-X</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">88% Cover</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Intervention: Overridden High-Volatility Signal (Low Impact)</p>
+</div>
+<!-- Code Item 3 -->
+<div class="p-3 rounded bg-surface-container border-l-2 border-outline">
+<div class="flex justify-between mb-1">
+<span class="font-label-mono text-label-mono text-on-surface-variant">RC-8812-C</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">99% Cover</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Standard Affirmation: Historical Payment Consistency</p>
+</div>
+<!-- Code Item 4 -->
+<div class="p-3 rounded bg-surface-container border-l-2 border-tertiary">
+<div class="flex justify-between mb-1">
+<span class="font-label-mono text-label-mono text-tertiary">RC-5001-Z</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">74% Cover</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Agentic Recalibration based on Macroeconomic Shifts</p>
+</div>
+</div>
+<div class="mt-6 pt-6 border-t border-outline-variant/20">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-mono text-label-mono text-on-surface-variant">Global Explainability Score</span>
+<span class="font-headline-md text-headline-md text-primary">94.1</span>
+</div>
+<div class="h-1 w-full bg-surface-container-high rounded-full">
+<div class="h-full bg-primary w-[94.1%]"></div>
+</div>
+</div>
+</section>
+<!-- Policy Boundary Log -->
+<section class="md:col-span-7 glass-panel rounded-xl overflow-hidden border-outline-variant/30">
+<div class="terminal-header p-4 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<h2 class="font-label-mono text-label-mono text-on-surface font-bold uppercase tracking-widest">Policy Boundary Log [Immutability Check]</h2>
+</div>
+<span class="text-label-mono text-label-mono text-on-surface-variant text-[10px]">LOCKED BY REG-K</span>
+</div>
+<div class="p-0">
+<table class="w-full font-label-mono text-label-mono text-[11px] border-collapse">
+<thead class="bg-surface-container-high text-on-surface-variant uppercase border-b border-outline-variant/20">
+<tr>
+<th class="py-3 px-4 text-left font-medium">Policy ID</th>
+<th class="py-3 px-4 text-left font-medium">Segment</th>
+<th class="py-3 px-4 text-left font-medium">Integrity</th>
+<th class="py-3 px-4 text-left font-medium">Last Proof</th>
+<th class="py-3 px-4 text-right font-medium">Hash</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="py-3 px-4 text-primary">P-SEG-CORE-01</td>
+<td class="py-3 px-4 text-on-surface">Base Eligibility</td>
+<td class="py-3 px-4"><span class="text-secondary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span> 1.0000</span></td>
+<td class="py-3 px-4 text-on-surface-variant">2023-11-20 14:22</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">0x7F4...8E2</td>
+</tr>
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="py-3 px-4 text-primary">P-SEG-RISK-09</td>
+<td class="py-3 px-4 text-on-surface">Exposure Limit</td>
+<td class="py-3 px-4"><span class="text-secondary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span> 1.0000</span></td>
+<td class="py-3 px-4 text-on-surface-variant">2023-11-20 14:20</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">0xA12...4D9</td>
+</tr>
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="py-3 px-4 text-primary">P-SEG-AUDIT-4</td>
+<td class="py-3 px-4 text-on-surface">Redline Protection</td>
+<td class="py-3 px-4"><span class="text-secondary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span> 1.0000</span></td>
+<td class="py-3 px-4 text-on-surface-variant">2023-11-20 14:18</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">0x3B8...21C</td>
+</tr>
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="py-3 px-4 text-primary">P-SEG-GOV-12</td>
+<td class="py-3 px-4 text-on-surface">AML Compliance</td>
+<td class="py-3 px-4"><span class="text-secondary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span> 1.0000</span></td>
+<td class="py-3 px-4 text-on-surface-variant">2023-11-20 14:15</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">0xEE9...9F4</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-surface-container-low flex justify-between items-center">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified">verified</span>
+<span class="font-label-mono text-label-mono text-[10px]">CRYPTOGRAPHIC INTEGRITY VERIFIED VIA ETH-LAYER-2</span>
+</div>
+<button class="text-secondary font-label-mono text-label-mono hover:underline">VIEW FULL LEDGER</button>
+</div>
+</section>
+<!-- Agentic Intervention Logs -->
+<section class="md:col-span-12 glass-panel rounded-xl p-6">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary" data-icon="terminal">terminal</span>
+<h2 class="font-headline-md text-headline-md">History of Agentic Intervention</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">AI RESCUE</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">POLICE OVERRIDE</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter overflow-hidden">
+<!-- Log 1 -->
+<div class="p-4 rounded bg-surface-container-lowest border border-outline-variant/20 hover:border-secondary/50 transition-all cursor-default">
+<div class="flex justify-between items-start mb-3">
+<span class="font-label-mono text-label-mono text-[10px] text-secondary bg-secondary/10 px-1.5 py-0.5 rounded">RESCUE_ACTIVE</span>
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant">14:02:11</span>
+</div>
+<p class="font-body-sm text-body-sm mb-4">Agent detected potential bias in zip-code weighting; injected alternative liquidity proof for application ID #8841.</p>
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-on-surface text-[10px]">SCORE Δ +42pts</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="info">info</span>
+</div>
+</div>
+<!-- Log 2 -->
+<div class="p-4 rounded bg-surface-container-lowest border border-outline-variant/20 hover:border-tertiary/50 transition-all cursor-default">
+<div class="flex justify-between items-start mb-3">
+<span class="font-label-mono text-label-mono text-[10px] text-tertiary bg-tertiary/10 px-1.5 py-0.5 rounded">OVERRIDE</span>
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant">13:58:44</span>
+</div>
+<p class="font-body-sm text-body-sm mb-4">Regulatory trigger: Blocked high-confidence rejection due to lack of explainable reason codes for segment #14.</p>
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-on-surface text-[10px]">ACTION: PENDING</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="info">info</span>
+</div>
+</div>
+<!-- Log 3 -->
+<div class="p-4 rounded bg-surface-container-lowest border border-outline-variant/20 hover:border-secondary/50 transition-all cursor-default">
+<div class="flex justify-between items-start mb-3">
+<span class="font-label-mono text-label-mono text-[10px] text-secondary bg-secondary/10 px-1.5 py-0.5 rounded">RESCUE_ACTIVE</span>
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant">13:42:01</span>
+</div>
+<p class="font-body-sm text-body-sm mb-4">Counter-factual generation applied to applicant #1122 to verify outcome stability across all protected groups.</p>
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-on-surface text-[10px]">STABILITY: 1.00</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="info">info</span>
+</div>
+</div>
+<!-- Log 4 -->
+<div class="p-4 rounded bg-surface-container-lowest border border-outline-variant/20 hover:border-primary/50 transition-all cursor-default">
+<div class="flex justify-between items-start mb-3">
+<span class="font-label-mono text-label-mono text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">LOG_ONLY</span>
+<span class="font-label-mono text-label-mono text-[10px] text-on-surface-variant">13:30:59</span>
+</div>
+<p class="font-body-sm text-body-sm mb-4">Drift detection: Model 'Helios-9' showing 0.2% variance in parity metrics. No action required per threshold.</p>
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-on-surface text-[10px]">DRIFT: 0.2%</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="info">info</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-stack-lg px-6 py-3 rounded-full bg-surface-container/90 dark:bg-surface-container-low/90 backdrop-blur-md border border-outline-variant/50 dark:border-outline-variant/30 shadow-2xl shadow-primary-container/20">
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-all hover:scale-110 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-label-mono text-[8px] mt-1">Command</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-all hover:scale-110 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="font-label-mono text-[8px] mt-1">Signals</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container rounded-full w-12 h-12 transition-all hover:scale-110 active:scale-90 shadow-lg shadow-primary/40 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="shield_with_heart" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+<span class="font-label-mono text-[8px] mt-1">Vault</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-all hover:scale-110 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-label-mono text-[8px] mt-1">Support</span>
+</div>
+</nav>
+<!-- Background Atmospheric Effect -->
+<div class="fixed inset-0 pointer-events-none z-[-1] opacity-30 overflow-hidden">
+
+</div>
+<script>
+        // Micro-interactions for terminal-like feel
+        document.querySelectorAll('.glass-panel').forEach(panel => {
+            panel.addEventListener('mouseenter', () => {
+                panel.style.transform = 'translateY(-2px)';
+                panel.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            });
+            panel.addEventListener('mouseleave', () => {
+                panel.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Simulating log activity
+        const logContainer = document.querySelector('.grid-cols-4');
+        setInterval(() => {
+            const firstLog = logContainer.firstElementChild;
+            if (firstLog) {
+                firstLog.classList.add('active-glow');
+                setTimeout(() => firstLog.classList.remove('active-glow'), 2000);
+            }
+        }, 5000);
+    </script>
+</body></html>

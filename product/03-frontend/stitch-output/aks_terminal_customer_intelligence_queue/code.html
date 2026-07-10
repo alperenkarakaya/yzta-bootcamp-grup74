@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AKS Intelligence | Customer Queue</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Geist:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#918fa1",
+                        "on-tertiary": "#3c0091",
+                        "on-secondary-container": "#00344e",
+                        "surface-container-low": "#1c1b1d",
+                        "tertiary": "#d0bcff",
+                        "surface-bright": "#39393b",
+                        "surface-container": "#201f22",
+                        "secondary-fixed": "#c9e6ff",
+                        "surface-container-high": "#2a2a2c",
+                        "on-tertiary-container": "#e3d5ff",
+                        "outline-variant": "#464555",
+                        "inverse-primary": "#4d44e3",
+                        "on-error": "#690005",
+                        "surface-container-lowest": "#0e0e10",
+                        "primary-container": "#4f46e5",
+                        "surface-container-highest": "#353437",
+                        "on-primary": "#1d00a5",
+                        "tertiary-fixed-dim": "#d0bcff",
+                        "secondary-container": "#00a2e6",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "primary-fixed": "#e2dfff",
+                        "secondary": "#89ceff",
+                        "on-primary-fixed": "#0f0069",
+                        "surface-dim": "#131315",
+                        "on-secondary": "#00344d",
+                        "secondary-fixed-dim": "#89ceff",
+                        "surface-variant": "#353437",
+                        "primary": "#c3c0ff",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#23005c",
+                        "surface": "#131315",
+                        "on-surface": "#e5e1e4",
+                        "inverse-on-surface": "#313032",
+                        "on-tertiary-fixed-variant": "#5516be",
+                        "on-secondary-fixed-variant": "#004c6e",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#e9ddff",
+                        "background": "#131315",
+                        "surface-tint": "#c3c0ff",
+                        "tertiary-container": "#6f3dd9",
+                        "on-secondary-fixed": "#001e2f",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-primary-container": "#dad7ff",
+                        "inverse-surface": "#e5e1e4",
+                        "error-container": "#93000a",
+                        "on-surface-variant": "#c7c4d8",
+                        "on-background": "#e5e1e4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "container-padding": "24px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "display-sm-mobile": ["Geist"],
+                        "label-mono": ["JetBrains Mono"],
+                        "display-lg": ["Geist"],
+                        "body-lg": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "body-sm": ["Geist"],
+                        "display-sm": ["Geist"]
+                    },
+                    "fontSize": {
+                        "display-sm-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "label-mono": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "display-sm": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #020617; /* High-performance aesthetic override */
+            color: #e5e1e4;
+        }
+        .command-table-row:hover {
+            background-color: rgba(79, 70, 229, 0.05);
+            box-shadow: inset 2px 0 0 #4f46e5;
+        }
+        .ai-pulse {
+            animation: pulse-indigo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-indigo {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .glass-header {
+            background: rgba(28, 27, 29, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 0.5px solid rgba(145, 143, 161, 0.2);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #353437; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
+    </style>
+</head>
+<body class="font-body-lg text-body-lg">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-background/80 dark:bg-background/80 backdrop-blur-xl border-b border-outline-variant/30 dark:border-outline-variant/20 shadow-sm h-16">
+<div class="flex justify-between items-center h-full px-container-padding max-w-[1440px] mx-auto">
+<div class="flex items-center gap-stack-lg">
+<span class="font-display-sm text-display-sm font-bold tracking-tighter text-on-background dark:text-on-background">AKS Intelligence</span>
+<div class="hidden md:flex items-center gap-gutter">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1" href="#">Intelligence</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1" href="#">Portfolio</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1" href="#">Audit</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary font-semibold pb-1" href="#">Customers</a>
+</div>
+</div>
+<div class="flex items-center gap-stack-md">
+<div class="hidden sm:flex bg-surface-container/50 px-3 py-1.5 rounded-lg border border-outline-variant/30 items-center gap-2">
+<span class="material-symbols-outlined text-sm opacity-60">search</span>
+<span class="font-label-mono text-label-mono opacity-60">Press ⌘K to search...</span>
+</div>
+<div class="flex gap-stack-sm">
+<button class="material-symbols-outlined p-2 hover:bg-surface-container/50 rounded-full transition-all text-on-surface-variant">bolt</button>
+<button class="material-symbols-outlined p-2 hover:bg-surface-container/50 rounded-full transition-all text-on-surface-variant">settings</button>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/50">
+<img class="w-full h-full object-cover" data-alt="A professional high-contrast studio portrait of a technology executive with sharp focus and cinematic lighting, reflecting a modern fintech atmosphere with deep blue and indigo undertones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA63wbiAoz2jPIGrI2ttkCwtpPN_WHcWd31S7D1H8Q43USH7aV2_lmU5HrC8oO-zBJnQV3LOnSezbrkp3IidSEm3T0SBhSF-FMycbzTSrP3IsKbMCDB0bG15cyLWr61hdb7_lsNMkH8vgJJyohQjLSgMorBUD1QNrmA5Nn4AQb4evAEY-R7tvMei7SCcpjwn2cqwIhnGKjmCiS7XFG1rOe1lcqiUA9DJ8-uPDOBKu-9g_E2vdt6QafINHyki-VJeHQ-DXgoSqar0i9-"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-32 px-container-padding max-w-[1440px] mx-auto min-h-screen">
+<!-- Header & Stats -->
+<header class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="flex h-2 w-2 rounded-full bg-secondary ai-pulse"></span>
+<span class="font-label-mono text-label-mono text-secondary uppercase tracking-widest">Live Assessment Queue</span>
+</div>
+<h1 class="font-display-sm text-display-sm">Customer Intelligence</h1>
+</div>
+<div class="flex gap-gutter overflow-x-auto pb-2">
+<div class="flex flex-col border-l border-outline-variant/30 pl-4">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">Rescued</span>
+<span class="font-display-sm text-display-sm text-primary">124</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/30 pl-4">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">Targeted</span>
+<span class="font-display-sm text-display-sm">892</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/30 pl-4">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">Avg Confidence</span>
+<span class="font-display-sm text-display-sm">94.2%</span>
+</div>
+</div>
+</header>
+<!-- Command Palette & Filters -->
+<div class="mb-stack-md bg-surface-container-lowest/50 border border-outline-variant/30 rounded-xl p-4 backdrop-blur-md flex flex-wrap items-center gap-stack-md">
+<div class="flex items-center gap-stack-sm mr-auto">
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 rounded-full font-label-mono text-label-mono transition-transform hover:scale-105 active:scale-95">All Customers</button>
+<button class="text-on-surface-variant hover:text-on-surface px-4 py-1.5 rounded-full font-label-mono text-label-mono transition-colors">Rescued</button>
+<button class="text-on-surface-variant hover:text-on-surface px-4 py-1.5 rounded-full font-label-mono text-label-mono transition-colors">Flagged</button>
+<button class="text-on-surface-variant hover:text-on-surface px-4 py-1.5 rounded-full font-label-mono text-label-mono transition-colors">Target Segments</button>
+</div>
+<div class="flex items-center gap-gutter text-on-surface-variant">
+<div class="flex items-center gap-2 font-label-mono text-label-mono bg-surface-container px-3 py-1 rounded border border-outline-variant/20">
+<span class="material-symbols-outlined text-sm">terminal</span>
+<span>AGENT_01: ACTIVE</span>
+</div>
+<div class="flex items-center gap-2 font-label-mono text-label-mono bg-surface-container px-3 py-1 rounded border border-outline-variant/20">
+<span class="material-symbols-outlined text-sm">filter_alt</span>
+<span>Advanced Filter</span>
+</div>
+</div>
+</div>
+<!-- Command Table -->
+<div class="bg-surface-container border border-outline-variant/30 rounded-xl overflow-hidden shadow-2xl">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="glass-header text-on-surface-variant font-label-mono text-label-mono uppercase tracking-widest">
+<th class="py-4 px-6 font-medium">Identity / Persona</th>
+<th class="py-4 px-6 font-medium">Signal Strength</th>
+<th class="py-4 px-6 font-medium">Decision Delta</th>
+<th class="py-4 px-6 font-medium">Classic Score</th>
+<th class="py-4 px-6 font-medium">AKS Vector</th>
+<th class="py-4 px-6 font-medium text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<!-- Row 1 -->
+<tr class="command-table-row transition-all duration-150">
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">CST-9821-X</span>
+<div class="flex gap-2 mt-1">
+<span class="bg-tertiary-container/30 text-tertiary px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-tertiary-container/50">High-Value</span>
+<span class="bg-secondary-container/30 text-secondary px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-secondary-container/50">Rescued</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1 bg-surface-container-highest rounded-full overflow-hidden min-w-[80px]">
+<div class="h-full bg-secondary w-[92%]"></div>
+</div>
+<span class="font-label-mono text-label-mono text-secondary">92%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="text-secondary font-bold font-label-mono">+14.2%</span>
+</td>
+<td class="py-4 px-6 font-label-mono opacity-60">640</td>
+<td class="py-4 px-6 font-label-mono text-primary font-bold">732</td>
+<td class="py-4 px-6 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">open_in_new</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="command-table-row transition-all duration-150">
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">CST-1044-B</span>
+<div class="flex gap-2 mt-1">
+<span class="bg-error-container/30 text-error px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-error-container/50">Flagged</span>
+<span class="bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-outline-variant/30">Anomaly</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1 bg-surface-container-highest rounded-full overflow-hidden min-w-[80px]">
+<div class="h-full bg-error w-[41%]"></div>
+</div>
+<span class="font-label-mono text-label-mono text-error">41%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="text-error font-bold font-label-mono">-28.5%</span>
+</td>
+<td class="py-4 px-6 font-label-mono opacity-60">810</td>
+<td class="py-4 px-6 font-label-mono text-error font-bold">580</td>
+<td class="py-4 px-6 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">open_in_new</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="command-table-row transition-all duration-150">
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">CST-5529-K</span>
+<div class="flex gap-2 mt-1">
+<span class="bg-primary-container/30 text-primary px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-primary-container/50">Target</span>
+<span class="bg-tertiary-container/30 text-tertiary px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-tertiary-container/50">Growth</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1 bg-surface-container-highest rounded-full overflow-hidden min-w-[80px]">
+<div class="h-full bg-primary w-[88%]"></div>
+</div>
+<span class="font-label-mono text-label-mono text-primary">88%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="text-secondary font-bold font-label-mono">+8.1%</span>
+</td>
+<td class="py-4 px-6 font-label-mono opacity-60">720</td>
+<td class="py-4 px-6 font-label-mono text-primary font-bold">778</td>
+<td class="py-4 px-6 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">open_in_new</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="command-table-row transition-all duration-150">
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">CST-2290-M</span>
+<div class="flex gap-2 mt-1">
+<span class="bg-secondary-container/30 text-secondary px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-secondary-container/50">Rescued</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1 bg-surface-container-highest rounded-full overflow-hidden min-w-[80px]">
+<div class="h-full bg-secondary w-[95%]"></div>
+</div>
+<span class="font-label-mono text-label-mono text-secondary">95%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="text-secondary font-bold font-label-mono">+21.0%</span>
+</td>
+<td class="py-4 px-6 font-label-mono opacity-60">590</td>
+<td class="py-4 px-6 font-label-mono text-primary font-bold">714</td>
+<td class="py-4 px-6 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">open_in_new</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="glass-header p-4 flex items-center justify-between font-label-mono text-label-mono text-on-surface-variant">
+<div class="flex items-center gap-4">
+<span>Showing 1-20 of 2,450 entities</span>
+<span class="opacity-30">|</span>
+<span class="flex items-center gap-2"><span class="w-2 h-2 bg-secondary rounded-full"></span> 4,203 Total Signals Today</span>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-outline-variant/30 rounded hover:bg-surface-container-high transition-colors">Previous</button>
+<button class="px-3 py-1 border border-outline-variant/30 rounded hover:bg-surface-container-high transition-colors">Next</button>
+</div>
+</div>
+</div>
+<!-- Terminal Sidebar/Panel Overlay (Floating) -->
+<div class="fixed right-container-padding bottom-32 w-80 bg-surface-container-high border border-outline-variant/50 rounded-xl shadow-2xl overflow-hidden hidden xl:block">
+<div class="bg-surface-container-highest px-4 py-2 border-b border-outline-variant/30 flex items-center justify-between">
+<span class="font-label-mono text-label-mono text-on-surface">Process Monitor</span>
+<div class="flex gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-error/40"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-secondary/40"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-primary/40"></div>
+</div>
+</div>
+<div class="p-4 font-label-mono text-[11px] space-y-2 leading-relaxed h-64 overflow-y-auto">
+<p class="text-primary">[INFO] Initializing Signal Cluster 'Gamma'...</p>
+<p class="text-on-surface-variant opacity-60">[OK] Shard connection established at 4ms</p>
+<p class="text-on-surface-variant opacity-60">[OK] Neural mesh consensus reached</p>
+<p class="text-secondary">[SIGNAL] High-confidence anomaly detected in CST-1044-B</p>
+<p class="text-on-surface-variant opacity-60">[PROCESS] Re-routing assessment to human queue</p>
+<p class="text-on-surface-variant opacity-60">[PROCESS] Decision delta calculated: -28.5%</p>
+<p class="text-on-surface-variant opacity-40">&gt; awaiting kernel instruction...</p>
+<div class="flex items-center gap-1">
+<span class="text-primary font-bold">_</span>
+<span class="w-1 h-3 bg-primary animate-pulse"></span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Floating Mobile/Anchor) -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-stack-lg px-6 py-3 rounded-full bg-surface-container/90 dark:bg-surface-container-low/90 backdrop-blur-md border border-outline-variant/50 dark:border-outline-variant/30 shadow-2xl shadow-primary-container/20">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-transform hover:scale-110 active:scale-90">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-label-mono text-label-mono scale-[0.7]">Command</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container rounded-full w-12 h-12 transition-transform hover:scale-110 active:scale-90">
+<span class="material-symbols-outlined">sensors</span>
+<span class="font-label-mono text-label-mono scale-[0.7]">Signals</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-transform hover:scale-110 active:scale-90">
+<span class="material-symbols-outlined">shield_with_heart</span>
+<span class="font-label-mono text-label-mono scale-[0.7]">Vault</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-transform hover:scale-110 active:scale-90">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="font-label-mono text-label-mono scale-[0.7]">Support</span>
+</button>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simulating live table updates
+        const rowData = [
+            { id: 'CST-2940-Y', persona: 'High-Value', score: 790, aks: 812, delta: '+2.8%', confidence: 98, color: 'text-secondary' },
+            { id: 'CST-4412-Z', persona: 'Anomaly', score: 450, aks: 442, delta: '-1.8%', confidence: 85, color: 'text-error' }
+        ];
+
+        // Search Command Palette logic (Visual only)
+        window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                alert('Command Palette: Initializing search index...');
+            }
+        });
+
+        // Add "hover glow" to the table
+        document.querySelectorAll('.command-table-row').forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.style.boxShadow = '0 0 15px -5px rgba(79, 70, 229, 0.2)';
+            });
+            row.addEventListener('mouseleave', () => {
+                row.style.boxShadow = 'none';
+            });
+        });
+    </script>
+</body></html>

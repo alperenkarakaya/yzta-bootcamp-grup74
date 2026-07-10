@@ -1,28 +1,72 @@
-:root { color-scheme: light dark; }
-* { box-sizing: border-box; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #0f172a;
-  color: #e2e8f0;
+  background-color: #020617;
+  color: #e5e1e4;
 }
-.wrap { max-width: 780px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
-h1 { margin: 0 0 .25rem; font-size: 1.6rem; }
-h2 { font-size: 1.15rem; margin: 0 0 .75rem; }
-.alt { color: #94a3b8; font-size: .9rem; }
-.rozet { display: inline-block; background: #1e293b; border: 1px solid #334155; color: #7dd3fc; padding: .35rem .7rem; border-radius: 999px; font-size: .8rem; }
-.kart { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 1.25rem; margin-top: 1.25rem; }
-.satir { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
-input { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; border-radius: 8px; padding: .4rem .6rem; width: 6rem; }
-button { background: #0ea5e9; color: #04293a; border: 0; border-radius: 8px; padding: .5rem 1rem; font-weight: 700; cursor: pointer; }
-button:hover { background: #38bdf8; }
-.skorlar { display: flex; align-items: center; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
-.skorkutu { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: .8rem 1.1rem; text-align: center; min-width: 8rem; }
-.skorkutu span { display: block; font-size: .75rem; color: #94a3b8; }
-.skorkutu b { font-size: 1.8rem; }
-.skorkutu.aks b { color: #34d399; }
-.ok { color: #7dd3fc; font-size: .85rem; }
-ul { margin: .5rem 0 0; padding-left: 1.1rem; line-height: 1.7; }
-.hata { background: #7f1d1d; border: 1px solid #b91c1c; color: #fecaca; padding: .75rem 1rem; border-radius: 10px; margin-top: 1rem; font-size: .9rem; }
-code { background: #0f172a; padding: .1rem .3rem; border-radius: 4px; }
-footer { margin-top: 2rem; text-align: center; }
+
+/* Shared utility classes, ported verbatim from the Stitch design system
+   (product/03-frontend/stitch-output/*\/code.html) so every page looks identical
+   to the approved mockups. */
+.ai-glow {
+  box-shadow: 0 0 15px -5px rgba(79, 70, 229, 0.4);
+}
+.hairline-border {
+  border: 1px solid rgba(70, 69, 85, 0.3);
+}
+.glass-header {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(145, 143, 161, 0.2);
+}
+.card-surface {
+  background-color: #0f172a;
+  border: 1px solid rgba(70, 69, 85, 0.3);
+}
+.inner-shadow-subtle {
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05);
+}
+.command-table-row:hover {
+  background-color: rgba(79, 70, 229, 0.05);
+  box-shadow: inset 2px 0 0 #4f46e5;
+}
+.ai-pulse {
+  animation: pulse-indigo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-indigo {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #353437;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4f46e5;
+}

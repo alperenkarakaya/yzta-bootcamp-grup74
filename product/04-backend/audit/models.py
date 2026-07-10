@@ -4,7 +4,7 @@ Denetim izi modelleri — sınır (boundary) hikâyesini operasyonelleştirir.
 Her skorlama, DEĞİŞTİRİLEMEZ bir AuditLog satırı yazar: klasik (banka) skoru
 OLDUĞU GİBİ kaydedilir, yanına AKS'nin ürettiği tamamlayıcı skor + karar +
 politika notu konur. Böylece "AKS bankanın segmentini asla ezmez, yalnızca
-tamamlar" ilkesi kayıt altında kanıtlanır (planning §4 / D10, ROADMAP invariant).
+tamamlar" ilkesi kayıt altında kanıtlanır (bkz. overview.md §7 / architecture.md §9).
 """
 from django.db import models
 

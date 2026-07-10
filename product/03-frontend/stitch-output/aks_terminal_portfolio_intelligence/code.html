@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Portfolio Analysis Terminal | AKS Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Geist:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#918fa1",
+                        "on-tertiary": "#3c0091",
+                        "on-secondary-container": "#00344e",
+                        "surface-container-low": "#1c1b1d",
+                        "tertiary": "#d0bcff",
+                        "surface-bright": "#39393b",
+                        "surface-container": "#201f22",
+                        "secondary-fixed": "#c9e6ff",
+                        "surface-container-high": "#2a2a2c",
+                        "on-tertiary-container": "#e3d5ff",
+                        "outline-variant": "#464555",
+                        "inverse-primary": "#4d44e3",
+                        "on-error": "#690005",
+                        "surface-container-lowest": "#0e0e10",
+                        "primary-container": "#4f46e5",
+                        "surface-container-highest": "#353437",
+                        "on-primary": "#1d00a5",
+                        "tertiary-fixed-dim": "#d0bcff",
+                        "secondary-container": "#00a2e6",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "primary-fixed": "#e2dfff",
+                        "secondary": "#89ceff",
+                        "on-primary-fixed": "#0f0069",
+                        "surface-dim": "#131315",
+                        "on-secondary": "#00344d",
+                        "secondary-fixed-dim": "#89ceff",
+                        "surface-variant": "#353437",
+                        "primary": "#c3c0ff",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#23005c",
+                        "surface": "#131315",
+                        "on-surface": "#e5e1e4",
+                        "inverse-on-surface": "#313032",
+                        "on-tertiary-fixed-variant": "#5516be",
+                        "on-secondary-fixed-variant": "#004c6e",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#e9ddff",
+                        "background": "#131315",
+                        "surface-tint": "#c3c0ff",
+                        "tertiary-container": "#6f3dd9",
+                        "on-secondary-fixed": "#001e2f",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-primary-container": "#dad7ff",
+                        "inverse-surface": "#e5e1e4",
+                        "error-container": "#93000a",
+                        "on-surface-variant": "#c7c4d8",
+                        "on-background": "#e5e1e4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "container-padding": "24px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "display-sm-mobile": ["Geist"],
+                        "label-mono": ["JetBrains Mono"],
+                        "display-lg": ["Geist"],
+                        "body-lg": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "body-sm": ["Geist"],
+                        "display-sm": ["Geist"]
+                    },
+                    "fontSize": {
+                        "display-sm-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "label-mono": ["12px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "display-sm": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #020617; /* Explicit deep midnight foundation from style guide */
+            color: #e5e1e4;
+        }
+        .glass-header {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+            border-bottom: 0.5px solid rgba(255,255,255,0.1);
+        }
+        .ai-glow {
+            box-shadow: 0 0 15px -5px rgba(79, 70, 229, 0.4);
+        }
+        .hairline-border {
+            border: 0.5px solid rgba(145, 143, 161, 0.2);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="font-body-lg text-body-lg selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-background/80 dark:bg-background/80 backdrop-blur-xl border-b border-outline-variant/30 dark:border-outline-variant/20 shadow-sm">
+<div class="flex justify-between items-center h-16 px-container-padding max-w-[1440px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="font-display-sm text-display-sm font-bold tracking-tighter text-on-background dark:text-on-background">AKS Intelligence</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1" href="#">Intelligence</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary font-semibold pb-1" href="#">Portfolio</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1" href="#">Audit</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors pb-1" href="#">Customers</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container/50 dark:hover:bg-surface-container-high/50 transition-all active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="bolt">bolt</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container/50 dark:hover:bg-surface-container-high/50 transition-all active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional high-resolution headshot of a senior financial analyst in a modern dark-themed office. The lighting is dramatic and cinematic, emphasizing technical precision. The analyst has a focused expression, wearing a sleek charcoal suit. Soft blue light from multiple high-end monitors reflects on their face, creating an immersive AI command center atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQMcUxQdAZJeUo2dKAIVcIaYv480aLLUujkK7cH7RUfO21SZYfcW5igtVAojPY0TyyWQvmaHRfreSc0sYwYZ6UUmqNW8xPOz29sgmsAUwIW1OIZT-8uhZAMXIjcia6hXvn7gcmRy2_-JB_uPbkvoxcDUlK7E3XFZULCxEd97v12Zy8Dx7tiNnRAgmi8ZXs3qM162Q1rXGDXvEi_h64UUnEHNB6QudHrSUWu9pUdRRNON7SGwADRj1FuyLiTsGSzIsR4rNELEj-nuym"/>
+</div>
+</div>
+</div>
+</nav>
+<main class="pt-24 pb-32 px-container-padding max-w-[1440px] mx-auto min-h-screen">
+<!-- Dashboard Header -->
+<header class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="font-label-mono text-label-mono text-primary px-2 py-0.5 bg-primary-container/20 rounded-full border border-primary/30">TERMINAL v4.2</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant opacity-60">LIVE ANALYTICS ENGINE</span>
+</div>
+<h1 class="font-display-lg text-display-lg tracking-tighter text-on-background">Portfolio Analysis</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex flex-col items-end">
+<span class="font-label-mono text-label-mono text-on-surface-variant">BOOK VALUE</span>
+<span class="font-display-sm text-display-sm text-primary">$4.28B</span>
+</div>
+<div class="w-px h-10 bg-outline-variant/30 mx-2"></div>
+<div class="flex flex-col items-end">
+<span class="font-label-mono text-label-mono text-on-surface-variant">RESCUE ALPHA</span>
+<span class="font-display-sm text-display-sm text-secondary">+12.4%</span>
+</div>
+</div>
+</header>
+<!-- Main Content Bento Grid -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Segment Alpha Chart: Comparing behavioral rescue rates -->
+<section class="col-span-12 lg:col-span-8 bg-surface-container-low hairline-border rounded-xl overflow-hidden ai-glow flex flex-col h-[480px]">
+<div class="glass-header px-6 py-4 flex items-center justify-between">
+<div>
+<h3 class="font-headline-md text-headline-md">Segment Alpha Comparison</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Behavioral Rescue vs. Traditional Risk Thresholds</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="font-label-mono text-label-mono">Behavioral</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-outline"></span>
+<span class="font-label-mono text-label-mono">Traditional</span>
+</div>
+</div>
+</div>
+<div class="flex-grow relative p-6">
+<!-- Pseudo-chart logic using CSS gradients and flex -->
+<div class="absolute inset-0 flex items-end justify-between px-10 pb-12 gap-6">
+<div class="w-full flex flex-col items-center justify-end group">
+<div class="w-full bg-outline/20 rounded-t-sm h-3/4 relative mb-1">
+<div class="absolute bottom-0 left-0 w-full bg-primary/40 h-[85%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 font-label-mono text-label-mono opacity-0 group-hover:opacity-100">+12%</div>
+</div>
+<span class="font-label-mono text-label-mono opacity-50">Q1</span>
+</div>
+<div class="w-full flex flex-col items-center justify-end group">
+<div class="w-full bg-outline/20 rounded-t-sm h-4/5 relative mb-1">
+<div class="absolute bottom-0 left-0 w-full bg-primary/40 h-[92%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 font-label-mono text-label-mono opacity-0 group-hover:opacity-100">+15%</div>
+</div>
+<span class="font-label-mono text-label-mono opacity-50">Q2</span>
+</div>
+<div class="w-full flex flex-col items-center justify-end group">
+<div class="w-full bg-outline/20 rounded-t-sm h-[70%] relative mb-1">
+<div class="absolute bottom-0 left-0 w-full bg-primary/40 h-[98%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 font-label-mono text-label-mono opacity-0 group-hover:opacity-100">+28%</div>
+</div>
+<span class="font-label-mono text-label-mono opacity-50">Q3</span>
+</div>
+<div class="w-full flex flex-col items-center justify-end group">
+<div class="w-full bg-outline/20 rounded-t-sm h-[85%] relative mb-1">
+<div class="absolute bottom-0 left-0 w-full bg-primary/40 h-[115%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 font-label-mono text-label-mono opacity-0 group-hover:opacity-100">+34%</div>
+</div>
+<span class="font-label-mono text-label-mono opacity-50">Q4 (PROJ)</span>
+</div>
+</div>
+<!-- Background Grid -->
+<div class="absolute inset-0 grid grid-rows-4 pointer-events-none px-6 py-6 opacity-10">
+<div class="border-t border-outline"></div>
+<div class="border-t border-outline"></div>
+<div class="border-t border-outline"></div>
+<div class="border-t border-outline"></div>
+</div>
+
+</div>
+</section>
+<!-- PD Gap Distribution Map -->
+<section class="col-span-12 lg:col-span-4 bg-surface-container-low hairline-border rounded-xl h-[480px] flex flex-col">
+<div class="glass-header px-6 py-4">
+<h3 class="font-headline-md text-headline-md">PD Gap Distribution</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Δ Traditional vs. Behavioral PD</p>
+</div>
+<div class="flex-grow p-6 flex flex-col justify-center items-center relative overflow-hidden">
+<div class="relative z-10 w-full aspect-square max-w-[280px]">
+<!-- Radial Distribution Heatmap visualization -->
+<div class="absolute inset-0 rounded-full border border-primary/20 animate-pulse"></div>
+<div class="absolute inset-4 rounded-full border border-primary/10"></div>
+<div class="absolute inset-12 rounded-full border border-primary/5"></div>
+<!-- Floating Data Nodes -->
+<div class="absolute top-1/4 left-1/4 w-3 h-3 bg-secondary rounded-full shadow-[0_0_10px_rgba(137,206,255,0.8)]"></div>
+<div class="absolute bottom-1/3 right-1/4 w-4 h-4 bg-primary rounded-full shadow-[0_0_12px_rgba(79,70,225,0.8)]"></div>
+<div class="absolute top-1/2 right-1/3 w-2 h-2 bg-tertiary rounded-full"></div>
+<div class="absolute top-1/3 left-2/3 w-3 h-3 bg-secondary/60 rounded-full"></div>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-display-sm text-display-sm text-on-background">0.42</span>
+<span class="font-label-mono text-label-mono text-primary">MEAN GAP σ</span>
+</div>
+</div>
+<div class="mt-8 w-full space-y-4">
+<div class="flex justify-between items-center text-label-mono font-label-mono uppercase tracking-widest text-[10px] opacity-60">
+<span>Convergence</span>
+<span>Anomaly</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full w-[68%] bg-gradient-to-r from-secondary to-primary"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Alpha Segments List -->
+<section class="col-span-12 bg-surface-container hairline-border rounded-xl">
+<div class="glass-header px-6 py-4 flex items-center justify-between">
+<div>
+<h3 class="font-headline-md text-headline-md">Alpha Segments Performance</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Drill-down into incremental approval metrics for high-behavioral-capacity cohorts.</p>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-body-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[20px]" data-icon="download">download</span>
+                        Export Matrix
+                    </button>
+</div>
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30">
+<th class="px-6 py-4 font-label-mono text-label-mono text-on-surface-variant opacity-70">SEGMENT COHORT</th>
+<th class="px-6 py-4 font-label-mono text-label-mono text-on-surface-variant opacity-70">VOL (MONTHLY)</th>
+<th class="px-6 py-4 font-label-mono text-label-mono text-on-surface-variant opacity-70">TRAD. APPROVAL</th>
+<th class="px-6 py-4 font-label-mono text-label-mono text-on-surface-variant opacity-70">RESCUE LIFT</th>
+<th class="px-6 py-4 font-label-mono text-label-mono text-on-surface-variant opacity-70">DEFAULT (OBS)</th>
+<th class="px-6 py-4 font-label-mono text-label-mono text-on-surface-variant opacity-70">MODEL CONFIDENCE</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<tr class="hover:bg-surface-container-highest/50 transition-colors cursor-pointer">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center border border-primary/20">
+<span class="material-symbols-outlined text-primary" data-icon="school">school</span>
+</div>
+<span class="font-body-lg text-on-background">Students (Gen-Z)</span>
+</div>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">14.2k</td>
+<td class="px-6 py-5 font-label-mono text-label-mono text-on-surface-variant">22.4%</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded font-label-mono text-label-mono">+18.5%</span>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">1.2%</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-surface-container-highest rounded-full">
+<div class="h-full w-[94%] bg-primary rounded-full"></div>
+</div>
+<span class="font-label-mono text-label-mono">94%</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest/50 transition-colors cursor-pointer">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-secondary/10 flex items-center justify-center border border-secondary/20">
+<span class="material-symbols-outlined text-secondary" data-icon="work">work</span>
+</div>
+<span class="font-body-lg text-on-background">Freelancers (Gig)</span>
+</div>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">28.5k</td>
+<td class="px-6 py-5 font-label-mono text-label-mono text-on-surface-variant">31.0%</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded font-label-mono text-label-mono">+12.2%</span>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">1.8%</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-surface-container-highest rounded-full">
+<div class="h-full w-[88%] bg-primary rounded-full"></div>
+</div>
+<span class="font-label-mono text-label-mono">88%</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest/50 transition-colors cursor-pointer">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-tertiary/10 flex items-center justify-center border border-tertiary/20">
+<span class="material-symbols-outlined text-tertiary" data-icon="flight">flight</span>
+</div>
+<span class="font-body-lg text-on-background">Digital Nomads</span>
+</div>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">8.1k</td>
+<td class="px-6 py-5 font-label-mono text-label-mono text-on-surface-variant">18.5%</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded font-label-mono text-label-mono">+24.8%</span>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">0.9%</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-surface-container-highest rounded-full">
+<div class="h-full w-[82%] bg-primary rounded-full"></div>
+</div>
+<span class="font-label-mono text-label-mono">82%</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest/50 transition-colors cursor-pointer">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center border border-primary/20">
+<span class="material-symbols-outlined text-primary" data-icon="account_balance">account_balance</span>
+</div>
+<span class="font-body-lg text-on-background">Thin-File Creators</span>
+</div>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">19.7k</td>
+<td class="px-6 py-5 font-label-mono text-label-mono text-on-surface-variant">14.2%</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded font-label-mono text-label-mono">+31.2%</span>
+</td>
+<td class="px-6 py-5 font-label-mono text-label-mono">2.1%</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-surface-container-highest rounded-full">
+<div class="h-full w-[76%] bg-primary rounded-full"></div>
+</div>
+<span class="font-label-mono text-label-mono">76%</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-6 py-4 border-t border-outline-variant/20 flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-on-surface-variant">Showing 4 of 12 clusters</span>
+<div class="flex gap-2">
+<button class="p-1 rounded border border-outline-variant/30 hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="p-1 rounded border border-outline-variant/30 hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-stack-lg px-6 py-3 rounded-full bg-surface-container/90 dark:bg-surface-container-low/90 backdrop-blur-md border border-outline-variant/50 dark:border-outline-variant/30 shadow-2xl shadow-primary-container/20">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-colors hover:scale-110 active:scale-90">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-label-mono text-label-mono text-[8px] uppercase">Command</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container rounded-full w-12 h-12 hover:scale-110 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="font-label-mono text-label-mono text-[8px] uppercase">Signals</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-colors hover:scale-110 active:scale-90">
+<span class="material-symbols-outlined" data-icon="shield_with_heart">shield_with_heart</span>
+<span class="font-label-mono text-label-mono text-[8px] uppercase">Vault</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant w-12 h-12 hover:text-primary transition-colors hover:scale-110 active:scale-90">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-label-mono text-label-mono text-[8px] uppercase">Support</span>
+</button>
+</nav>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+                row.classList.add('bg-primary-container/10');
+                setTimeout(() => {
+                    row.classList.remove('bg-primary-container/10');
+                }, 300);
+            });
+        });
+
+        // Atmospheric parallax effect for background
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            // Apply very subtle transform to dashboard elements
+            const moveX = (x - 0.5) * 10;
+            const moveY = (y - 0.5) * 10;
+            
+            document.querySelectorAll('.ai-glow').forEach(el => {
+                el.style.transform = `translate3d(${moveX}px, ${moveY}px, 0)`;
+            });
+        });
+    </script>
+</body></html>

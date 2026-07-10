@@ -1,0 +1,17 @@
+# AKS — Session Router
+
+The project has exactly **three** source-of-truth documents. Read them in order; everything else is code under `product/`.
+
+1. **[overview.md](overview.md)** — start here. Vision, problem, solution, business thesis, statistical & AI philosophy, boundary principle, current status, stack, decisions.
+2. **[architecture.md](architecture.md)** — engineering spec. Every AI/ML/architectural component and *why* it exists.
+3. **[execution.md](execution.md)** — the live plan: sprint, priorities, research/eng tasks, technical debt, risks, open decisions (OQ-xx).
+
+## Binding rules (do not violate)
+
+- **Statistical validity > AI.** Priority order: accuracy > generalization > calibration > robustness > interpretability > business value > regulatory > engineering > AI > UI. Classical methods win by default. UI/stack/agents (P8–P10) must never preempt validity work (P1–P4).
+- **Every AI/agent component must pass the five-question test** (overview.md §6) or be removed/renamed. LLMs must never become the decision engine.
+- **The headline numbers are circular** (architecture.md §5.1). Do **not** cite AUC 0.829, "973/1084 rescued," or the fairness-gap figures as validated. Caveat or fix first.
+- **The boundary is absolute:** AKS complements, never overrides, the bank's classic score/segment — enforced by the immutable audit trail (architecture.md §9).
+- **Never resolve an open question (OQ-xx) by guessing — ask the Product Owner.** Live decisions: OQ-36 (real data), OQ-37 (fix sequencing), OQ-38 (agent narrative), OQ-39 (target = Formulation B, proposed).
+- **"No-go is a valid outcome."** If the thesis fails on a non-circular benchmark, report it.
+- **Keep the three docs current and never create a fourth.** Edit in place; do not archive history or add a README.

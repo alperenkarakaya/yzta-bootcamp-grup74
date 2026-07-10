@@ -10,7 +10,6 @@
 | Scrum Master | Ahmet Özdoğan |
 | Developer | Zeynep Salkaya |
 | Developer | Havva Balta |
-| Developer | Begüm Bakan |
 
 ## 1. Problem
 
@@ -167,11 +166,11 @@ aynı klasörde (`slack_01_fikir_tartismasi.png`, `slack_02_fikir_form_gorev.png
 
 **Sprint Board Update:**
 
-![Sprint 1 Board](docs/sprint1/board_sprint1.png)
+![Sprint 1 Board](sprints/docs/sprint1/board_sprint1.png)
 
 **Ürün Durumu:**
 
-![Skor raporu özeti](docs/sprint1/urun_durumu_sprint1.png)
+![Skor raporu özeti](sprints/docs/sprint1/urun_durumu_sprint1.png)
 
 **Sprint Review — alınan kararlar:**
 
@@ -184,7 +183,7 @@ aynı klasörde (`slack_01_fikir_tartismasi.png`, `slack_02_fikir_form_gorev.png
   denetimli modele dönüştürülmesi ve açıklanabilirlik katmanı.
 - Sentetik veri üreticisinde gider/gelir oranının olması gerekenden yüksek
   çıktığı fark edildi; kalibrasyon Sprint 2'ye alındı.
-- Sprint Review katılımcıları: Alperen Karakaya, Ahmet Özdoğan, Zeynep Salkaya, Havva Balta, Begüm Bakan
+- Sprint Review katılımcıları: Alperen Karakaya, Ahmet Özdoğan, Zeynep Salkaya, Havva Balta
 
 **Sprint Retrospective:**
 

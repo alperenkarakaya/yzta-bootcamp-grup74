@@ -145,6 +145,8 @@ Progress / Done) olarak takip edilmektedir.
 
 [Miro linki](https://miro.com/app/board/uXjVH9d7vBk=/?share_link_id=459493776909)
 
+---
+
 # Sprint 1
 
 **Sprint Notu:** Bu sprintte hedef, projenin veri temelini ve kavram kanıtını

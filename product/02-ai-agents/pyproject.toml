@@ -22,3 +22,6 @@ include = ["aks_core*"]
 
 [tool.setuptools.package-data]
 aks_core = ["artifacts/*.joblib", "artifacts/*.json"]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]

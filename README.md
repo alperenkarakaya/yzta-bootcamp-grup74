@@ -33,13 +33,21 @@ kazançlı bir denge.
 
 ## 2. Çözüm
 
-Hesap hareketlerinden (transaction) çıkarılan davranışsal özelliklerle
-(gelir düzenliliği, gelir kaynağı çeşitliliği, gider disiplini, tasarruf
-trendi, fatura ödeme düzeni, hesap aktivite yoğunluğu) resmi gelirden
-bağımsız bir **Alternatif Kapasite Skoru (AKS)** üretiyoruz. Bu skor,
-klasik skorlamayı **değiştirmek değil tamamlamak** için tasarlandı: banka
-mevcut risk modelini korurken, "thin-file" (resmi veri açısından zayıf
-dosyalı) ama davranışsal olarak güçlü müşterileri ayırt edebiliyor.
+Hesap hareketlerinden (transaction) çıkarılan **9 davranışsal özellikle**
+(gelir hacmi, gider hacmi, gelir işlem sayısı, gelir kaynağı çeşitliliği,
+gelir düzenliliği, gider/gelir oranı, bakiye trendi, fatura ödeme düzeni,
+hesap aktivite yoğunluğu) resmi gelirden bağımsız bir **Alternatif Kapasite
+Skoru (AKS)** üretiyoruz.
+
+Ürünün en kritik tasarım kararı bir sınır kuralı:
+
+> **AKS, bankanın klasik skorunu veya segmentini asla ezmez, değiştirmez —
+> yalnızca tamamlar.**
+
+Bu bir vaat değil, kodda zorlanan bir kısıt: her skorlama, bankanın klasik
+skorunu **değiştirilmemiş** haliyle kaydeden **değiştirilemez bir denetim
+satırı** (immutable audit row) yazar. AKS bir karar motoru değil, klasik
+skorun göremediği kapasiteyi yüzeye çıkaran bir **köprü katmanıdır**.
 
 ## 3. Hedef Kitle / Persona'lar
 
@@ -50,94 +58,121 @@ dosyalı) ama davranışsal olarak güçlü müşterileri ayırt edebiliyor.
 | `klasik_maasli` | Sabit, resmi aylık maaşlı çalışan (kontrol/baseline grubu) |
 | `dusuk_hacim_riskli` | Gerçekten düşük kapasiteli, düzensiz hareketli kişi (negatif kontrol — modelin yanlışlıkla yüksek skor vermemesi gerekiyor) |
 
-## 4. Mimari (Plan)
+## 4. Mimari (Sprint 2 sonu — çalışan hâli)
 
 ```
-[Sentetik/Gerçek İşlem Verisi]
-        │
-        ▼
-[Özellik Mühendisliği]  ── gelir düzenliliği, gider/gelir oranı, ...
-        │
-        ▼
-[Skorlama Motoru]  ── klasik_skor (baseline) + alternatif_skor (AKS)
-        │
-        ▼
-[Açıklanabilirlik Katmanı]  ── "neden bu skor?" (SHAP / kural bazlı / LLM)
-        │
-        ▼
-[API (FastAPI)]  ── /score  /explain  /simulate
-        │
-        ▼
-[Dashboard]  ── kullanıcı görünümü + banka portföy görünümü
+React (Vite + TS + Tailwind)  →  Django 5.2 + DRF (11 endpoint)  →  aks_core
+       5 sayfa                          │                             (Python paketi)
+                                        │                                │
+                                        │                    ┌───────────┴────────────┐
+                                        │                    │ ozellik/  → 9 özellik  │
+                                        │                    │ model/    → XGB/LGBM,  │
+                                        │                    │             SHAP, adalet│
+                                        │                    │ agents/   → pipeline + │
+                                        │                    │             AsistanAgent│
+                                        │                    └────────────────────────┘
+                                        │
+                        ┌───────────────┴───────────────┐
+                        │ Supabase (Postgres)           │  → müşteri · değerlendirme
+                        │   └ değiştirilemez audit_log  │    · denetim izi
+                        │ Upstash Redis (cache)         │
+                        └───────────────────────────────┘
 ```
 
-Sprint 2'de skorlama motoru XGBoost/LightGBM tabanlı denetimli modele, açıklama
-katmanı da üç-agent yapısına (veri/özellik agent'ı → skorlama agent'ı →
-danışman agent'ı) genişletilecek.
+Tüm dış servisler (Supabase, Upstash, Gemini) **opsiyoneldir**: kimlik bilgisi
+yoksa sistem SQLite + bellek-içi cache + kural-tabanlı asistana düşer, yani
+demo her koşulda çalışır.
+
+### Agent mimarisi hakkında dürüst bir not
+
+Boru hattı `VeriAgent → SkorlamaAgent → DanismanAgent` (`Orkestrator` ile
+yönetiliyor) ve ayrıca bir `AsistanAgent` var. Bunları beş soruluk bir testten
+geçirdik ("hangi problemi çözüyor, klasik ML neden çözemiyor, neden LLM/agent
+gerekiyor, değeri nasıl ölçülüyor, gelişimi nasıl doğrulanıyor"). Sonuç:
+**gerçekten agent olan tek bileşen `AsistanAgent`** (bağlama dayalı, Gemini
+veya kural-tabanlı soru-cevap katmanı). Diğer üçü deterministik boru hattı
+adımları ve materyallerde bu şekilde adlandırılıyor. **LLM hiçbir noktada karar
+motoru değildir.**
 
 ## 5. Klasör Yapısı
 
 ```
 yzta-bootcamp-grup74/
-├── data/
-│   ├── sentetik_islemler.csv      # Üretilen ham sentetik işlem verisi
-│   └── skor_raporu.csv            # Müşteri bazlı skor çıktısı
-├── src/
-│   ├── sentetik_veri_uretici.py   # Sentetik banka işlem verisi üretici
-│   └── skor_hesaplama.py          # Özellik mühendisliği + skorlama
-├── docs/
-│   └── sprint1/                   # Daily Scrum notları, board görüntüleri
-├── requirements.txt
-└── README.md
+├── overview.md              # Vizyon, problem, istatistik & AI felsefesi, kararlar
+├── architecture.md          # Mühendislik spesifikasyonu (her bileşen neden var)
+├── execution.md             # Canlı plan: backlog, riskler, teknik borç, açık sorular
+├── planning/                # Veri mimarisi, özellik şeması, pipeline adımları
+├── sprints/docs/            # Sprint kanıtları: daily scrum, board, ürün ekranları
+└── product/                 # Ürünün kendisi — 5 iş akışı
+    ├── 01-data/             Sentetik işlem üretici, veri setleri, veri sözlüğü
+    ├── 02-ai-agents/        aks_core paketi (ozellik · model · agents · artifacts)
+    ├── 03-frontend/         React + Vite + TS + Tailwind, 5 sayfa
+    ├── 04-backend/          Django + DRF, audit app, ayarlar
+    └── 05-business/         Alan dokümanları (iş tezi, KVKK, hipotez kaydı)
 ```
 
 ## 6. Çalıştırma
 
 ```bash
-cd src
-python3 sentetik_veri_uretici.py --musteri-sayisi 500 --gun 180
-python3 skor_hesaplama.py
+# 1) Veri üret
+cd product/01-data/generator
+python3 -m veri.uretici --musteri-sayisi 2000 --gun 180
+
+# 2) Modeli eğit
+cd ../../02-ai-agents
+pip install -e .
+python3 -m aks_core.model.egitim
+
+# 3) API'yi ayağa kaldır
+cd ../04-backend
+pip install -r requirements.txt
+python3 manage.py migrate && python3 manage.py runserver
+
+# 4) Arayüz
+cd ../03-frontend
+npm install && npm run dev
 ```
 
-`random.seed(42)` sabit olduğu için üretilen veri ve skorlar tekrarlanabilir.
+Seed sabit olduğu için üretilen veri ve skorlar tekrarlanabilir. `.env`
+olmadan sistem SQLite + LocMem cache ile çalışır.
 
-## 7. Erken Bulgu (Sprint 1)
+## 7. API Uçları (Django + DRF)
 
-500 sentetik müşteri üzerinde:
-
-| Persona | Ort. Klasik Skor | Ort. Alternatif Skor |
-|---|---|---|
-| klasik_maasli | 840.8 | 462.3 |
-| ogrenci_yuksek_hacim | 636.1 | 440.6 |
-| stajyer_degisken_gelir | 631.9 | 345.5 |
-| dusuk_hacim_riskli | 504.2 | 300.0 |
-
-**Yorum:** Klasik skorlamada `klasik_maasli` ile `ogrenci_yuksek_hacim`
-arasındaki fark **~205 puan**. Alternatif skorlamada bu fark **~22 puana**
-düşüyor — yani davranışsal model, resmi gelir farkının yarattığı
-dengesizliğin büyük kısmını kapatıyor. `dusuk_hacim_riskli` grubu ise
-beklendiği gibi alternatif modelde de düşük kalıyor (negatif kontrol başarılı).
-*(Mutlak skor seviyeleri Sprint 2'de gerçek/açık datasetlerle kalibre
-edilecek; buradaki amaç göreceli farkı göstermek.)*
+| Uç | İş |
+|---|---|
+| `GET /api/bilgi` | Servis ve model bilgisi |
+| `GET /api/demo-musteriler` | Demo müşteri listesi |
+| `POST /api/skorla` | Ham işlemlerden skor üret |
+| `GET /api/skorla/<id>` | Demo müşteriyi skorla |
+| `POST /api/aciklama` | SHAP tabanlı "neden bu skor?" |
+| `POST /api/simulasyon` | "Şunu değiştirirsem skorum ne olur?" |
+| `GET /api/portfoy` | Banka portföy görünümü |
+| `GET /api/adalet` | Segment bazlı adalet raporu |
+| `POST /api/csv-skorla` | Toplu CSV skorlama |
+| `POST /api/asistan` | `AsistanAgent` soru-cevap |
+| `GET /api/gecmis/<id>` | Müşteri skor geçmişi (denetim izi) |
 
 ## 8. Product Backlog
 
-Backlog bu repo içinde tutulmaktadır: aşağıdaki tablo story bazında,
-`docs/sprint1/board_sprint1.png` ise sprint panosu (Backlog / To Do / In
-Progress / Done) olarak takip edilmektedir.
+Backlog Miro üzerinde tutuluyor (link aşağıda); story bazlı özet:
 
 | # | User Story | Sprint | Durum |
 |---|---|---|---|
 | 1 | Sentetik işlem verisi üretici | 1 | ✅ |
 | 2 | Özellik mühendisliği + baseline skor | 1 | ✅ |
-| 3 | Persona bazlı doğrulama / kalibrasyon | 2 | ⏳ |
-| 4 | XGBoost/LightGBM ile denetimli model | 2 | ⏳ |
-| 5 | Üç-agent mimarisi (veri / skor / danışman) | 2 | ⏳ |
-| 6 | Açıklanabilirlik katmanı (SHAP veya LLM) | 2 | ⏳ |
-| 7 | FastAPI `/score` `/explain` `/simulate` | 2 | ⏳ |
-| 8 | Kullanıcı dashboard'u | 3 | ⏳ |
-| 9 | Banka portföy/getiri simülasyon görünümü | 3 | ⏳ |
-| 10 | Deploy + demo video | 3 | ⏳ |
+| 3 | Persona bazlı doğrulama / kalibrasyon | 2 | ✅ |
+| 4 | XGBoost/LightGBM ile denetimli model | 2 | ✅ |
+| 5 | Boru hattı + `AsistanAgent` mimarisi | 2 | ✅ |
+| 6 | Açıklanabilirlik katmanı (SHAP) + adalet raporu | 2 | ✅ |
+| 7 | API `/skorla` `/aciklama` `/simulasyon` (+8 uç) | 2 | ✅ |
+| 8 | Django + DRF geçişi, değiştirilemez denetim izi | 2 | ✅ |
+| 9 | Döngüsellik (circularity) ablasyon testi | 2 | ✅ |
+| 10 | Dekuple veri üretici (etiket ↔ özellik ayrıştırma) | 2 | ✅ |
+| 11 | React arayüz — 5 sayfa | 2 | ✅ |
+| 12 | Döngüsel olmayan benchmark üzerinde model finalizasyonu | 3 | ⏳ |
+| 13 | Kalibrasyon (Brier/ECE) + sabit kötü-oranında ek onay metriği | 3 | ⏳ |
+| 14 | Test paketinin Django/`aks_core`'a taşınması | 3 | ⏳ |
+| 15 | Deploy (Docker + Render) + demo video | 3 | ⏳ |
 
 ---
 
@@ -200,7 +235,135 @@ aynı klasörde (`slack_01_fikir_tartismasi.png`, `slack_02_fikir_form_gorev.png
 
 ---
 
+---
+
 # Sprint 2
+
+**Sprint Notu:** Sprint 1'de kural-tabanlı bir kavram kanıtı vardı. Bu sprintte
+hedef, onu **çalışan bir ürüne** dönüştürmekti: denetimli ML modeli, açıklanabilirlik,
+boru hattı + asistan mimarisi, kalıcı bir API ve arayüz. Sprint ortasında planda
+olmayan ama planı değiştiren bir şey oldu — kendi başarı sayımızı denetledik ve
+geçersiz olduğunu bulduk. Bu bulguyu sprintin en önemli teslimatı sayıyoruz.
+
+**Sprint içi kapsam ve tahmin:** Sprint 1'den devreden 5 story (persona kalibrasyonu,
+denetimli model, agent mimarisi, açıklanabilirlik, API) sprintin taahhüt edilen
+kapsamıydı. Story'ler görece boyutlandırıldı, story başına tahmin sprint toplamının
+yarısını geçmeyecek şekilde tutuldu. Sprint 1 retrospektifinde "tahmin puanları
+gözden geçirilecek" kararı alınmıştı; bu sprintte tahminler developer'ların
+kendi verdiği puanlarla belirlendi.
+
+Sprint içinde kapsama **eklenen** 4 story (#8–#11), planlanan işlerin
+gerçekleştirilmesi sırasında zorunlu hale geldi: FastAPI, denetim izi (audit trail)
+ve migration ihtiyacını karşılayamadığı için Django'ya geçildi; model sonuçları
+şüphe uyandırdığı için ablasyon testi yazıldı; ablasyon bulgusu da dekuple veri
+üreticisini zorunlu kıldı. Tümü sprint sonunda `DONE`.
+
+**Puan tamamlama mantığı:** Taahhüt edilen 5 story'nin tamamı bitti; ek olarak
+sprint içinde açılan 4 story daha kapandı. Devreden iş yok. Miro board'da kırmızı
+item'lar task'leri, mavi item'lar story'leri temsil ediyor.
+
+**Daily Scrum:** Sprint 1'de olduğu gibi Daily Scrum'lar zaman kısıtı nedeniyle
+Slack üzerinden (grup DM + huddle) yürütüldü. Notlar
+`sprints/docs/sprint2/daily_scrum_notlari.md` altında, ilgili
+Slack ekran görüntüleri aynı klasörde.
+
+**Sprint Board Update:**
+
+![Sprint 2 Board](sprints/docs/sprint2/board_sprint2.png)
+
+**Ürün Durumu:**
+
+Model karşılaştırması (2000 sentetik müşteri, test seti):
+
+![Model sonuçları](sprints/docs/sprint2/model_sonuclari.png)
+
+| Model | ROC-AUC | Average Precision |
+|---|---|---|
+| XGBoost | 0.829 | 0.687 |
+| LightGBM | 0.823 | 0.684 |
+| Klasik skor (baseline) | 0.729 | 0.569 |
+
+Çalışan arayüz (React, Django API'ye canlı bağlı, 5 sayfa):
+
+![Ürün ekranı](sprints/docs/sprint2/urun_durumu_sprint2.png)
+
+### Sprint 2'de teslim edilenler
+
+| Alan | Teslim |
+|---|---|
+| Veri | Kapasite-tabanlı yeni üretici, veri sözlüğü, şema + PII + döngüsellik doğrulaması (CI kapısı) |
+| Model | XGBoost/LightGBM eğitimi, model artifact'ı, klasik skora karşı baseline karşılaştırması |
+| Açıklanabilirlik | SHAP tabanlı açıklama, segment bazlı adalet raporu, iş etkisi analizi |
+| Değerlendirme | Stratified k-fold CV + bootstrap %95 güven aralığı harness'ı, döngüsellik ablasyon testi |
+| AI | Deterministik boru hattı (`VeriAgent → SkorlamaAgent → DanismanAgent` + `Orkestrator`) + `AsistanAgent` (Gemini / kural-tabanlı fallback) |
+| Backend | FastAPI → Django 5.2 + DRF geçişi, 11 endpoint, değiştirilemez denetim izi, Supabase + Upstash entegrasyonu (graceful fallback) |
+| Frontend | React + Vite + TS + Tailwind, 5 sayfa, tüm gerçek `/api/*` uçlarına bağlı |
+
+### Sprint Review — alınan kararlar
+
+- **Denetimli model çalışıyor.** XGBoost 0.829 AUC ile klasik skorun 0.729'unu
+  geçiyor. Uçtan uca boru hattı (veri → özellik → model → API → denetim izi)
+  ayakta ve tekrarlanabilir.
+
+- **Ama bu sayı, tezimizi kanıtlamıyor — ve bunu biz bulduk.** Modelin eğitildiği
+  9 özelliğin 4'ü (`gider_gelir_orani`, `bakiye_trendi`, `gelir_duzenliligi`,
+  `fatura_odeme_duzeni`), sentetik etiketin **doğrudan üretildiği** değişkenler.
+  Yani model, keşfetmesi gereken sinyali zaten biliyor. `circularity_ablation.py`
+  ile ölçtük:
+  - XGBoost ile 9 özellikli lojistik regresyon arasındaki fark: **0.0004 AUC** —
+    yani "gelişmiş model" hiçbir şey katmıyor, kural yeniden inşa ediliyor.
+  - "Nedensel olmayan" 5 özellik tek başına bile 0.82 AUC veriyor; sorun 4 kolonu
+    saklayarak çözülmüyor, **yapısal**.
+  - Sonuç: **0.829 vs 0.729 karşılaştırması inşa gereği doğru**, gizli kapasite
+    kanıtı değil. Bu sayı boru hattının çalıştığını gösterir; iş tezini **göstermez**.
+
+- **Sayıları saklamıyoruz, çerçeveliyoruz.** Yayımlanan tüm figürler (AUC 0.829,
+  "973 kurtarılan müşteri", adalet farkı) bu uyarıyla birlikte sunuluyor. Bir
+  sayının nasıl üretildiğini bilmeden savunmak, yanlış sayı üretmekten daha kötü.
+
+- **Klasik yöntem varsayılan olarak kazanır.** Lojistik regresyon XGBoost'a eşit
+  veya üstün (AUC, PR-AUC ve kalibrasyon) olduğu için raporlanan modelin LR'ye
+  çevrilmesi Sprint 3'e alındı — ama ancak geçerli bir benchmark üzerinde karar
+  verilecek.
+
+- **Düzeltme yolu kuruldu.** Etiketi persona'dan ve özelliklerden ayıran dekuple
+  veri üretici (`uretici_kapasite.py`) yazıldı ve kanıtlandı (`dekuple_kanit.py`:
+  persona-etiket yayılımı 0.015; tek başına etikete eşit hiçbir özellik yok).
+  Sprint 3'te bu etiket eğitim/değerlendirme hattına taşınacak.
+
+- **FastAPI emekliye ayrıldı.** Denetim izi ve Supabase gereksinimleri ORM,
+  migration ve read-only admin istediği için Django + DRF'e geçildi; parite
+  doğrulandı. Eski kod `_legacy_fastapi/` altında referans olarak duruyor.
+
+- **Sprint Review katılımcıları:** Alperen Karakaya, Ahmet Özdoğan,
+  Zeynep Salkaya, Havva Balta
+
+### Sprint Retrospective
+
+**İyi giden:**
+- Sprint 1'de devreden 5 story'nin tamamı kapandı, devir yok.
+- Kendi sonucumuza şüpheyle bakıp ablasyon testi yazma refleksi, sprintin en
+  değerli çıktısını üretti. Bir sonraki sprintte de "sayıyı önce kır, sonra
+  yayımla" kuralını sürdürüyoruz.
+
+**İyi gitmeyen:**
+- **Repo yeniden yapılandırması takım hizası olmadan yapıldı.** Klasör yapısı
+  sprint ortasında değişti; diğer geliştiriciler bir süre eski yollarla çalıştı.
+  Karar: yapısal değişiklikler bundan sonra Daily Scrum'da duyurulup onaylanmadan
+  main'e girmeyecek.
+- **Sprint 1 retrospektifinde alınan "unit test eforu artırılacak" kararı
+  gerçekleşmedi.** Aksine, Django geçişiyle mevcut 22 test kırıldı
+  (FastAPI/`src.*` import ediyorlar). Sprint 3'ün ilk işi bunları taşımak —
+  ve klasik skorun hiçbir agent tarafından değiştirilemediğini kanıtlayan
+  sınır testlerini eklemek.
+- Kapsam sprint içinde 5 story'den 9'a çıktı. Çıkan işler doğruydu ama
+  planlanmamıştı; tahmin disiplini hâlâ oturmadı.
+
+**Sprint 3'e taşınan kararlar:**
+1. Dekuple etiketi eğitim/değerlendirme hattına taşı → dürüst headline sayı üret.
+2. Kalibrasyonu (Brier/ECE) ana metrik yap; ham AUC'yi başlıktan çıkar.
+3. Testleri Django + `aks_core`'a taşı, sınır testlerini ekle.
+4. Deploy + demo videosu.
 
 ---
 

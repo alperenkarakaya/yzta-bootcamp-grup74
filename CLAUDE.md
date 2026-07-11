@@ -14,4 +14,8 @@ The project has exactly **three** source-of-truth documents. Read them in order;
 - **The boundary is absolute:** AKS complements, never overrides, the bank's classic score/segment — enforced by the immutable audit trail (architecture.md §9).
 - **Never resolve an open question (OQ-xx) by guessing — ask the Product Owner.** Live decisions: OQ-36 (real data), OQ-37 (fix sequencing), OQ-38 (agent narrative), OQ-39 (target = Formulation B, proposed).
 - **"No-go is a valid outcome."** If the thesis fails on a non-circular benchmark, report it.
-- **Keep the three docs current and never create a fourth.** Edit in place; do not archive history or add a README.
+- **Keep the three internal docs current and never create a fourth.** Edit `overview.md` / `architecture.md` / `execution.md` in place; do not archive history or spin up parallel planning docs.
+- **`README.md` is a graded deliverable, not internal documentation — never delete it.** It is the bootcamp jury's entry point to the repo (project definition, product backlog, and the per-sprint evidence blocks required by YZTA Bootcamp 2026). It is exempt from the "no fourth doc" rule.
+  - **The Sprint 1 block is frozen.** It has already been graded (full marks); do not edit its text or move the images it links (`sprints/docs/sprint1/*`).
+  - Each sprint appends its own block under its own heading. Sprint evidence lives in `sprints/docs/sprint<N>/` (daily scrum notes, board screenshot, product screenshots).
+  - Keep `README.md` in sync with reality: when a component ships or a claim changes, update the backlog table and the relevant sprint block.

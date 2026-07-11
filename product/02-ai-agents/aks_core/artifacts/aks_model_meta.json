@@ -1,0 +1,16 @@
+{
+  "model_adi": "XGBoost",
+  "bicim": "xgboost_json",
+  "dosya": "aks_model.json",
+  "ozellikler": [
+    "toplam_gelir_hacmi",
+    "toplam_gider_hacmi",
+    "gelir_islem_sayisi",
+    "gelir_kaynagi_sayisi",
+    "gelir_duzenliligi",
+    "gider_gelir_orani",
+    "bakiye_trendi",
+    "fatura_odeme_duzeni",
+    "hesap_hareket_yogunlugu"
+  ]
+}

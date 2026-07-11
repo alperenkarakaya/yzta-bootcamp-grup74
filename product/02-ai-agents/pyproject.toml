@@ -11,9 +11,9 @@ dependencies = [
     "scikit-learn>=1.4",
     "xgboost>=2.0",
     "lightgbm>=4.0",
-    "shap>=0.44",
+    "shap>=0.52",   # 0.49 ve altı xgboost>=3 base_score formatını okuyamıyor
     "joblib>=1.3",
-    "numpy>=1.26,<2",  # xgboost/shap artefaktları NumPy 1.x ile derlendi
+    "numpy>=1.26",
 ]
 
 [tool.setuptools.packages.find]

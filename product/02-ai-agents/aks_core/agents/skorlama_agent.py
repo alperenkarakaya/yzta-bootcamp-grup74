@@ -9,7 +9,6 @@ Limit mantığı: aylık net nakit akışı (gelir - gider, aylık ortalama) tab
 alınır; risk düştükçe çarpan büyür. Temerrüt olasılığı yüksekse limit 0'a iner.
 """
 import numpy as np
-import joblib
 
 
 def olasilik_to_aks(p):
@@ -33,11 +32,8 @@ class SkorlamaAgent:
     ad = "skorlama_agent"
 
     def __init__(self, model_yolu=None):
-        from aks_core import paths
-        paket = joblib.load(model_yolu or paths.model_path())
-        self.model = paket["model"]
-        self.model_adi = paket["model_adi"]
-        self.ozellikler = paket["ozellikler"]
+        from aks_core.model import kayit
+        self.model, self.model_adi, self.ozellikler = kayit.yukle(model_yolu)
 
     def calistir(self, vektor, ozellik_sozlugu=None):
         x = np.array(vektor, dtype=float).reshape(1, -1)

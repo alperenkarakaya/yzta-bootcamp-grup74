@@ -17,6 +17,8 @@ import xgboost as xgb
 import lightgbm as lgb
 import joblib
 
+from aks_core.model import kayit
+
 from aks_core.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
 from aks_core.model.etiketleme import etiketle
 
@@ -93,7 +95,7 @@ def egit(islem_csv=None, model_cikti=None):
 
     # Kaydet
     os.makedirs(os.path.dirname(model_cikti), exist_ok=True)
-    joblib.dump({"model": en_iyi[1], "model_adi": en_iyi[0], "ozellikler": OZELLIK_ADLARI}, model_cikti)
+    model_cikti = kayit.kaydet(en_iyi[1], en_iyi[0], OZELLIK_ADLARI)
     with open(paths.METRICS_PATH, "w", encoding="utf-8") as f:
         json.dump({k: {m: round(v, 4) for m, v in val.items()} for k, val in sonuc.items()}, f, ensure_ascii=False, indent=2)
     print(f"\nModel kaydedildi -> {model_cikti}")

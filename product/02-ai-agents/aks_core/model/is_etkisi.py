@@ -20,7 +20,9 @@ def olasilik_to_aks(p):
 def analiz(islem_csv=None, klasik_esik=560, aks_esik=560):
     from aks_core import paths
     islem_csv = islem_csv or paths.data("sentetik_islemler.csv")
-    paket = joblib.load(paths.model_path())
+    from aks_core.model import kayit
+    _model, _model_adi, _ozellikler = kayit.yukle()
+    paket = {"model": _model, "model_adi": _model_adi, "ozellikler": _ozellikler}
     model, ozellikler = paket["model"], paket["ozellikler"]
     musteriler = etiketle(tum_musteriler(islem_csv), hedef_temerrut_orani=0.18)
     X = np.array([[m[o] for o in ozellikler] for m in musteriler], dtype=float)

@@ -283,9 +283,40 @@ Model karşılaştırması (2000 sentetik müşteri, test seti):
 | LightGBM | 0.823 | 0.684 |
 | Klasik skor (baseline) | 0.729 | 0.569 |
 
-Çalışan arayüz (React, Django API'ye canlı bağlı, 5 sayfa):
+Çalışan arayüz — React + Vite + TS, Django API'ye canlı bağlı, 5 sayfa.
+Aşağıdaki ekran görüntüleri çalışan uygulamadan alınmıştır.
 
-![Ürün ekranı](sprints/docs/sprint2/urun_durumu_sprint2.png)
+**1. Intelligence — canlı skorlama akışı**
+
+Model bilgisi, gerçek zamanlı skorlama akışı (klasik → AKS), agent boru hattı
+durumu ve hedef segmentlerdeki kurtarma oranları. Öğrenci segmentinde kredibl
+müşterilerin %94'ü AKS eşiğini geçiyor.
+
+![Intelligence](sprints/docs/sprint2/urun_intelligence.png)
+
+**2. Müşteri detayı — ürünün tezi tek ekranda**
+
+Öğrenci profilindeki müşteri #10: klasik skor **597** ile reddedilirken, davranışsal
+AKS skoru **824**. Sol üstte klasik skorun değiştirilmediğini gösteren sınır rozeti,
+altta SHAP faktörleri, agent zinciri ve danışman önerileri.
+
+![Müşteri detayı](sprints/docs/sprint2/urun_musteri_detay.png)
+
+**3. Portföy analizi — bankanın kaçırdığı getiri**
+
+Segment bazında klasik ve davranışsal onay oranlarının karşılaştırması, eşit-fırsat
+boşluğu ve illüstratif getiri hesabı. Öğrenci segmentinde klasik onay %0.5 iken AKS
+onayı %93.6.
+
+![Portföy analizi](sprints/docs/sprint2/urun_portfoy.png)
+
+**4. Denetim izi — sınır bütünlüğünün kanıtı**
+
+Her skorlama, bankanın klasik skorunu **değiştirilmemiş** haliyle kaydeden bir
+denetim satırı yazar. `AuditLog` append-only'dir: güncellenemez, silinemez.
+Adalet raporu ve agent beş-soru denetimi de bu sayfada.
+
+![Denetim izi](sprints/docs/sprint2/urun_denetim_izi.png)
 
 ### Sprint 2'de teslim edilenler
 

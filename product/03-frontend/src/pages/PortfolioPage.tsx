@@ -57,6 +57,12 @@ export default function PortfolioPage() {
         </div>
       )}
 
+      {portfoy?.veri_kaynagi === "dongusel" && (
+        <div className="bg-secondary-container/10 border border-secondary/30 text-on-surface-variant rounded-DEFAULT p-3 font-body-sm text-body-sm">
+          <span className="text-secondary font-semibold">Not:</span> {portfoy.uyari}
+        </div>
+      )}
+
       <div className="grid grid-cols-12 gap-gutter">
         {/* Segment Alpha Comparison */}
         <section className="col-span-12 lg:col-span-8 bg-surface-container-low hairline-border rounded-xl overflow-hidden ai-glow flex flex-col min-h-[440px]">

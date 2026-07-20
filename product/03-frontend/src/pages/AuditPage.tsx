@@ -81,6 +81,12 @@ export default function AuditPage() {
         </div>
       )}
 
+      {adalet?.veri_kaynagi === "dongusel" && (
+        <div className="bg-secondary-container/10 border border-secondary/30 text-on-surface-variant rounded-DEFAULT p-3 font-body-sm text-body-sm">
+          <span className="text-secondary font-semibold">Not:</span> {adalet.uyari}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
         {/* Adalet Parity Gauge */}
         <section className="md:col-span-4 glass-panel rounded-xl p-6 relative overflow-hidden flex flex-col justify-between ai-glow border-primary/20">

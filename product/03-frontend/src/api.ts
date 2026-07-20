@@ -79,6 +79,10 @@ export interface Portfoy {
     beklenen_kayip: number;
     net: number;
   };
+  // §3b/U17 (OQ-44 bulgusu): bu toplu istatistikler hâlâ döngüsel etiketli demo
+  // verisinden geliyor — tekil skorlamadan (dekuple/LR) farklı bir kaynak.
+  veri_kaynagi: "dongusel" | "dekuple";
+  uyari: string;
 }
 
 export interface GrupMetrik {
@@ -96,6 +100,8 @@ export interface AdaletAlan {
 export interface Adalet {
   klasik_skor: AdaletAlan;
   aks_skor: AdaletAlan;
+  veri_kaynagi: "dongusel" | "dekuple";
+  uyari: string;
 }
 
 export interface GecmisKayit {

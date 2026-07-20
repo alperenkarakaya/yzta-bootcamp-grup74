@@ -58,6 +58,10 @@ export interface SkorSonuc {
   ozellikler: Record<string, number>;
   aciklama: Aciklama;
   danisman: Danisman;
+  // Formülasyon B (architecture.md §5.3, §3b U10/U17) — klasik_skor bilinmiyorsa null.
+  pd_geleneksel_bant: number | null;
+  pd_fark: number | null;
+  kapasite_sinyali: number | null;
 }
 
 export interface Portfoy {
@@ -111,6 +115,42 @@ export interface AsistanYanit {
   mod: "llm" | "kural";
 }
 
+// §3b/U15 — degerlendirme.py'nin (rigorous CV+CI+kalibrasyon harness'i) persist ettiği
+// rapor. metrikler.json (egit()'in hızlı tek-split sağlık kontrolü) DEĞİL — bu "resmi"
+// (raporlanabilir) kaynak.
+export interface ModelMetrik {
+  ad: string;
+  roc_auc: { ortalama: number; std: number; ci95: [number, number] };
+  pr_auc: { ortalama: number; std: number; ci95: [number, number] };
+  brier_oof: number;
+  ece_oof: number;
+  reliability: { tahmin: number; gozlenen: number; n: number }[];
+  persona_metrik: Record<string, { auc: number; brier: number; n: number }>;
+}
+
+export interface MetriklerRaporu {
+  zaman: string;
+  veri_kaynagi: "dekuple" | "dongusel";
+  n_musteri: number;
+  taban_temerrut_orani: number;
+  yontem: string;
+  modeller: ModelMetrik[];
+}
+
+// §3b/U16 — karar mekanizması politikası: tekil AKS bantları + toplu portföy eşikleri.
+export interface PolitikaBant {
+  esik: number;
+  seviye: string;
+  karar: string;
+  carpan: number;
+}
+
+export interface Politika {
+  surum: string;
+  bantlar: PolitikaBant[];
+  portfoy_esikleri: { klasik_esik: number; aks_esik: number };
+}
+
 // Bilinen 4 persona (aks_core/ozellik + model/etiketleme'de sabit) — tasarımdaki
 // uydurma segment adları ("Digital Nomads" vb.) yerine gerçek etiketler.
 export const PERSONA_ETIKET: Record<string, string> = {
@@ -131,4 +171,6 @@ export const api = {
   adalet: () => get<Adalet>("/adalet"),
   gecmis: (id: number) => get<GecmisYanit>(`/gecmis/${id}`),
   asistan: (soru: string, baglam: unknown = {}) => post<AsistanYanit>("/asistan", { soru, baglam }),
+  metrikler: () => get<MetriklerRaporu>("/metrikler"),
+  politika: () => get<Politika>("/politika"),
 };

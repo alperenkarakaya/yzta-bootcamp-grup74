@@ -12,9 +12,17 @@ aynı kalır. Döngüsellik düzeltilse de (OQ-36/37) bu modül yeniden kullanı
   + Alt-grup (persona) bazında AUC & Brier — thin-file tezinin asıl test edildiği yer
   + Mandat gereği: XGBoost vs LojistikRegresyon (basit model eşitse basiti seç)
 
-Çalıştırma:  python -m aks_core.model.degerlendirme
+§3b/U6: bu betiğin çıktısı önceden yalnızca stdout'a yazdırılıyordu; `egitim.py`nin
+tek-split point-estimate'i (`metrikler.json`) "resmi" rapor gibi kalıyordu. Artık
+`json_yaz()` bu tam CV+CI+kalibrasyon+alt-grup raporunu `degerlendirme_raporu.json`
+olarak diske de yazıyor — D5'in çözümü ("headline numbers... do not cite as
+validated" uyarısının somut karşılığı): raporlanan sayı artık bu dosyadan gelmeli.
+
+Çalıştırma:  python -m aks_core.model.degerlendirme [--veri-kaynagi dekuple|dongusel]
 """
-from dataclasses import dataclass, field
+import json
+import time
+from dataclasses import dataclass, field, asdict
 
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedKFold
@@ -26,6 +34,8 @@ import xgboost as xgb
 from aks_core import paths
 from aks_core.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
 from aks_core.model.etiketleme import etiketle
+
+RAPOR_DOSYA_ADI = "degerlendirme_raporu.json"
 
 
 # ----------------------------- yardımcılar -----------------------------
@@ -144,14 +154,52 @@ def _yazdir(rapor: ModelRaporu):
             print(f"      {pj:<26} AUC {auc:.4f}  Brier {brier:.4f}  [n={n}]")
 
 
-def calistir(islem_csv=None, hedef_oran=0.18, seed=42):
-    islem_csv = islem_csv or paths.data("sentetik_islemler.csv")
-    musteriler = etiketle(tum_musteriler(islem_csv), hedef_temerrut_orani=hedef_oran)
+def _rapor_json(rapor: ModelRaporu):
+    a_m, a_s, (a_lo, a_hi) = rapor.auc
+    p_m, p_s, (p_lo, p_hi) = rapor.ap
+    return {
+        "ad": rapor.ad,
+        "roc_auc": {"ortalama": round(a_m, 4), "std": round(a_s, 4), "ci95": [round(a_lo, 4), round(a_hi, 4)]},
+        "pr_auc": {"ortalama": round(p_m, 4), "std": round(p_s, 4), "ci95": [round(p_lo, 4), round(p_hi, 4)]},
+        "brier_oof": round(rapor.brier_oof, 4),
+        "ece_oof": round(rapor.ece_oof, 4),
+        "reliability": [{"tahmin": round(p, 4), "gozlenen": round(o, 4), "n": n} for p, o, n in rapor.reliability],
+        "persona_metrik": {
+            pj: {"auc": round(auc, 4), "brier": round(brier, 4), "n": n}
+            for pj, (auc, brier, n) in rapor.persona_metrik.items()
+        },
+    }
+
+
+def json_yaz(raporlar, veri_kaynagi, n_musteri, taban_oran, dosya_yolu=None):
+    """§3b/U6: tam CV+CI+kalibrasyon+alt-grup raporunu diske yazar — bu, artık
+    "resmi" (raporlanabilir) metrik kaynağıdır; `egitim.py`'nin `metrikler.json`'ı
+    yalnızca hızlı bir tek-split sağlık kontrolüdür, headline sayı değildir."""
+    yol = dosya_yolu or (paths.ARTIFACTS_DIR / RAPOR_DOSYA_ADI)
+    icerik = {
+        "zaman": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "veri_kaynagi": veri_kaynagi,
+        "n_musteri": n_musteri,
+        "taban_temerrut_orani": round(taban_oran, 4),
+        "yontem": "RepeatedStratifiedKFold(5x5) AUC/PR-AUC + bootstrap %95 CI; 5-fold OOF Brier/ECE/reliability/persona",
+        "modeller": [_rapor_json(r) for r in raporlar],
+    }
+    with open(yol, "w", encoding="utf-8") as f:
+        json.dump(icerik, f, ensure_ascii=False, indent=2)
+    return str(yol)
+
+
+def calistir(islem_csv=None, hedef_oran=0.18, seed=42, veri_kaynagi="dekuple", yaz=True):
+    from aks_core.model.egitim import veri_hazirla, VERI_KAYNAKLARI
+    kaynak = VERI_KAYNAKLARI[veri_kaynagi]
+    islem_csv = islem_csv or paths.data(kaynak["islem"])
+    etiket_csv = paths.data(kaynak["etiket"]) if kaynak["etiket"] else None
+    musteriler = veri_hazirla(islem_csv, hedef_oran=hedef_oran, veri_kaynagi=veri_kaynagi, etiket_csv=etiket_csv)
     y = np.array([m["temerrut"] for m in musteriler])
     persona = np.array([m["persona"] for m in musteriler])
     X = np.array([[m[o] for o in OZELLIK_ADLARI] for m in musteriler], dtype=float)
 
-    print(f"Veri: {len(y)} musteri, taban temerrut orani {y.mean():.3f}, {X.shape[1]} ozellik")
+    print(f"Veri kaynagi: {veri_kaynagi} — {len(y)} musteri, taban temerrut orani {y.mean():.3f}, {X.shape[1]} ozellik")
     print(f"Referans Brier (sabit p=taban): {y.mean()*(1-y.mean()):.4f}")
 
     adaylar = {
@@ -168,8 +216,16 @@ def calistir(islem_csv=None, hedef_oran=0.18, seed=42):
     lr_auc = raporlar[1].auc[0]
     print(f"\nKarar notu (mandat #1/#8): XGBoost AUC {xgb_auc:.4f} vs LR AUC {lr_auc:.4f} — "
           f"fark {abs(xgb_auc-lr_auc):.4f}. CI'lar orortusuyorsa, basit model (LR) tercih edilmeli.")
+
+    if yaz:
+        yol = json_yaz(raporlar, veri_kaynagi, len(y), float(y.mean()))
+        print(f"\nRapor yazildi -> {yol}")
     return raporlar
 
 
 if __name__ == "__main__":
-    calistir()
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--veri-kaynagi", default="dekuple", choices=["dekuple", "dongusel"])
+    a = p.parse_args()
+    calistir(veri_kaynagi=a.veri_kaynagi)

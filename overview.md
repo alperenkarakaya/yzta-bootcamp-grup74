@@ -128,8 +128,8 @@ The five product sections map 1:1 to five workstreams: 01-data, 02-ai-agents (hi
 
 ## 12. Current limitations
 
-1. **The headline benchmark is circular** (see §14). Published numbers (AUC 0.829, "973/1084 rescued", fairness gap 1.00→0.39) prove the *pipeline works end-to-end*, **not** the business thesis. Do not cite them as validated. This is the top blocker.
-2. **XGBoost is unjustified.** Logistic regression equals/beats it on AUC, PR-AUC, and calibration; the model swap is gated on the benchmark fix.
+1. **The headline benchmark is circular** (see §14). Published numbers (AUC 0.829, "973/1084 rescued", fairness gap 1.00→0.39) prove the *pipeline works end-to-end*, **not** the business thesis. Do not cite them as validated. **The fix itself is now built and validated** (execution.md §3b Phase 1: training reads the decoupled dataset, `circularity_ablation.py` reproduces the old numbers *and* the new ones side by side) — what remains is OQ-37 (whether/when to rewrite the *published* figures in README.md for jury-facing material). Do not update those until OQ-37 is answered.
+2. **XGBoost is unjustified.** ~~Logistic regression equals/beats it on AUC, PR-AUC, and calibration; the model swap is gated on the benchmark fix.~~ **Resolved:** on the non-circular benchmark, LR's 95% CI [0.853, 0.871] doesn't overlap XGBoost's [0.831, 0.850] (5×5 CV) — the swap has been executed; production model is now LogisticRegression (architecture.md §5.2).
 3. **Target segment performance is weak.** Within the primary target (`ogrenci_yuksek_hacim`) AUC is only 0.61–0.68 — weakest exactly where the product claims value.
 4. **No real data yet.** Everything runs on synthetic data (OQ-36).
 5. **Test suite not ported.** The 22 Sprint-2 tests still import FastAPI/`src.*`; not migrated to Django/`aks_core`.

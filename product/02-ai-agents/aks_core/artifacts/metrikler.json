@@ -1,14 +1,21 @@
 {
   "XGBoost": {
-    "auc": 0.8299,
-    "ap": 0.6862
+    "auc": 0.8359,
+    "ap": 0.5714,
+    "cv_auc_arama": 0.8533
   },
   "LightGBM": {
-    "auc": 0.8233,
-    "ap": 0.6837
+    "auc": 0.8336,
+    "ap": 0.5747,
+    "cv_auc_arama": 0.8538
+  },
+  "LogisticRegression": {
+    "auc": 0.8499,
+    "ap": 0.5932,
+    "cv_auc_arama": 0.8666
   },
   "Klasik skor": {
-    "auc": 0.7288,
-    "ap": 0.5687
+    "auc": 0.4931,
+    "ap": 0.1781
   }
 }

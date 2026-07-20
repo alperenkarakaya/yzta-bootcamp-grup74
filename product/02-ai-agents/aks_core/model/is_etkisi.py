@@ -4,27 +4,28 @@
 Klasik skorun reddettiği ama GERÇEKTE temerrüde düşmeyen (kredibl) kişileri,
 davranışsal modelin ne kadarını doğru şekilde 'onaylanabilir' olarak
 yeniden kazandığını ölçer. Projenin bankaya değer önerisi buradan çıkar.
+
+§3b/U6/D5: varsayılan veri kaynağı artık "dekuple" (özelliklerden bağımsız
+etiket, architecture.md §5.1 düzeltmesi) — bu betiğin ürettiği "kurtarılan
+kredibl kişi" sayısı önceden döngüsel veriyle hesaplanıyordu (D5: "973/1084
+rescued... do not cite as validated"). Eski döngüsel veriyle karşılaştırma
+için `veri_kaynagi="dongusel"` hâlâ seçilebilir.
 """
 import numpy as np
-import joblib
-from aks_core.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
-from aks_core.model.etiketleme import etiketle
-from aks_core.model.egitim import klasik_risk_skoru
+from aks_core.model.egitim import klasik_risk_skoru, veri_hazirla, VERI_KAYNAKLARI
+from aks_core.agents.skorlama_agent import olasilik_to_aks  # tek kaynak (U11 dedupe)
 
 
-def olasilik_to_aks(p):
-    """Model temerrüt olasılığını 300-850 AKS skoruna çevirir (yüksek=iyi)."""
-    return int(max(300, min(850, round(850 - 550 * p))))
-
-
-def analiz(islem_csv=None, klasik_esik=560, aks_esik=560):
+def analiz(islem_csv=None, klasik_esik=560, aks_esik=560, veri_kaynagi="dekuple"):
     from aks_core import paths
-    islem_csv = islem_csv or paths.data("sentetik_islemler.csv")
+    kaynak = VERI_KAYNAKLARI[veri_kaynagi]
+    islem_csv = islem_csv or paths.data(kaynak["islem"])
+    etiket_csv = paths.data(kaynak["etiket"]) if kaynak["etiket"] else None
     from aks_core.model import kayit
     _model, _model_adi, _ozellikler = kayit.yukle()
     paket = {"model": _model, "model_adi": _model_adi, "ozellikler": _ozellikler}
     model, ozellikler = paket["model"], paket["ozellikler"]
-    musteriler = etiketle(tum_musteriler(islem_csv), hedef_temerrut_orani=0.18)
+    musteriler = veri_hazirla(islem_csv, veri_kaynagi=veri_kaynagi, etiket_csv=etiket_csv)
     X = np.array([[m[o] for o in ozellikler] for m in musteriler], dtype=float)
     p = model.predict_proba(X)[:, 1]
 
@@ -71,4 +72,8 @@ def analiz(islem_csv=None, klasik_esik=560, aks_esik=560):
 
 
 if __name__ == "__main__":
-    analiz()
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--veri-kaynagi", default="dekuple", choices=list(VERI_KAYNAKLARI))
+    a = p.parse_args()
+    analiz(veri_kaynagi=a.veri_kaynagi)

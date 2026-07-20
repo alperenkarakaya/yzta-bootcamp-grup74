@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Icon } from "./Icon";
+import { politikaEsikleriniYukle } from "../lib/skor";
 
 const NAV_LINKS = [
   { to: "/", label: "Intelligence", end: true },
@@ -16,6 +18,10 @@ const BOTTOM_LINKS = [
 ];
 
 export default function Layout() {
+  useEffect(() => {
+    politikaEsikleriniYukle();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-on-background font-body-sm text-body-sm antialiased selection:bg-primary-container selection:text-on-primary-container">
       {/* TopNavBar (desktop) */}

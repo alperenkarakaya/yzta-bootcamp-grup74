@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     path("bilgi", views.bilgi),
+    path("metrikler", views.metrikler),
+    path("politika", views.politika),
     path("demo-musteriler", views.demo_musteriler),
     path("skorla", views.skorla),
     path("skorla/<int:musteri_id>", views.skorla_demo),

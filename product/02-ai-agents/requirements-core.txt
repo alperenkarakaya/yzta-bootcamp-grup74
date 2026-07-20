@@ -1,13 +1,10 @@
-# Sprint 2 bağımlılıkları
+# aks-core bağımlılıkları — pyproject.toml ile birebir aynı olmalı (U12: eski
+# şap>=0.44/FastAPI pinleri kaldırıldı; Django backend'e geçildi, ayrı API
+# stack'i gerekmiyor — bkz. 04-backend/requirements.txt).
 scikit-learn>=1.4
 xgboost>=2.0
 lightgbm>=4.0
-shap>=0.44
+shap>=0.52   # 0.49 ve altı xgboost>=3 base_score formatını okuyamıyor
 joblib>=1.3
 numpy>=1.26
-# API
-fastapi>=0.110
-uvicorn[standard]>=0.29
-pydantic>=2.6
 pytest>=8.0
-python-multipart>=0.0.9

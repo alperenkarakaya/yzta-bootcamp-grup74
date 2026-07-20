@@ -1,0 +1,33 @@
+{
+  "zaman": "2026-07-20T22:18:44",
+  "veri_kaynagi": "dekuple",
+  "n_musteri": 2000,
+  "n_egitim": 1500,
+  "n_test": 500,
+  "taban_temerrut_orani": 0.1715,
+  "secilen_model": "LogisticRegression",
+  "secilen_test_auc": 0.8499,
+  "en_iyi_parametreler": {
+    "XGBoost": {
+      "subsample": 0.8,
+      "n_estimators": 250,
+      "max_depth": 3,
+      "learning_rate": 0.05,
+      "colsample_bytree": 0.8
+    },
+    "LightGBM": {
+      "subsample": 1.0,
+      "n_estimators": 250,
+      "max_depth": 3,
+      "learning_rate": 0.05,
+      "colsample_bytree": 0.8
+    },
+    "LogisticRegression": {
+      "C": 1.0
+    }
+  },
+  "arama_suresi_sn": 15.4,
+  "kalibrasyon_uygulandi": true,
+  "ece_kalibrasyon_oncesi": 0.0391,
+  "ece_kalibrasyon_sonrasi": 0.0394
+}

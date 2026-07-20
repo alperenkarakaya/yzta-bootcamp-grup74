@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, PERSONA_ETIKET, type Adalet, type SkorSonuc } from "../api";
+import { api, PERSONA_ETIKET, type Adalet, type SkorSonuc, type MetriklerRaporu } from "../api";
 import { Icon } from "../components/Icon";
 
 const AGENT_AUDIT = [
@@ -19,8 +19,12 @@ export default function AuditPage() {
   const [incelemeYukleniyor, setIncelemeYukleniyor] = useState(false);
   const [incelemeHata, setIncelemeHata] = useState("");
 
+  const [metrikler, setMetrikler] = useState<MetriklerRaporu | null>(null);
+  const [metriklerHata, setMetriklerHata] = useState("");
+
   useEffect(() => {
     api.adalet().then(setAdalet).catch((e) => setHata(String(e)));
+    api.metrikler().then(setMetrikler).catch((e) => setMetriklerHata(String(e)));
   }, []);
 
   async function incele() {
@@ -251,6 +255,66 @@ export default function AuditPage() {
               Bkz. architecture.md §9 — audit/models.py: Customer, Assessment, AuditLog.
             </p>
           </div>
+        </section>
+
+        {/* Model Validity — §3b/U20, /api/metrikler (degerlendirme.py's CV+CI harness) */}
+        <section className="md:col-span-12 glass-panel rounded-xl p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <Icon name="query_stats" className="text-primary" />
+              <h2 className="font-headline-md text-headline-md">Model Validity</h2>
+            </div>
+            {metrikler && (
+              <span className="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">
+                {metrikler.n_musteri} müşteri · veri: {metrikler.veri_kaynagi}
+              </span>
+            )}
+          </div>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 max-w-3xl">
+            Repeated stratified k-fold ROC-AUC/PR-AUC (bootstrap %95 CI), Brier skoru ve ECE (kalibrasyon hatası).
+            <span className="text-primary font-semibold"> Bu, gerçek veriyle doğrulanmış bir sonuç değildir</span> —
+            sentetik/dekuple bir benchmark üzerinde (execution.md §3b). "No-go is a valid outcome": bu sayılar
+            bir iş tezini kanıtlamaz, yalnızca bu benchmark üzerindeki istatistiksel davranışı gösterir.
+          </p>
+          {metriklerHata && (
+            <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono mb-4">
+              Henüz üretilmedi — <code>python -m aks_core.model.degerlendirme</code> çalıştırın.
+            </div>
+          )}
+          {metrikler && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+              {metrikler.modeller.map((m) => (
+                <div key={m.ad} className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-4">
+                  <div className="font-label-mono text-label-mono text-on-surface font-bold mb-3">{m.ad}</div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <div className="text-[10px] text-on-surface-variant uppercase font-label-mono">ROC-AUC</div>
+                      <div className="font-headline-md text-headline-md text-primary">{m.roc_auc.ortalama.toFixed(3)}</div>
+                      <div className="text-[10px] text-on-surface-variant font-label-mono">
+                        %95 CI [{m.roc_auc.ci95[0].toFixed(3)}, {m.roc_auc.ci95[1].toFixed(3)}]
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-on-surface-variant uppercase font-label-mono">ECE (kalibrasyon)</div>
+                      <div className="font-headline-md text-headline-md text-secondary">{m.ece_oof.toFixed(3)}</div>
+                      <div className="text-[10px] text-on-surface-variant font-label-mono">Brier {m.brier_oof.toFixed(3)}</div>
+                    </div>
+                  </div>
+                  {Object.keys(m.persona_metrik).length > 0 && (
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-on-surface-variant uppercase font-label-mono mb-1">Persona bazında AUC</div>
+                      {Object.entries(m.persona_metrik).map(([persona, pm]) => (
+                        <div key={persona} className="flex justify-between font-label-mono text-label-mono text-[11px]">
+                          <span className="text-on-surface-variant">{PERSONA_ETIKET[persona] ?? persona}</span>
+                          <span className="text-on-surface">{pm.auc.toFixed(3)} (n={pm.n})</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Agent Honesty Audit */}

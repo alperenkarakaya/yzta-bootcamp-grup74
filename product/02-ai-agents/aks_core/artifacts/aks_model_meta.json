@@ -1,7 +1,7 @@
 {
-  "model_adi": "XGBoost",
-  "bicim": "xgboost_json",
-  "dosya": "aks_model.json",
+  "model_adi": "LogisticRegression",
+  "bicim": "logistic_joblib",
+  "dosya": "aks_model_lr.joblib",
   "ozellikler": [
     "toplam_gelir_hacmi",
     "toplam_gider_hacmi",

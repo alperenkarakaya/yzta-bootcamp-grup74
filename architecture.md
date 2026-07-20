@@ -126,16 +126,29 @@ Traced in code, not inferred:
 
 Two findings: (a) XGBoost vs 9-feature LR differ by **0.0004 AUC** — its complexity buys nothing; (b) the 5 "non-causal" features *alone* reach 0.82, so the confounding is **structural** (persona-conditioning shapes the whole feature vector jointly), not limited to 4 columns. **The fix cannot be "hide the 4 columns."** It must decouple persona-conditioned feature generation from label generation at the generator level (draw a customer-level latent capacity independently within each persona's plausible range), or move to real data.
 
+**Status: this fix is now built and the production training path uses it** (execution.md §3b Phase 1, U1). `egitim.py::egit()` defaults to `veri_kaynagi="dekuple"`, reading `01-data/generator/veri/uretici_kapasite.py`'s already-built decoupled dataset (`kapasite_islemler.csv` + `kapasite_etiketleri.csv`, read-only). `circularity_ablation.py --veri-kaynagi hepsi` reproduces both the table above (old, circular) *and* the new one back to back as proof, not assertion — on the decoupled data the classic-score baseline's AUC collapses to **0.493** (chance), directly confirming the thin-file blind spot claim non-circularly. This is a synthetic honest-fallback, not real data (OQ-36 remains open).
+
 ### 5.2 Model choice — logistic regression preferred over XGBoost
 
-Evaluation harness (`degerlendirme.py`, 2000 customers, base default rate 0.195):
+**Status: swap executed (execution.md §3b Phase 1, U8).** The numbers below are the *old, circular-benchmark* comparison — kept for the historical record of why LR was already the standing recommendation before the fix landed:
+
+Evaluation harness (`degerlendirme.py`, 2000 customers, base default rate 0.195, **circular label**):
 
 | Model | ROC-AUC (95% CI) | PR-AUC | Brier | ECE |
 |---|---|---|---|---|
-| XGBoost (current production) | 0.842 [0.832, 0.853] | 0.698 | 0.098 | 0.032 |
+| XGBoost (former production) | 0.842 [0.832, 0.853] | 0.698 | 0.098 | 0.032 |
 | Logistic regression (9 feats) | **0.852 [0.841, 0.864]** | 0.709 | 0.098 | **0.018** |
 
-LR equals/beats XGBoost on AUC, PR-AUC, and calibration while being simpler (#8), more interpretable (#5), better calibrated (#3). Per the mandate ("classical wins by default"), **LR is the standing recommendation.** The *swap* is deliberately gated on the benchmark fix — optimizing a model against a metric already shown circular would repeat the error. XGBoost reaches only 94.7% of oracle AUC (0.8525/0.9006): consistent with "recovering a roughly-linear generating rule", not "discovering nonlinear structure".
+**On the non-circular (decoupled) benchmark** — `python -m aks_core.model.degerlendirme --veri-kaynagi dekuple`, same harness, 2000 customers, base default rate 0.172:
+
+| Model | ROC-AUC (95% CI) | PR-AUC | Brier | ECE |
+|---|---|---|---|---|
+| XGBoost | 0.840 [0.831, 0.850] | 0.557 | 0.105 | 0.034 |
+| Logistic regression (9 feats) | **0.862 [0.853, 0.871]** | **0.610** | **0.098** | **0.014** |
+
+The CIs **do not overlap** — LR is now the genuinely better model on a valid benchmark, not just a tie-breaker by simplicity. LR equals/beats XGBoost on AUC, PR-AUC, and calibration while being simpler (#8), more interpretable (#5), better calibrated (#3). **Production model is now `LogisticRegression`** (`aks_core/artifacts/aks_model_meta.json`, format `logistic_joblib` — a fitted `StandardScaler` is persisted alongside it, since LR trains on standardized features; see `kayit.py::OlcekliLojistikSarmalayici`). XGBoost reached only 94.7% of the *old* oracle AUC (0.8525/0.9006): consistent with "recovering a roughly-linear generating rule", not "discovering nonlinear structure" — the new benchmark's oracle ratio (XGBoost 0.845/0.909 = 93.0%) tells the same story.
+
+**Calibration correction (U9):** a test-set ECE of 0.0391 (pre-hyperparameter-search LR, held-out split) triggered the pre-registered isotonic-correction threshold (0.03); an OOF-fit isotonic layer was applied and persisted (`kayit.py::KalibreliModel`, `artifacts/kalibrasyon.json`). Honest result: ECE moved from 0.0391 to 0.0394 on that particular holdout — essentially flat, not a meaningful improvement. Likely cause: small test set (n=500) makes binned ECE noisy at this scale, and the base model was already close to well-calibrated. Reported as-is per the anti-goal-seeking mandate (the threshold was fixed before the run; the result isn't hidden or re-tuned after the fact).
 
 ### 5.3 Target definition — Formulation B (the product's spine)
 
@@ -149,6 +162,8 @@ The mission's exact words — *discover hidden capacity the pipeline **fails to 
 | Mission fit | Partial (it *is* default prediction) | **Strong** | Purest in theory, premature |
 
 **Decision: B now, engineered to graduate into C.** B uses the same calibrated-probability machinery (calibration is already priority #3), reframes the output as a supplementary capacity signal + PD-gap, preserves the "never replace the bank" boundary, and makes **calibration the headline metric**. C is a *graduation, not a rewrite*: B's output (calibrated capacity PD + gap) is exactly the input a champion/challenger pilot needs. Do not attempt C before that experimental data exists.
+
+**Status: instrumented in `aks_core.model.formulasyon_b`** (execution.md §3b Phase 1, U10). `pd_geleneksel_bant` is fit as an isotonic (monotonic-decreasing) mapping from classic score → *empirical* observed default rate on the training split (not a formula); `pd_fark = pd_geleneksel_bant − pd_davranissal`; `kapasite_sinyali` is a simple 0–100, 50-neutral linear rescaling of `pd_fark` (documented as a v1 approximation, not a calibrated probability itself). `SkorlamaAgent.calistir()` accepts an optional `klasik_skor` argument and returns these fields when provided; wiring `klasik_skor` through from the backend (which already computes it) is Phase 2 (§3b, U17) — not yet done, so the API doesn't surface these fields yet.
 
 ## 6. Evaluation pipeline
 

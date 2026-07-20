@@ -1,0 +1,199 @@
+{
+  "zaman": "2026-07-20T22:07:46",
+  "veri_kaynagi": "dekuple",
+  "n_musteri": 2000,
+  "taban_temerrut_orani": 0.1715,
+  "yontem": "RepeatedStratifiedKFold(5x5) AUC/PR-AUC + bootstrap %95 CI; 5-fold OOF Brier/ECE/reliability/persona",
+  "modeller": [
+    {
+      "ad": "XGBoost (uretimdeki model)",
+      "roc_auc": {
+        "ortalama": 0.8399,
+        "std": 0.0239,
+        "ci95": [
+          0.8306,
+          0.8497
+        ]
+      },
+      "pr_auc": {
+        "ortalama": 0.5571,
+        "std": 0.0366,
+        "ci95": [
+          0.5436,
+          0.572
+        ]
+      },
+      "brier_oof": 0.1054,
+      "ece_oof": 0.0337,
+      "reliability": [
+        {
+          "tahmin": 0.0256,
+          "gozlenen": 0.0523,
+          "n": 1204
+        },
+        {
+          "tahmin": 0.1406,
+          "gozlenen": 0.148,
+          "n": 277
+        },
+        {
+          "tahmin": 0.2469,
+          "gozlenen": 0.2714,
+          "n": 140
+        },
+        {
+          "tahmin": 0.3534,
+          "gozlenen": 0.3896,
+          "n": 77
+        },
+        {
+          "tahmin": 0.4483,
+          "gozlenen": 0.3735,
+          "n": 83
+        },
+        {
+          "tahmin": 0.5414,
+          "gozlenen": 0.4894,
+          "n": 47
+        },
+        {
+          "tahmin": 0.6472,
+          "gozlenen": 0.6512,
+          "n": 43
+        },
+        {
+          "tahmin": 0.745,
+          "gozlenen": 0.6522,
+          "n": 46
+        },
+        {
+          "tahmin": 0.8468,
+          "gozlenen": 0.717,
+          "n": 53
+        },
+        {
+          "tahmin": 0.9301,
+          "gozlenen": 0.7,
+          "n": 30
+        }
+      ],
+      "persona_metrik": {
+        "dusuk_hacim_riskli": {
+          "auc": 0.8262,
+          "brier": 0.1037,
+          "n": 286
+        },
+        "klasik_maasli": {
+          "auc": 0.8603,
+          "brier": 0.0999,
+          "n": 590
+        },
+        "ogrenci_yuksek_hacim": {
+          "auc": 0.8353,
+          "brier": 0.1077,
+          "n": 590
+        },
+        "stajyer_degisken_gelir": {
+          "auc": 0.8426,
+          "brier": 0.1097,
+          "n": 534
+        }
+      }
+    },
+    {
+      "ad": "LojistikRegresyon (mandat: basit baseline)",
+      "roc_auc": {
+        "ortalama": 0.8621,
+        "std": 0.0223,
+        "ci95": [
+          0.8534,
+          0.8707
+        ]
+      },
+      "pr_auc": {
+        "ortalama": 0.6096,
+        "std": 0.0436,
+        "ci95": [
+          0.5928,
+          0.6271
+        ]
+      },
+      "brier_oof": 0.0979,
+      "ece_oof": 0.0141,
+      "reliability": [
+        {
+          "tahmin": 0.035,
+          "gozlenen": 0.0357,
+          "n": 1092
+        },
+        {
+          "tahmin": 0.1424,
+          "gozlenen": 0.1552,
+          "n": 335
+        },
+        {
+          "tahmin": 0.2473,
+          "gozlenen": 0.2108,
+          "n": 185
+        },
+        {
+          "tahmin": 0.3424,
+          "gozlenen": 0.3182,
+          "n": 110
+        },
+        {
+          "tahmin": 0.4521,
+          "gozlenen": 0.52,
+          "n": 75
+        },
+        {
+          "tahmin": 0.546,
+          "gozlenen": 0.6102,
+          "n": 59
+        },
+        {
+          "tahmin": 0.6551,
+          "gozlenen": 0.5818,
+          "n": 55
+        },
+        {
+          "tahmin": 0.7494,
+          "gozlenen": 0.75,
+          "n": 48
+        },
+        {
+          "tahmin": 0.84,
+          "gozlenen": 0.8485,
+          "n": 33
+        },
+        {
+          "tahmin": 0.9419,
+          "gozlenen": 0.875,
+          "n": 8
+        }
+      ],
+      "persona_metrik": {
+        "dusuk_hacim_riskli": {
+          "auc": 0.8857,
+          "brier": 0.0892,
+          "n": 286
+        },
+        "klasik_maasli": {
+          "auc": 0.8652,
+          "brier": 0.1017,
+          "n": 590
+        },
+        "ogrenci_yuksek_hacim": {
+          "auc": 0.8637,
+          "brier": 0.0973,
+          "n": 590
+        },
+        "stajyer_degisken_gelir": {
+          "auc": 0.8628,
+          "brier": 0.0989,
+          "n": 534
+        }
+      }
+    }
+  ]
+}

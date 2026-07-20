@@ -30,6 +30,20 @@ def bilgi(request):
 
 
 @api_view(["GET"])
+def metrikler(request):
+    """§3b/U15: degerlendirme.py'nin (U6) persist ettiği CV+CI+kalibrasyon+alt-grup raporu."""
+    if not services.metrikler_var():
+        return Response({"hata": "Henüz üretilmedi — python -m aks_core.model.degerlendirme çalıştırın"}, status=503)
+    return Response(services.metrikler())
+
+
+@api_view(["GET"])
+def politika(request):
+    """§3b/U16: karar mekanizması politikası (skor bantları + limit çarpanları)."""
+    return Response(services.politika())
+
+
+@api_view(["GET"])
 def demo_musteriler(request):
     return Response(services.demo_personalar(_int(request.query_params, "adet_per_persona", 3)))
 
@@ -47,6 +61,9 @@ def skorla_demo(request, musteri_id: int):
         "onerilen_limit": sonuc.get("onerilen_limit"), "risk_seviyesi": sonuc["risk_seviyesi"],
         "karar": sonuc["karar"], "ozellikler": sonuc["ozellikler"],
         "aciklama": sonuc["aciklama"], "danisman": sonuc["danisman"],
+        "pd_geleneksel_bant": sonuc.get("pd_geleneksel_bant"),
+        "pd_fark": sonuc.get("pd_fark"),
+        "kapasite_sinyali": sonuc.get("kapasite_sinyali"),
     })
 
 
@@ -106,8 +123,10 @@ def portfoy(request):
     if not services.demo_var():
         return Response({"hata": "Demo verisi yüklü değil"}, status=503)
     q = request.query_params
+    varsayilan = services.PORTFOY_ESIK_VARSAYILAN
     return Response(services.portfoy(
-        klasik_esik=_int(q, "klasik_esik", 680), aks_esik=_int(q, "aks_esik", 650),
+        klasik_esik=_int(q, "klasik_esik", varsayilan["klasik_esik"]),
+        aks_esik=_int(q, "aks_esik", varsayilan["aks_esik"]),
         ort_kredi=_float(q, "ort_kredi", 25000), getiri_orani=_float(q, "getiri_orani", 0.12),
         zarar_orani=_float(q, "zarar_orani", 0.55)))
 
@@ -117,8 +136,9 @@ def adalet(request):
     if not services.demo_var():
         return Response({"hata": "Demo verisi yüklü değil"}, status=503)
     q = request.query_params
-    return Response(services.adalet(klasik_esik=_int(q, "klasik_esik", 680),
-                                    aks_esik=_int(q, "aks_esik", 650)))
+    varsayilan = services.PORTFOY_ESIK_VARSAYILAN
+    return Response(services.adalet(klasik_esik=_int(q, "klasik_esik", varsayilan["klasik_esik"]),
+                                    aks_esik=_int(q, "aks_esik", varsayilan["aks_esik"])))
 
 
 @api_view(["POST"])

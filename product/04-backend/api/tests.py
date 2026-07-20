@@ -138,7 +138,7 @@ class ApiUclariTesti(TestCase):
         r = self.client.get("/api/bilgi")
         self.assertEqual(r.status_code, 200)
         veri = r.json()
-        self.assertIn(veri["model"], ("XGBoost", "LightGBM"))
+        self.assertIn(veri["model"], ("XGBoost", "LightGBM", "LogisticRegression"))
         self.assertEqual(len(veri["ozellikler"]), 9)
 
     def test_demo_musteri_ucu_persona_listeliyor(self):
@@ -163,3 +163,76 @@ class ApiUclariTesti(TestCase):
         r = self.client.get("/api/gecmis/1")
         self.assertEqual(r.status_code, 200)
         self.assertIn("gecmis", r.json())
+
+    def test_metrikler_ucu_cv_raporu_donuyor(self):
+        """§3b/U15/U19: degerlendirme.py'nin (U6) persist ettiği rapor erişilebilir olmalı."""
+        from api import services
+        if not services.metrikler_var():
+            self.skipTest("degerlendirme_raporu.json henüz üretilmedi")
+        r = self.client.get("/api/metrikler")
+        self.assertEqual(r.status_code, 200)
+        veri = r.json()
+        self.assertIn("veri_kaynagi", veri)
+        self.assertIn("modeller", veri)
+        self.assertTrue(len(veri["modeller"]) >= 1)
+        self.assertIn("roc_auc", veri["modeller"][0])
+        self.assertIn("ci95", veri["modeller"][0]["roc_auc"])
+
+    def test_politika_ucu_bantlari_donuyor(self):
+        """§3b/U16/U19: karar mekanizması bantları tek kaynaktan (aks_core.politika) geliyor."""
+        r = self.client.get("/api/politika")
+        self.assertEqual(r.status_code, 200)
+        veri = r.json()
+        self.assertIn("bantlar", veri)
+        esikler = [b["esik"] for b in veri["bantlar"]]
+        self.assertEqual(esikler, sorted(esikler, reverse=True), "Bantlar eşiğe göre azalan sırada olmalı")
+
+    def test_skorla_demo_formulasyon_b_alanlarini_iceriyor(self):
+        """§3b/U17/U19: persona biliniyorsa pd_geleneksel_bant/pd_fark/kapasite_sinyali dönmeli."""
+        from api import services
+        if not services.demo_var():
+            self.skipTest("Demo veri yok")
+        personalar = services.demo_personalar(adet_per_persona=1)
+        mid = next(iter(personalar.values()))[0]
+
+        r = self.client.get(f"/api/skorla/{mid}")
+        self.assertEqual(r.status_code, 200)
+        veri = r.json()
+        for alan in ("pd_geleneksel_bant", "pd_fark", "kapasite_sinyali"):
+            self.assertIn(alan, veri)
+        # Bant tablosu eğitilmiş bir modelden geliyorsa (normal durum) sayısal olmalı.
+        if veri["pd_fark"] is not None:
+            self.assertIsInstance(veri["pd_fark"], (int, float))
+            self.assertEqual(veri["klasik_skor"] is not None, True)
+
+
+class FormulasyonBSinirTesti(TestCase):
+    """§3b/U18/U19: yeni Formülasyon B alanları klasik_skor'u ASLA etkilememeli/ezmemeli
+    — bu, KlasikSkorSinirTesti'nin U17/U18 sonrası hâlâ geçerli olduğunu doğrular."""
+
+    def setUp(self):
+        from api import services
+        self.services = services
+        self.demo_var = services.demo_var()
+
+    def test_pd_fark_eklenmesi_klasik_skoru_degistirmiyor(self):
+        if not self.demo_var:
+            self.skipTest("Demo veri yok")
+        personalar = self.services.demo_personalar(adet_per_persona=1)
+        persona, mid_listesi = next(iter(personalar.items()))
+        mid = mid_listesi[0]
+        islemler = self.services.demo_islemler(mid)
+
+        from aks_core.model.egitim import klasik_risk_skoru
+        veri = self.services.orkestrator.veri_agent.calistir(islemler)
+        beklenen_klasik = klasik_risk_skoru({"persona": persona, **veri["ozellikler"]})
+
+        sonuc, klasik = self.services.degerlendir(mid, islemler, kaynak="demo", persona=persona)
+        self.assertEqual(klasik, beklenen_klasik)
+
+        log = AuditLog.objects.filter(musteri_id=str(mid)).latest("created_at")
+        self.assertEqual(log.klasik_skor, beklenen_klasik,
+                          "Formülasyon B alanları eklendikten sonra bile klasik skor değişmemeli")
+        # pd_fark salt-okunur türetilmiş bir alan; klasik_skor'dan bağımsız olarak var/None olabilir
+        # ama asla klasik_skor kolonunun YERİNE geçmemeli (ayrı kolon).
+        self.assertNotEqual(log.klasik_skor, log.aks_skor)

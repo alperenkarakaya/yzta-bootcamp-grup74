@@ -132,6 +132,29 @@ export default function CustomerDetailPage() {
               </div>
             </div>
           </div>
+          {sonuc.pd_fark != null && (
+            <div className="mt-6 pt-4 border-t border-outline-variant/20 flex items-center justify-center gap-stack-lg relative z-20">
+              <div className="text-center">
+                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Geleneksel Bant PD</span>
+                <span className="font-body-lg text-body-lg text-on-surface">{(sonuc.pd_geleneksel_bant! * 100).toFixed(1)}%</span>
+              </div>
+              <div className="text-center">
+                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">PD-Gap</span>
+                <span className={`font-headline-md text-headline-md ${sonuc.pd_fark >= 0 ? "text-emerald-400" : "text-error"}`}>
+                  {sonuc.pd_fark >= 0 ? "+" : ""}
+                  {(sonuc.pd_fark * 100).toFixed(1)}pp
+                </span>
+              </div>
+              <div className="text-center">
+                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Kapasite Sinyali</span>
+                <span className="font-body-lg text-body-lg text-primary">{sonuc.kapasite_sinyali}/100</span>
+              </div>
+            </div>
+          )}
+          <p className="font-label-mono text-[10px] text-on-surface-variant mt-3 relative z-20 text-center">
+            Formülasyon B (architecture.md §5.3) — pozitif PD-Gap: davranışsal kanıt, geleneksel bandın ima ettiğinden
+            daha fazla kapasite gösteriyor. Bankanın skorunu değiştirmez, yalnızca tamamlar.
+          </p>
         </div>
 
         {/* Suggested Limit */}

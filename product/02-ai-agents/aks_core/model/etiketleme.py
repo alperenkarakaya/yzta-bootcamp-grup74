@@ -14,10 +14,17 @@ adil şekilde karşılaştırılabilir.
 
 Intercept (taban), verilen hedef temerrüt oranına otomatik kalibre edilir;
 kişiye özel gürültü, gözlenemeyen faktörleri temsil eder.
+
+Not (D2/E6 düzeltmesi): rastgelelik artık modül/global `random` durumunu
+DEĞİŞTİRMEZ. Eskiden `random.seed(7)` hem import anında hem her çağrıda
+global RNG'yi sıfırlıyordu — bu, aynı süreç içindeki başka hiçbir kodun
+(ör. Django, testler) `random` modülünü güvenle kullanamayacağı, yan etkili
+bir tasarımdı ve resampling/bootstrap belirsizliğini de gizliyordu. Şimdi
+yerel bir `random.Random(seed)` örneği kullanılıyor; varsayılan seed=7,
+demo tutarlılığını korur ama global durumu kirletmez ve gerektiğinde farklı
+seed'lerle yeniden örnekleme (uncertainty) çalışmalarına izin verir.
 """
 import math, random
-
-random.seed(7)
 
 
 def _sigmoid(x): return 1 / (1 + math.exp(-x))
@@ -48,13 +55,14 @@ def _intercept_kalibre(kismi_logitler, hedef_oran, tol=1e-4):
     return b
 
 
-def etiketle(musteri_ozellikleri, hedef_temerrut_orani=0.18):
-    random.seed(7)  # her çağrıda birebir aynı etiketler (demo tutarlılığı)
+def etiketle(musteri_ozellikleri, hedef_temerrut_orani=0.18, seed=7):
+    """Yerel RNG (`random.Random(seed)`) kullanır — global `random` durumunu değiştirmez."""
+    rng = random.Random(seed)
     z = [_kismi_logit(m) for m in musteri_ozellikleri]
     b = _intercept_kalibre(z, hedef_temerrut_orani)
     for m, zi in zip(musteri_ozellikleri, z):
-        gurultu = random.gauss(0, 0.9)  # kişiye özel gözlenemeyen faktörler
+        gurultu = rng.gauss(0, 0.9)  # kişiye özel gözlenemeyen faktörler
         p = _sigmoid(b + zi + gurultu)
         m["temerrut_olasiligi_gercek"] = round(p, 4)
-        m["temerrut"] = 1 if random.random() < p else 0
+        m["temerrut"] = 1 if rng.random() < p else 0
     return musteri_ozellikleri

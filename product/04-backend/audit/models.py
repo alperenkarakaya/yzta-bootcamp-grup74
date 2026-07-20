@@ -33,6 +33,10 @@ class Assessment(models.Model):
     onerilen_limit = models.IntegerField(null=True, blank=True)
     ozellikler = models.JSONField(default=dict)
     kaynak = models.CharField(max_length=16, default="api")  # demo / csv / api
+    # Formülasyon B (architecture.md §5.3, §3b U10/U18) — yalnızca klasik skor
+    # biliniyorsa (persona verildiyse) hesaplanır; aksi halde null.
+    pd_fark = models.FloatField(null=True, blank=True, help_text="pd_geleneksel_bant − pd_davranissal")
+    kapasite_sinyali = models.IntegerField(null=True, blank=True, help_text="0-100, 50=nötr")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -70,6 +74,10 @@ class AuditLog(models.Model):
     )
     ajanlar = models.JSONField(default=list)  # kullanılan agent'lar
     kaynak = models.CharField(max_length=16, default="api")
+    # Formülasyon B (architecture.md §5.3, §3b U10/U18) — klasik_skor gibi salt-okunur
+    # bir türetilmiş alan; audit satırının append-only doğasını değiştirmez.
+    pd_fark = models.FloatField(null=True, blank=True, help_text="pd_geleneksel_bant − pd_davranissal")
+    kapasite_sinyali = models.IntegerField(null=True, blank=True, help_text="0-100, 50=nötr")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:

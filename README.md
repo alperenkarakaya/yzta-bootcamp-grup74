@@ -58,7 +58,7 @@ skorun göremediği kapasiteyi yüzeye çıkaran bir **köprü katmanıdır**.
 | `klasik_maasli` | Sabit, resmi aylık maaşlı çalışan (kontrol/baseline grubu) |
 | `dusuk_hacim_riskli` | Gerçekten düşük kapasiteli, düzensiz hareketli kişi (negatif kontrol — modelin yanlışlıkla yüksek skor vermemesi gerekiyor) |
 
-## 4. Mimari (Sprint 2 sonu — çalışan hâli)
+## 4. Mimari (Sprint 3 — çalışan hâli)
 
 ```
 React (Vite + TS + Tailwind)  →  Django 5.2 + DRF (11 endpoint)  →  aks_core
@@ -66,7 +66,7 @@ React (Vite + TS + Tailwind)  →  Django 5.2 + DRF (11 endpoint)  →  aks_core
                                         │                                │
                                         │                    ┌───────────┴────────────┐
                                         │                    │ ozellik/  → 9 özellik  │
-                                        │                    │ model/    → XGB/LGBM,  │
+                                        │                    │ model/    → LojistikReg│
                                         │                    │             SHAP, adalet│
                                         │                    │ agents/   → pipeline + │
                                         │                    │             AsistanAgent│
@@ -107,8 +107,7 @@ yzta-bootcamp-grup74/
     ├── 01-data/             Sentetik işlem üretici, veri setleri, veri sözlüğü
     ├── 02-ai-agents/        aks_core paketi (ozellik · model · agents · artifacts)
     ├── 03-frontend/         React + Vite + TS + Tailwind, 5 sayfa
-    ├── 04-backend/          Django + DRF, audit app, ayarlar
-    └── 05-business/         Alan dokümanları (iş tezi, KVKK, hipotez kaydı)
+    └── 04-backend/          Django + DRF, audit app, ayarlar
 ```
 
 ## 6. Çalıştırma
@@ -122,6 +121,9 @@ python3 -m veri.uretici --musteri-sayisi 2000 --gun 180
 cd ../../02-ai-agents
 pip install -e .
 python3 -m aks_core.model.egitim
+
+# 2b) Değerlendirme raporunu üret (CV + bootstrap CI + Brier/ECE)
+python3 -m aks_core.model.degerlendirme
 
 # 3) API'yi ayağa kaldır
 cd ../04-backend
@@ -161,7 +163,7 @@ Backlog Miro üzerinde tutuluyor (link aşağıda); story bazlı özet:
 | 1 | Sentetik işlem verisi üretici | 1 | ✅ |
 | 2 | Özellik mühendisliği + baseline skor | 1 | ✅ |
 | 3 | Persona bazlı doğrulama / kalibrasyon | 2 | ✅ |
-| 4 | XGBoost/LightGBM ile denetimli model | 2 | ✅ |
+| 4 | XGBoost/LightGBM ile denetimli model | 2 | ✅ (Sprint 3'te LR ile değiştirildi) |
 | 5 | Boru hattı + `AsistanAgent` mimarisi | 2 | ✅ |
 | 6 | Açıklanabilirlik katmanı (SHAP) + adalet raporu | 2 | ✅ |
 | 7 | API `/skorla` `/aciklama` `/simulasyon` (+8 uç) | 2 | ✅ |
@@ -169,9 +171,10 @@ Backlog Miro üzerinde tutuluyor (link aşağıda); story bazlı özet:
 | 9 | Döngüsellik (circularity) ablasyon testi | 2 | ✅ |
 | 10 | Dekuple veri üretici (etiket ↔ özellik ayrıştırma) | 2 | ✅ |
 | 11 | React arayüz — 5 sayfa | 2 | ✅ |
-| 12 | Döngüsel olmayan benchmark üzerinde model finalizasyonu | 3 | ⏳ |
-| 13 | Kalibrasyon (Brier/ECE) + sabit kötü-oranında ek onay metriği | 3 | ⏳ |
-| 14 | Test paketinin Django/`aks_core`'a taşınması | 3 | ⏳ |
+| 12 | Döngüsel olmayan benchmark üzerinde model finalizasyonu | 3 | ✅ |
+| 13 | Kalibrasyon (Brier/ECE) | 3 | ✅ |
+| 13b | Sabit kötü-oranında ek onay metriği | 3 | ⏳ |
+| 14 | Test paketinin Django/`aks_core`'a taşınması | 3 | ✅ |
 | 15 | Deploy (Docker + Render) + demo video | 3 | ⏳ |
 
 ---
@@ -399,6 +402,171 @@ Adalet raporu ve agent beş-soru denetimi de bu sayfada.
 ---
 
 # Sprint 3
+
+**Sprint Notu:** Sprint 2'nin sonunda elimizde çalışan bir boru hattı ve
+kanıtlamadığı bir sayı vardı. Bu sprintin hedefi o sayıyı döngüsel olmayan
+bir veri üzerinde yeniden üretmek ve ürünün iddiasını tek, savunulabilir bir
+rakama oturtmaktı.
+
+Hedeflenen rakam şu: **ince dosyalı ama gerçekte güvenilir müşterilerde,
+sabit bir risk seviyesinde yüzde kaç daha fazla iyi müşteriyi
+onaylayabiliyoruz** — güven aralığıyla birlikte. "No-go" da geçerli bir
+sonuç olarak tanımlandı; sonucu bükmemek sprintin açık kuralıydı.
+
+**Sprint içi kapsam ve tahmin:** Sprint 2'den devreden 4 story (#12–#15)
+sprintin taahhüt edilen kapsamıydı. Sprint Planning'de (19 Temmuz gecesi, sprint penceresi açılmadan hemen önce) kapsam
+dört çalışma başlığı altında yeniden düzenlendi: model optimizasyonu, karar
+mekanizması değişiklikleri ve veri ile model eğitimi, frontend değişiklikleri,
+metrik değişiklikleri.
+
+Aynı huddle'da bootcamp teslim tarihinden bağımsız bir **iç takvim** kuruldu:
+konuşulan değişiklikler 22 Temmuz'a kadar, projenin tamamı 29 Temmuz'a kadar
+bitecek, kalan günler eklemeler ve kapanış için ayrılacak. Amaç, 2 Ağustos
+teslimine üç günlük bir tampon bırakmaktı.
+
+| Alan | Sahip |
+|---|---|
+| Araştırma | Havva |
+| Model optimizasyonu ve metrik kontrolleri | Alperen, Ahmet |
+| Veri ve sentetik veri hazırlığı | Zeynep |
+
+**Puan tamamlama mantığı:** `<!-- TODO: teslim gününe göre doldurun -->`
+Miro board'da kırmızı item'lar task'leri, mavi item'lar story'leri temsil ediyor.
+
+**Daily Scrum:** Sprint 3, Sprint 1 ve 2'den farklı olarak sesli bir Sprint Planning
+huddle'ı ile başladı; günlük koordinasyon yine Slack ve Instagram grup DM'i
+üzerinden asenkron yürütüldü. Notlar
+`sprints/docs/sprint3/daily_scrum_notlari.md` altında, ilgili ekran
+görüntüleri aynı klasörde.
+
+**Sprint Board Update:**
+
+`<!-- TODO: ![Sprint 3 Board](sprints/docs/sprint3/board_sprint3.png) -->`
+
+## Ürün Durumu
+
+### 1. Dürüst benchmark devrede
+
+Eğitim ve değerlendirme artık dekuple veri kaynağı üzerinde çalışıyor
+(2000 sentetik müşteri, taban temerrüt oranı **%17.15**). Değerlendirme
+yöntemi: `RepeatedStratifiedKFold(5×5)` ile ROC-AUC / PR-AUC + bootstrap
+%95 güven aralığı, ayrıca 5-fold OOF üzerinden Brier, ECE, reliability
+eğrisi ve persona bazlı kırılım.
+
+| Model | ROC-AUC (%95 CI) | PR-AUC | Brier | ECE |
+|---|---|---|---|---|
+| **Lojistik Regresyon** | **0.8621** (0.8534–0.8707) | **0.6096** | **0.0979** | **0.0141** |
+| XGBoost | 0.8399 (0.8306–0.8497) | 0.5571 | 0.1054 | 0.0337 |
+
+Güven aralıkları kesişmiyor. Lojistik regresyon gradient boosting'i dört
+metrikte de geçiyor — sadece daha basit olduğu için değil, daha iyi olduğu
+için seçildi. Üretimdeki model `LogisticRegression`'a çevrildi (holdout
+test AUC 0.8499).
+
+Persona kırılımında da LR daha dengeli: negatif kontrol grubunda
+(`dusuk_hacim_riskli`) 0.8857, odak grubumuzda (`ogrenci_yuksek_hacim`)
+0.8637. XGBoost'ta aynı sayılar 0.8262 ve 0.8353 — boosting, ayırt etmesi
+en kritik olan grupta daha zayıf.
+
+### 2. Kalibrasyon: ölçtük, işe yaramadı, saklamıyoruz
+
+Sprint 2'de "kalibrasyonu ana metrik yap" kararı almıştık. İzotonik
+kalibrasyon eğitim hattına eklendi ve ölçüldü:
+
+| | ECE |
+|---|---|
+| Kalibrasyon öncesi | 0.0391 |
+| Kalibrasyon sonrası | 0.0394 |
+
+Fark yok. Model zaten kalibre olduğu için düzeltilecek bir şey bulunamadı.
+Bu bir başarısızlık değil ama kazanım da değil — adım hatta duruyor çünkü
+veri değiştiğinde gerekebilir, ancak şu anki modelin kalibrasyonu izotonik
+katmandan gelmiyor. Sayılar `egitim_manifest.json` içinde kayıtlı.
+
+### 3. Cevaplanması gereken bulgu: klasik skorun sinyali kayboldu
+
+Dekuple benchmark üzerinde klasik skorun ROC-AUC'si **0.4931**. Yani
+rastgele tahminden ayırt edilemiyor. Sprint 2'nin döngüsel verisinde aynı
+sayı 0.729'du.
+
+Bunu bir bulgu olarak sunmuyoruz, çünkü büyük olasılıkla üreticinin kendi
+kurgusundan geliyor: dekuple üretici etiketi resmi gelirden kasıtlı olarak
+ayırıyor, klasik skor da resmi gelirden türetiliyor. Çıkan sonuç "klasik
+skorun öngörü gücü yok" değil, "bu sentetik dünyada klasik skor tanım
+gereği bilgi taşımıyor".
+
+`<!-- TODO — takım kararı: Bu haliyle "AKS klasik skoru geçiyor"
+karşılaştırması kurulamaz (0.86 vs 0.49 dürüst bir kıyas değil).
+  (a) Üreticiye klasik skor için zayıf ama sıfır olmayan bir sinyal koymak
+  (b) Karşılaştırmayı bırakıp AKS'yi mutlak metriklerle savunmak
+Sprint Review'da karara bağlanacak. -->`
+
+### 4. Test paketi yeniden kuruldu
+
+Sprint 2'de Django geçişiyle kırılan 22 test yerine iki paket var:
+
+| Paket | Test sayısı |
+|---|---|
+| `product/02-ai-agents/tests/test_aks_core.py` | 24 |
+| `product/04-backend/api/tests.py` | 15 |
+
+`<!-- TODO: Sprint 2 retrospektifinde "klasik skorun hiçbir agent tarafından
+değiştirilemediğini kanıtlayan sınır testleri" sözü verilmişti. Varsa adlarını
+yazın; yoksa yazın — ürünün en kritik iddiası bu. -->`
+
+### 5. Sabit kötü-oranında ek onay metriği
+
+`<!-- TODO — sprintin headline sayısı. Hesap: klasik skor ve AKS için
+kötü-oranı (bad rate) sabitlenip her iki yöntemin hedef segmentteki onay
+oranı karşılaştırılacak; fark bootstrap %95 CI ile raporlanacak.
+Sonuç buraya. -->`
+
+## Sprint 3'te teslim edilenler
+
+| Alan | Teslim |
+|---|---|
+| Veri | Dekuple üretici eğitim/değerlendirme hattına taşındı; tüm metrikler bu kaynak üzerinde |
+| Model | Model seçimi yeniden yapıldı; üretimdeki model `LogisticRegression` |
+| Değerlendirme | 5×5 tekrarlı CV + bootstrap CI, OOF Brier/ECE/reliability, persona kırılımı |
+| Kalibrasyon | İzotonik hat + öncesi/sonrası ECE kaydı |
+| Test | 39 test (24 `aks_core` + 15 Django API) |
+| Metrik | `<!-- TODO -->` |
+| Frontend | `<!-- TODO -->` |
+| Deploy | `<!-- TODO -->` |
+
+## Sprint Review — alınan kararlar
+
+`<!-- TODO — taslak, review'da teyit edilecek -->`
+
+- **Basit model kazandı ve bunu raporluyoruz.** Lojistik regresyon dört
+  metrikte de XGBoost'u geçtiği için üretimdeki model LR.
+
+- **Başlıktaki sayı değişti.** Öne çıkardığımız rakam ham AUC değil, sabit
+  kötü-oranında ek onay oranı — güven aralığıyla.
+
+- **Klasik skor karşılaştırması askıya alındı.** `<!-- TODO: (a)/(b) -->`
+
+- **Sprint Review katılımcıları:** Alperen Karakaya, Ahmet Özdoğan,
+  Zeynep Salkaya, Havva Balta
+
+## Sprint Retrospective
+
+`<!-- TODO — taslak -->`
+
+**İyi giden:**
+- Sprint 2'de söz verilen test eforu bu sefer harcandı; kırık paket 39
+  çalışan teste dönüştü.
+- Kalibrasyonun işe yaramadığını ölçüp yazdık. Ölçmeseydik "kalibrasyon
+  eklendi" diye yazacaktık — yanlış olmazdı ama boş olurdu.
+- Ana hedef tek bir cümleye indirgendi ve "no-go da geçerli sonuç" kuralı
+  baştan konuldu.
+
+**İyi gitmeyen:**
+- Demo verisi ile eğitim verisi sprint ortasına kadar farklıydı.
+- `<!-- TODO -->`
+
+**Sprint 3 sonrası açık kalan işler:**
+1. `<!-- TODO -->`
 
 ---
 

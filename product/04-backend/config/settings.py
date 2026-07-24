@@ -61,7 +61,7 @@ TEMPLATES = [
 # --- Veritabanı: Supabase (DATABASE_URL) yoksa yerel SQLite ---
 DATABASES = {
     "default": dj_database_url.parse(
-        os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'aks_dev.sqlite3'}"),
+        os.environ.get("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'aks_dev.sqlite3'}",
         conn_max_age=600,
     )
 }
@@ -79,7 +79,11 @@ if _redis_url:
 else:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-AUTH_PASSWORD_VALIDATORS = []
+# Kullanıcı portalı gerçek şifreler kabul ettiğinden (§3b Phase 6) minimum uzunluk
+# doğrulaması aktif — Django'nun kendisi zaten güçlü hashleme (PBKDF2) uyguluyor.
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
+]
 LANGUAGE_CODE = "tr"
 TIME_ZONE = "Europe/Istanbul"
 USE_I18N = True
@@ -98,5 +102,14 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174",
 ).split(",")
+
+# §3b Phase 6 — kullanıcı portalı (giriş/kayıt) çerez tabanlı oturum + CSRF kullanıyor.
+# Django 4+ CSRF middleware'i, cookie/header eşleşse bile isteğin Origin header'ını
+# CSRF_TRUSTED_ORIGINS ile karşılaştırıyor — Vite dev proxy'si isteği tarayıcıdan
+# (localhost:517x) sunucu tarafında Django'ya (127.0.0.1:8000) ilettiği için bu, aynı
+# origin listesini paylaşır (dev'de Vite hangi porta düşerse düşsün, 5173 dolu olduğunda
+# otomatik 5174'e geçebiliyor — ikisi de listede).
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS

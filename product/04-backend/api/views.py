@@ -1,7 +1,4 @@
 """DRF görünümleri — eski FastAPI uç noktalarının bire bir karşılığı."""
-import csv as _csv
-import io
-
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -44,6 +41,22 @@ def politika(request):
 
 
 @api_view(["GET"])
+def segmentasyon(request):
+    """§3b/U26: segmentasyon.py'nin (denetimsiz K-Means keşif) persist ettiği rapor."""
+    if not services.segmentasyon_var():
+        return Response({"hata": "Henüz üretilmedi — python -m aks_core.model.segmentasyon çalıştırın"}, status=503)
+    return Response(services.segmentasyon())
+
+
+@api_view(["GET"])
+def genelleme_saglamlik(request):
+    """§4 R8/R10/R11: persona-dışı genelleme, ince dosya stres testi, oyunlanabilirlik duyarlılığı."""
+    if not services.genelleme_saglamlik_var():
+        return Response({"hata": "Henüz üretilmedi — python -m aks_core.model.genelleme_saglamlik çalıştırın"}, status=503)
+    return Response(services.genelleme_saglamlik())
+
+
+@api_view(["GET"])
 def demo_musteriler(request):
     return Response(services.demo_personalar(_int(request.query_params, "adet_per_persona", 3)))
 
@@ -64,6 +77,8 @@ def skorla_demo(request, musteri_id: int):
         "pd_geleneksel_bant": sonuc.get("pd_geleneksel_bant"),
         "pd_fark": sonuc.get("pd_fark"),
         "kapasite_sinyali": sonuc.get("kapasite_sinyali"),
+        "anomali_bayrak": sonuc.get("anomali_bayrak"),
+        "anomali_skoru": sonuc.get("anomali_skoru"),
     })
 
 
@@ -78,6 +93,7 @@ def skorla(request):
         "musteri_id": mid, "aks_skor": sonuc["aks_skor"], "risk_seviyesi": sonuc["risk_seviyesi"],
         "karar": sonuc["karar"], "onerilen_limit": sonuc.get("onerilen_limit"),
         "aciklama": sonuc["aciklama"], "danisman": sonuc["danisman"],
+        "anomali_bayrak": sonuc.get("anomali_bayrak"), "anomali_skoru": sonuc.get("anomali_skoru"),
     })
 
 
@@ -147,27 +163,17 @@ def csv_skorla(request):
     dosya = request.FILES.get("dosya")
     if not dosya:
         return Response({"hata": "dosya alanı gerekli (multipart)"}, status=400)
-    icerik = dosya.read().decode("utf-8-sig")
-    okuyucu = _csv.DictReader(io.StringIO(icerik))
-    gerekli = {"tarih", "islem_tipi", "kategori", "tutar"}
-    if not okuyucu.fieldnames or not gerekli.issubset(set(okuyucu.fieldnames)):
-        return Response({"hata": f"CSV kolonları eksik. Gerekli: {sorted(gerekli)}"}, status=400)
-    islemler = []
-    for i, satir in enumerate(okuyucu):
-        try:
-            islemler.append({"tarih": satir["tarih"].strip(), "islem_tipi": satir["islem_tipi"].strip(),
-                             "kategori": satir["kategori"].strip(), "tutar": float(satir["tutar"]),
-                             "aciklama": satir.get("aciklama", "")})
-        except (ValueError, KeyError):
-            return Response({"hata": f"Satır {i+2} okunamadı (tutar sayısal olmalı)"}, status=400)
-    if len(islemler) < 5:
-        return Response({"hata": "Anlamlı skor için en az 5 işlem gerekli"}, status=400)
+    try:
+        islemler = services.csv_ayristir(dosya)
+    except ValueError as e:
+        return Response({"hata": str(e)}, status=400)
     sonuc, _ = services.degerlendir(-1, islemler, kaynak="csv")
     return Response({
         "islem_sayisi": len(islemler), "aks_skor": sonuc["aks_skor"],
         "risk_seviyesi": sonuc["risk_seviyesi"], "karar": sonuc["karar"],
         "onerilen_limit": sonuc.get("onerilen_limit"),
         "aciklama": sonuc["aciklama"], "danisman": sonuc["danisman"],
+        "anomali_bayrak": sonuc.get("anomali_bayrak"), "anomali_skoru": sonuc.get("anomali_skoru"),
     })
 
 

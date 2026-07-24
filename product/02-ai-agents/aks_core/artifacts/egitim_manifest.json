@@ -1,5 +1,5 @@
 {
-  "zaman": "2026-07-20T22:18:44",
+  "zaman": "2026-07-24T22:19:41",
   "veri_kaynagi": "dekuple",
   "n_musteri": 2000,
   "n_egitim": 1500,
@@ -26,8 +26,13 @@
       "C": 1.0
     }
   },
-  "arama_suresi_sn": 15.4,
+  "arama_suresi_sn": 30.3,
   "kalibrasyon_uygulandi": true,
   "ece_kalibrasyon_oncesi": 0.0391,
-  "ece_kalibrasyon_sonrasi": 0.0394
+  "ece_kalibrasyon_sonrasi": 0.0394,
+  "anomali_modeli": {
+    "tur": "IsolationForest",
+    "kontaminasyon": 0.05,
+    "n_egitim": 1500
+  }
 }

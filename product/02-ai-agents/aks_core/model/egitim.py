@@ -31,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 import lightgbm as lgb
 
-from aks_core.model import kayit, kalibrasyon, formulasyon_b, aciklama
+from aks_core.model import kayit, kalibrasyon, formulasyon_b, aciklama, anomali
 from aks_core.ozellik.cikarim import tum_musteriler, OZELLIK_ADLARI
 from aks_core.model.etiketleme import etiketle
 
@@ -236,6 +236,12 @@ def egit(islem_csv=None, model_cikti=None, veri_kaynagi="dekuple", n_iter=20,
 
     formulasyon_b.kaydet(bant_tablosu)
 
+    # --- §3b/U25: Anomali/OOD tespiti (denetimsiz, karar mekanizmasını etkilemez) ---
+    # Train bölümü üzerinde fit edilir (test'e sızıntı yok — degerlendirme.py'nin
+    # OOF disiplini burada da geçerli: "tipik" tanımı yalnızca eğitim verisinden gelir).
+    anomali_model = anomali.egit(Xtr, seed=seed)
+    anomali.kaydet(anomali_model)
+
     # SHAP açıklayıcı arka planı (U8 yan etkisi: LogisticRegression'ın LinearExplainer'ı
     # bir arka plan örneğine ihtiyaç duyar; ağaç modelleri kullanmaz ama tutarlılık için
     # her eğitimde yazılır).
@@ -261,6 +267,7 @@ def egit(islem_csv=None, model_cikti=None, veri_kaynagi="dekuple", n_iter=20,
         "kalibrasyon_uygulandi": kalib_tablo is not None,
         "ece_kalibrasyon_oncesi": round(float(ece_once), 4),
         "ece_kalibrasyon_sonrasi": round(float(ece_sonra), 4),
+        "anomali_modeli": {"tur": "IsolationForest", "kontaminasyon": anomali.KONTAMINASYON, "n_egitim": int(len(Xtr))},
     }
     with open(os.path.join(str(paths.ARTIFACTS_DIR), "egitim_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)

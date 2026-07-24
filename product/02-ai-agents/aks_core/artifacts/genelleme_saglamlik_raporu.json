@@ -1,0 +1,96 @@
+{
+  "zaman": "2026-07-24T22:42:46",
+  "veri_kaynagi": "dekuple",
+  "n_musteri": 2000,
+  "model_adi_referans": "LogisticRegression",
+  "sure_sn": 89.8,
+  "persona_disi_genelleme": {
+    "aciklama": "Her persona sırayla eğitim setinden tamamen çıkarılıp kalan 3 personayla eğitilen ayrı bir LogisticRegression(C=1.0) ile test edildi — üretim modeliyle aynı hiperparametre (egitim_manifest.json), ama rastgele k-fold DEĞİL: gerçek 'hiç görmedim' testi.",
+    "sonuc": {
+      "dusuk_hacim_riskli": {
+        "n_test": 286,
+        "n_train": 1714,
+        "auc": 0.8812
+      },
+      "klasik_maasli": {
+        "n_test": 590,
+        "n_train": 1410,
+        "auc": 0.8705
+      },
+      "ogrenci_yuksek_hacim": {
+        "n_test": 590,
+        "n_train": 1410,
+        "auc": 0.8574
+      },
+      "stajyer_degisken_gelir": {
+        "n_test": 534,
+        "n_train": 1466,
+        "auc": 0.8593
+      }
+    }
+  },
+  "out_of_time_split": {
+    "durum": "YAPILMADI (atlanmadı, gerekçeli)",
+    "gerekce": "kapasite_islemler.csv'deki her müşterinin işlemleri aynı 6 aylık pencereye (2026-01-01–2026-06-29) yayılmış; üretici zamana bağlı bir kayma (concept drift) simüle etmiyor. Müşterileri tarihe göre erken/geç ayırmak üretici rastgeleliğini ölçmekten başka bir şey olmazdı — sahte bir sonuç yerine bu boşluk açıkça bırakıldı. Gerçek bir out-of-time testi gerçek veri gerektirir (OQ-36)."
+  },
+  "ince_dosya_stres_testi": {
+    "aciklama": "150 rastgele müşterinin TAM geçmişiyle skoru taban alınıp, geçmiş ilk K işleme kırpıldığında skorun ne kadar SAPTIĞI ve anomali bayrağının ne sıklıkla tetiklendiği ölçüldü. K küçüldükçe sapma artıyor VE anomali oranı artıyorsa, model 'zarifçe' bozuluyor demektir (güvenle yanılmak yerine daha az güvenilir olduğunu işaretliyor).",
+    "sonuc": {
+      "ilk_5_islem": {
+        "n": 150,
+        "ort_mutlak_sapma": 190.2,
+        "p90_mutlak_sapma": 476.9,
+        "anomali_bayrak_orani": 1.0
+      },
+      "ilk_8_islem": {
+        "n": 150,
+        "ort_mutlak_sapma": 158.4,
+        "p90_mutlak_sapma": 448.9,
+        "anomali_bayrak_orani": 1.0
+      },
+      "ilk_12_islem": {
+        "n": 150,
+        "ort_mutlak_sapma": 137.0,
+        "p90_mutlak_sapma": 368.2,
+        "anomali_bayrak_orani": 0.933
+      },
+      "ilk_20_islem": {
+        "n": 150,
+        "ort_mutlak_sapma": 138.3,
+        "p90_mutlak_sapma": 344.8,
+        "anomali_bayrak_orani": 0.593
+      },
+      "ilk_40_islem": {
+        "n": 150,
+        "ort_mutlak_sapma": 78.0,
+        "p90_mutlak_sapma": 251.0,
+        "anomali_bayrak_orani": 0.14
+      }
+    }
+  },
+  "oyunlanabilirlik_duyarliligi": {
+    "aciklama": "4 nedensel özellik tek tek %25 'iyileştirme' yönünde değiştirilip ortalama skor kazancı ölçüldü — sabit büyüklükteki bir davranış değişikliği için hangi özellik en çok skor 'satın alıyor'. Yüksek kazanç + düşük gerçek-dünya maliyeti olan bir özellik, oyunlanabilirlik riski taşır (RQ-3).",
+    "sonuc": {
+      "gider_gelir_orani": {
+        "ort_skor_kazanci": 73.4,
+        "p90_skor_kazanci": 265.0,
+        "degisim_orani": 0.25
+      },
+      "bakiye_trendi": {
+        "ort_skor_kazanci": 1.0,
+        "p90_skor_kazanci": 0.0,
+        "degisim_orani": 0.25
+      },
+      "gelir_duzenliligi": {
+        "ort_skor_kazanci": -2.3,
+        "p90_skor_kazanci": 0.0,
+        "degisim_orani": 0.25
+      },
+      "fatura_odeme_duzeni": {
+        "ort_skor_kazanci": 6.0,
+        "p90_skor_kazanci": 22.0,
+        "degisim_orani": 0.25
+      }
+    }
+  }
+}

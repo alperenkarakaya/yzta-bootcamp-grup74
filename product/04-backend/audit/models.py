@@ -6,6 +6,7 @@ OLDUĞU GİBİ kaydedilir, yanına AKS'nin ürettiği tamamlayıcı skor + karar
 politika notu konur. Böylece "AKS bankanın segmentini asla ezmez, yalnızca
 tamamlar" ilkesi kayıt altında kanıtlanır (bkz. overview.md §7 / architecture.md §9).
 """
+from django.conf import settings
 from django.db import models
 
 
@@ -32,7 +33,14 @@ class Assessment(models.Model):
     karar = models.CharField(max_length=128)
     onerilen_limit = models.IntegerField(null=True, blank=True)
     ozellikler = models.JSONField(default=dict)
-    kaynak = models.CharField(max_length=16, default="api")  # demo / csv / api
+    kaynak = models.CharField(max_length=16, default="api")  # demo / csv / api / portal
+    # Kullanıcı portalı (§3b Phase 6): giriş yapmış bir son kullanıcının kendi
+    # yüklediği ekstre — "Geçmişim" listesini besler. Banka/demo skorlamalarında
+    # (kaynak != "portal") her zaman null — bu alan yalnızca portal kullanıcısını
+    # KENDİ geçmişine bağlar, bankanın gördüğü hiçbir veriyi etkilemez.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="degerlendirmeler"
+    )
     # Formülasyon B (architecture.md §5.3, §3b U10/U18) — yalnızca klasik skor
     # biliniyorsa (persona verildiyse) hesaplanır; aksi halde null.
     pd_fark = models.FloatField(null=True, blank=True, help_text="pd_geleneksel_bant − pd_davranissal")

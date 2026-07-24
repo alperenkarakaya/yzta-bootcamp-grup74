@@ -106,7 +106,7 @@ credit-calc/
     │   └── generator/veri/uretici.py, datasets/*.csv
     ├── 02-ai-agents/        aks_core installable package (pyproject.toml)
     │   └── aks_core/{ozellik, model, agents, artifacts}
-    ├── 03-frontend/         React + Vite + TS + Tailwind, 5 pages (Google Stitch UI, integrated)
+    ├── 03-frontend/         React + Vite + TS + Tailwind — bank UI (Google Stitch, integrated) + user portal
     ├── 04-backend/          Django + DRF, audit app, settings, requirements
     │   └── {config, api, audit}/   (+ _legacy_fastapi/ reference only)
     └── 05-business/         domain docs, sprint evidence (screenshots, scrum notes)
@@ -120,11 +120,14 @@ The five product sections map 1:1 to five workstreams: 01-data, 02-ai-agents (hi
 - Trained model artifact + baseline comparison (`aks_core.model.egitim`, `etiketleme`).
 - SHAP explainability, equal-opportunity fairness report, business-impact analysis.
 - Deterministic pipeline (`VeriAgent → SkorlamaAgent → DanismanAgent`, `Orkestrator`) + `AsistanAgent` (Gemini/rule-based).
-- Django + DRF backend: **11 endpoints**, verified at parity with the retired FastAPI backend.
+- Django + DRF backend: **21 endpoints** (15 bank/scoring + 6 user-portal auth/upload/history), verified at parity with the retired FastAPI backend for the original set.
 - Immutable audit trail (`Customer`, `Assessment`, `AuditLog`) with read-only Django admin.
 - Supabase + Upstash integration code (graceful fallback) + `check_connections` diagnostic.
-- React + Vite + TS + Tailwind frontend: 5 pages (Intelligence, Portfolio, Audit, Customers, Customer Detail) implementing the Google Stitch design, wired live to every real `/api/*` endpoint — no fabricated data or invented compliance claims.
+- React + Vite + TS + Tailwind frontend, **two interfaces** (execution.md §3b Phase 6): bank side — 6 pages (Intelligence, Portfolio, Audit, Customers, Customer Detail, CSV Upload) implementing the Google Stitch design; user portal — 2 pages (login/register, upload+history dashboard) under `/portal`, session-gated, fully separate nav/branding. All wired live to real `/api/*` endpoints — no fabricated data or invented compliance claims. Customer Detail also includes a live what-if scenario simulator (`/api/simulasyon`).
 - **Statistical evaluation harness** (`degerlendirme.py`) and **circularity diagnostic** (`circularity_ablation.py`) — reproducible.
+- **Unsupervised auxiliary components** (execution.md §3b Phase 4): anomaly/out-of-distribution detection (`anomali.py`, IsolationForest — flags atypical profiles, never changes the decision) and unsupervised segment discovery (`segmentasyon.py`, K-Means — offline research report, not decision-facing). Architecture.md §5.4/§5.5.
+- **Generalization & robustness testing** (execution.md §3b Phase 5, R8/R10/R11): out-of-persona holdout (model generalizes to a never-seen persona, AUC 0.857–0.881), thin-file stress test (score degrades gracefully — the anomaly detector correctly flags 100% of severely-truncated profiles, falling to 14% at near-full history), and a gaming-resistance sensitivity analysis (found `gider_gelir_orani` disproportionately gameable — flagged as open decision OQ-45, not silently accepted).
+- **User portal — two interfaces, market-facing** (execution.md §3b Phase 6): a real login (Django session auth, OQ-33 resolved for this scope) at `/portal`, fully separate from the bank's internal UI — a logged-in end user uploads their own statement, sees their own AKS score/limit/SHAP factors, and a personal "Geçmişim" history tied to their account. Demo-grade, not yet market-hardened on consent/KVKK (OQ-46 open).
 
 ## 12. Current limitations
 

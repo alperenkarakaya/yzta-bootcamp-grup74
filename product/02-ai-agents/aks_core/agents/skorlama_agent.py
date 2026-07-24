@@ -36,8 +36,10 @@ class SkorlamaAgent:
     ad = "skorlama_agent"
 
     def __init__(self, model_yolu=None):
-        from aks_core.model import kayit
+        from aks_core.model import kayit, anomali
         self.model, self.model_adi, self.ozellikler = kayit.yukle(model_yolu)
+        # §3b/U25: opsiyonel — dosya yoksa None, skorlama hiç etkilenmez (kalibrasyonla aynı desen).
+        self._anomali_model = anomali.yukle()
 
     def calistir(self, vektor, ozellik_sozlugu=None, klasik_skor=None):
         """klasik_skor verilirse (Phase 2/backend zaten hesaplıyor), Formülasyon B
@@ -60,4 +62,9 @@ class SkorlamaAgent:
         if klasik_skor is not None:
             from aks_core.model import formulasyon_b
             sonuc.update(formulasyon_b.hesapla(klasik_skor, p))
+        if self._anomali_model is not None:
+            from aks_core.model import anomali
+            bayrak, tipiklik = anomali.degerlendir(self._anomali_model, vektor)
+            sonuc["anomali_bayrak"] = bayrak
+            sonuc["anomali_skoru"] = tipiklik
         return sonuc

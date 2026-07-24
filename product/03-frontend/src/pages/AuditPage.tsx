@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { api, PERSONA_ETIKET, type Adalet, type SkorSonuc, type MetriklerRaporu } from "../api";
+import {
+  api,
+  PERSONA_ETIKET,
+  type Adalet,
+  type SkorSonuc,
+  type MetriklerRaporu,
+  type SegmentasyonRaporu,
+  type GenellemeSaglamlikRaporu,
+} from "../api";
 import { Icon } from "../components/Icon";
 
 const AGENT_AUDIT = [
@@ -22,9 +30,17 @@ export default function AuditPage() {
   const [metrikler, setMetrikler] = useState<MetriklerRaporu | null>(null);
   const [metriklerHata, setMetriklerHata] = useState("");
 
+  const [segmentasyon, setSegmentasyon] = useState<SegmentasyonRaporu | null>(null);
+  const [segmentasyonHata, setSegmentasyonHata] = useState("");
+
+  const [genelleme, setGenelleme] = useState<GenellemeSaglamlikRaporu | null>(null);
+  const [genellemeHata, setGenellemeHata] = useState("");
+
   useEffect(() => {
     api.adalet().then(setAdalet).catch((e) => setHata(String(e)));
     api.metrikler().then(setMetrikler).catch((e) => setMetriklerHata(String(e)));
+    api.segmentasyon().then(setSegmentasyon).catch((e) => setSegmentasyonHata(String(e)));
+    api.genellemeSaglamlik().then(setGenelleme).catch((e) => setGenellemeHata(String(e)));
   }, []);
 
   async function incele() {
@@ -319,6 +335,177 @@ export default function AuditPage() {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+        </section>
+
+        {/* Segmentasyon — §3b/U26, denetimsiz K-Means keşif */}
+        <section className="md:col-span-12 glass-panel rounded-xl p-6">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <Icon name="scatter_plot" className="text-tertiary" />
+              <h2 className="font-headline-md text-headline-md">Segmentasyon (Denetimsiz Keşif)</h2>
+            </div>
+            {segmentasyon && (
+              <span className="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">
+                k={segmentasyon.k} · silhouette {segmentasyon.silhouette_skoru.toFixed(3)} · n={segmentasyon.n_musteri}
+              </span>
+            )}
+          </div>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 max-w-3xl">
+            K-Means ile davranışsal özellikler üzerinde denetimsiz kümeleme — sabit 4 persona etiketi yerine,
+            verinin kendisi kaç doğal grup önerdiğine (silhouette skoruna göre) bakar.{" "}
+            <span className="text-primary font-semibold">Bu bir karar bileşeni değildir</span> — hiçbir
+            skorlama/karar yoluna beslenmez, yalnızca araştırma/şeffaflık amaçlıdır.
+          </p>
+          {segmentasyonHata && (
+            <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono mb-4">
+              Henüz üretilmedi — <code>python -m aks_core.model.segmentasyon</code> çalıştırın.
+            </div>
+          )}
+          {segmentasyon && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-4">
+                {Object.entries(segmentasyon.kume_profilleri)
+                  .sort(([, a], [, b]) => b.n - a.n)
+                  .map(([kume, prof]) => (
+                    <div key={kume} className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-4">
+                      <div className="flex justify-between items-baseline mb-3">
+                        <span className="font-label-mono text-label-mono text-on-surface font-bold">Küme {kume}</span>
+                        <span className="font-label-mono text-[10px] text-on-surface-variant">n={prof.n}</span>
+                      </div>
+                      <div className="mb-3">
+                        <div className="text-[10px] text-on-surface-variant uppercase font-label-mono">Ampirik temerrüt oranı</div>
+                        <div className="font-headline-md text-headline-md text-secondary">{(prof.temerrut_orani * 100).toFixed(1)}%</div>
+                      </div>
+                      <div className="text-[10px] text-on-surface-variant uppercase font-label-mono mb-1">Persona dağılımı</div>
+                      <div className="space-y-1">
+                        {Object.entries(prof.persona_dagilimi)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([persona, adet]) => (
+                            <div key={persona} className="flex justify-between font-label-mono text-label-mono text-[11px]">
+                              <span className="text-on-surface-variant">{PERSONA_ETIKET[persona] ?? persona}</span>
+                              <span className="text-on-surface">{adet}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+              <p className="font-label-mono text-[10px] text-on-surface-variant leading-relaxed">{segmentasyon.not}</p>
+            </>
+          )}
+        </section>
+
+        {/* Genelleme & Sağlamlık — §4 R8/R10/R11 */}
+        <section className="md:col-span-12 glass-panel rounded-xl p-6">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <Icon name="rule" className="text-tertiary" />
+              <h2 className="font-headline-md text-headline-md">Genelleme &amp; Sağlamlık (R8 / R10 / R11)</h2>
+            </div>
+            {genelleme && (
+              <span className="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">
+                referans model: {genelleme.model_adi_referans} · {genelleme.n_musteri} müşteri
+              </span>
+            )}
+          </div>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 max-w-3xl">
+            Rastgele k-fold CV'nin (Model Validity paneli) test edemediği üç soru: model hiç görmediği bir davranış
+            profiline genelleşiyor mu (R8), ince işlem geçmişinde zarifçe mi kararsızlaşıyor yoksa güvenle mi
+            yanılıyor (R10), ve 4 nedensel özellikten hangisi en kolay "oyunlanıyor" (R11).
+          </p>
+          {genellemeHata && (
+            <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono mb-4">
+              Henüz üretilmedi — <code>python -m aks_core.model.genelleme_saglamlik</code> çalıştırın.
+            </div>
+          )}
+          {genelleme && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+              {/* R8 */}
+              <div className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-4">
+                <div className="font-label-mono text-label-mono text-on-surface font-bold mb-1">
+                  R8 — Persona-dışı genelleme
+                </div>
+                <p className="font-label-mono text-[10px] text-on-surface-variant mb-3">
+                  Her persona sırayla eğitimden tamamen çıkarılıp test edildi — "hiç görmedim" testi.
+                </p>
+                <div className="space-y-2 mb-4">
+                  {Object.entries(genelleme.persona_disi_genelleme.sonuc).map(([persona, s]) => (
+                    <div key={persona} className="flex justify-between font-label-mono text-label-mono text-[11px]">
+                      <span className="text-on-surface-variant">{PERSONA_ETIKET[persona] ?? persona}</span>
+                      <span className="text-on-surface">{s.auc != null ? s.auc.toFixed(3) : "—"} (n={s.n_test})</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-3 border-t border-outline-variant/20">
+                  <div className="text-[10px] text-amber-400 uppercase font-label-mono mb-1">Out-of-time split</div>
+                  <p className="font-label-mono text-[10px] text-on-surface-variant leading-relaxed">
+                    {genelleme.out_of_time_split.durum} — {genelleme.out_of_time_split.gerekce}
+                  </p>
+                </div>
+              </div>
+
+              {/* R10 */}
+              <div className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-4">
+                <div className="font-label-mono text-label-mono text-on-surface font-bold mb-1">
+                  R10 — İnce dosya stres testi
+                </div>
+                <p className="font-label-mono text-[10px] text-on-surface-variant mb-3">
+                  Geçmiş ilk K işleme kırpıldığında skor sapması ve anomali bayrağı oranı.
+                </p>
+                <table className="w-full font-label-mono text-[11px]">
+                  <thead>
+                    <tr className="text-on-surface-variant text-left">
+                      <th className="font-normal pb-1">K</th>
+                      <th className="font-normal pb-1 text-right">Ort. Sapma</th>
+                      <th className="font-normal pb-1 text-right">Anomali %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(genelleme.ince_dosya_stres_testi.sonuc).map(([k, s]) => (
+                      <tr key={k} className="border-t border-outline-variant/10">
+                        <td className="py-1 text-on-surface">{k.replace("ilk_", "").replace("_islem", "")}</td>
+                        <td className="py-1 text-right text-on-surface">{s.ort_mutlak_sapma}</td>
+                        <td className="py-1 text-right text-amber-400">
+                          {s.anomali_bayrak_orani != null ? `${(s.anomali_bayrak_orani * 100).toFixed(0)}%` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* R11 */}
+              <div className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-4">
+                <div className="font-label-mono text-label-mono text-on-surface font-bold mb-1">
+                  R11 — Oyunlanabilirlik duyarlılığı
+                </div>
+                <p className="font-label-mono text-[10px] text-on-surface-variant mb-3">
+                  %25 "iyileştirme" karşılığında ortalama AKS puan kazancı — yüksek olan, düşük çabayla en çok skor
+                  satın alıyor demektir.
+                </p>
+                <div className="space-y-2">
+                  {Object.entries(genelleme.oyunlanabilirlik_duyarliligi.sonuc)
+                    .sort(([, a], [, b]) => b.ort_skor_kazanci - a.ort_skor_kazanci)
+                    .map(([feat, s]) => (
+                      <div key={feat}>
+                        <div className="flex justify-between font-label-mono text-label-mono text-[11px] mb-0.5">
+                          <span className="text-on-surface-variant">{feat}</span>
+                          <span className={s.ort_skor_kazanci > 20 ? "text-error" : "text-on-surface"}>
+                            +{s.ort_skor_kazanci}
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${s.ort_skor_kazanci > 20 ? "bg-error" : "bg-secondary-container"}`}
+                            style={{ width: `${Math.min(100, Math.max(2, (s.ort_skor_kazanci / 100) * 100))}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
             </div>
           )}
         </section>

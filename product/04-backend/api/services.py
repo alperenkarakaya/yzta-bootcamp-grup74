@@ -75,6 +75,32 @@ def metrikler():
         return json.load(f)
 
 
+def segmentasyon_var():
+    """§3b/U26: segmentasyon.py'nin (denetimsiz K-Means keşif) persist ettiği rapor."""
+    import os
+    return os.path.exists(os.path.join(str(paths.ARTIFACTS_DIR), "segmentasyon_raporu.json"))
+
+
+def segmentasyon():
+    import json, os
+    yol = os.path.join(str(paths.ARTIFACTS_DIR), "segmentasyon_raporu.json")
+    with open(yol, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def genelleme_saglamlik_var():
+    """§4 R8/R10/R11: genelleme_saglamlik.py'nin persist ettiği rapor."""
+    import os
+    return os.path.exists(os.path.join(str(paths.ARTIFACTS_DIR), "genelleme_saglamlik_raporu.json"))
+
+
+def genelleme_saglamlik():
+    import json, os
+    yol = os.path.join(str(paths.ARTIFACTS_DIR), "genelleme_saglamlik_raporu.json")
+    with open(yol, encoding="utf-8") as f:
+        return json.load(f)
+
+
 # Portfoy/adalet toplu-istatistik eşiklerinin varsayılanları — tek yerde (views.py'nin
 # query-param varsayılanları burayı referans alır; frontend de /api/politika ile aynı
 # yerden okur, kendi kopyasını icat etmez — U21).
@@ -96,7 +122,32 @@ def politika():
     return sozluk
 
 
-def degerlendir(musteri_id, islemler, kaynak="api", persona=""):
+def csv_ayristir(dosya):
+    """Multipart CSV dosyasından işlem listesi çıkarır. Format hatasında ValueError
+    fırlatır (mesajı doğrudan kullanıcıya gösterilebilir). Hem anonim `/api/csv-skorla`
+    hem giriş yapmış `/api/portal/yukle` tarafından paylaşılan tek ayrıştırma mantığı
+    (§3b Phase 6) — kolon/satır doğrulama iki yerde kopyalanmadı."""
+    import csv as _csv
+    import io
+    icerik = dosya.read().decode("utf-8-sig")
+    okuyucu = _csv.DictReader(io.StringIO(icerik))
+    gerekli = {"tarih", "islem_tipi", "kategori", "tutar"}
+    if not okuyucu.fieldnames or not gerekli.issubset(set(okuyucu.fieldnames)):
+        raise ValueError(f"CSV kolonları eksik. Gerekli: {sorted(gerekli)}")
+    islemler = []
+    for i, satir in enumerate(okuyucu):
+        try:
+            islemler.append({"tarih": satir["tarih"].strip(), "islem_tipi": satir["islem_tipi"].strip(),
+                             "kategori": satir["kategori"].strip(), "tutar": float(satir["tutar"]),
+                             "aciklama": satir.get("aciklama", "")})
+        except (ValueError, KeyError):
+            raise ValueError(f"Satır {i+2} okunamadı (tutar sayısal olmalı)")
+    if len(islemler) < 5:
+        raise ValueError("Anlamlı skor için en az 5 işlem gerekli")
+    return islemler
+
+
+def degerlendir(musteri_id, islemler, kaynak="api", persona="", user=None):
     """aks_core ile skorla + denetim izi yaz.
 
     §3b/U17: persona biliniyorsa (klasik skor hesaplanabiliyorsa) Formülasyon B
@@ -106,6 +157,10 @@ def degerlendir(musteri_id, islemler, kaynak="api", persona=""):
     olan SHAP tekrar hesaplanmıyor. Bu, aks_core'a (Phase 1, kapalı) dokunmadan
     04-backend katmanında Formülasyon B'yi açığa çıkarmanın yolu — orkestratör
     klasik skoru bilmiyor (sınır: bankanın skoru yalnızca 04-backend'de hesaplanır).
+
+    §3b/Phase 6: `user` verilirse (portal akışı) `Assessment.user`'a bağlanır —
+    yalnızca o kullanıcının "Geçmişim" listesini besler, bankanın gördüğü hiçbir
+    veriyi etkilemez.
     """
     sonuc = orkestrator.degerlendir(musteri_id, islemler)
     klasik = None
@@ -117,11 +172,11 @@ def degerlendir(musteri_id, islemler, kaynak="api", persona=""):
         sonuc["pd_geleneksel_bant"] = formulasyon_b.get("pd_geleneksel_bant")
         sonuc["pd_fark"] = formulasyon_b.get("pd_fark")
         sonuc["kapasite_sinyali"] = formulasyon_b.get("kapasite_sinyali")
-    _denetim_yaz(musteri_id, klasik, sonuc, kaynak)
+    _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=user)
     return sonuc, klasik
 
 
-def _denetim_yaz(musteri_id, klasik, sonuc, kaynak):
+def _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=None):
     """Best-effort: denetim yazımı skorlamayı asla düşürmemeli."""
     try:
         from audit.models import AuditLog, Assessment, Customer
@@ -139,6 +194,7 @@ def _denetim_yaz(musteri_id, klasik, sonuc, kaynak):
             karar=sonuc["karar"], onerilen_limit=sonuc.get("onerilen_limit"),
             ozellikler=sonuc.get("ozellikler", {}), kaynak=kaynak,
             pd_fark=pd_fark, kapasite_sinyali=kapasite_sinyali,
+            user=user if (user is not None and user.is_authenticated) else None,
         )
         AuditLog.objects.create(
             musteri_id=str(musteri_id), klasik_skor=klasik, aks_skor=sonuc["aks_skor"],

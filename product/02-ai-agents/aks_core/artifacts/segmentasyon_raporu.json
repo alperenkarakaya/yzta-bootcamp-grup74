@@ -1,0 +1,73 @@
+{
+  "zaman": "2026-07-24T22:20:07",
+  "veri_kaynagi": "dekuple",
+  "n_musteri": 2000,
+  "k": 3,
+  "silhouette_skoru": 0.3889,
+  "bilinen_personalar": [
+    "dusuk_hacim_riskli",
+    "klasik_maasli",
+    "ogrenci_yuksek_hacim",
+    "stajyer_degisken_gelir"
+  ],
+  "kume_profilleri": {
+    "1": {
+      "n": 582,
+      "persona_dagilimi": {
+        "klasik_maasli": 579,
+        "stajyer_degisken_gelir": 3
+      },
+      "temerrut_orani": 0.1701,
+      "ozellik_ortalamalari": {
+        "toplam_gelir_hacmi": 167140.836,
+        "toplam_gider_hacmi": 123741.887,
+        "gelir_islem_sayisi": 6.057,
+        "gelir_kaynagi_sayisi": 1.005,
+        "gelir_duzenliligi": 0.923,
+        "gider_gelir_orani": 0.742,
+        "bakiye_trendi": 16.114,
+        "fatura_odeme_duzeni": 0.554,
+        "hesap_hareket_yogunlugu": 0.262
+      }
+    },
+    "2": {
+      "n": 828,
+      "persona_dagilimi": {
+        "stajyer_degisken_gelir": 531,
+        "dusuk_hacim_riskli": 286,
+        "klasik_maasli": 11
+      },
+      "temerrut_orani": 0.1751,
+      "ozellik_ortalamalari": {
+        "toplam_gelir_hacmi": 54377.56,
+        "toplam_gider_hacmi": 46760.728,
+        "gelir_islem_sayisi": 9.682,
+        "gelir_kaynagi_sayisi": 1.641,
+        "gelir_duzenliligi": 0.454,
+        "gider_gelir_orani": 0.885,
+        "bakiye_trendi": 6.47,
+        "fatura_odeme_duzeni": 0.548,
+        "hesap_hareket_yogunlugu": 0.282
+      }
+    },
+    "0": {
+      "n": 590,
+      "persona_dagilimi": {
+        "ogrenci_yuksek_hacim": 590
+      },
+      "temerrut_orani": 0.1678,
+      "ozellik_ortalamalari": {
+        "toplam_gelir_hacmi": 46230.061,
+        "toplam_gider_hacmi": 36691.565,
+        "gelir_islem_sayisi": 29.969,
+        "gelir_kaynagi_sayisi": 4.0,
+        "gelir_duzenliligi": 0.219,
+        "gider_gelir_orani": 0.8,
+        "bakiye_trendi": 10.696,
+        "fatura_odeme_duzeni": 0.55,
+        "hesap_hareket_yogunlugu": 0.395
+      }
+    }
+  },
+  "not": "Denetimsiz keşif raporu (§3b/U26) — hiçbir skorlama/karar yoluna beslenmez. Silhouette skoru 1'e yakınsa kümeler iyi ayrışmış, 0'a yakınsa örtüşüyor demektir. Bu sentetik veri üzerinde 4 persona ETİKETİ zaten üretici tarafından gömülü olduğundan, kümelerin bunu 'yeniden keşfetmesi' beklenir; gerçek veride bu doğrulanmadı (OQ-36)."
+}

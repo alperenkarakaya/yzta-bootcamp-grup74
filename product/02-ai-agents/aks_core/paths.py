@@ -11,9 +11,9 @@ ARTIFACTS_DIR = _PKG / "artifacts"
 _REPO = _PKG.parents[2]                                     # .../<repo kökü>
 _DEFAULT_DATA = _REPO / "product" / "01-data" / "datasets"
 
-MODEL_PATH = Path(os.environ.get("AKS_MODEL", ARTIFACTS_DIR / "aks_model.joblib"))
+MODEL_PATH = Path(os.environ.get("AKS_MODEL") or ARTIFACTS_DIR / "aks_model.joblib")
 METRICS_PATH = ARTIFACTS_DIR / "metrikler.json"
-DATA_DIR = Path(os.environ.get("AKS_DATA_DIR", _DEFAULT_DATA))
+DATA_DIR = Path(os.environ.get("AKS_DATA_DIR") or _DEFAULT_DATA)
 
 
 def data(name: str) -> str:

@@ -6,19 +6,57 @@
 
 const BASE = import.meta.env.VITE_API_BASE ?? "";
 
+// §3b Phase 6 — kullanıcı portalı session çerezi (sessionid) + CSRF çerezi
+// (csrftoken) kullanır. Vite dev proxy /api'yi aynı origin'den (localhost:5174)
+// Django'ya yönlendirdiği için `credentials: "same-origin"` çerezlerin akmasına
+// yeterli — cross-origin bir kuruluma geçilirse "include" + CORS_ALLOW_CREDENTIALS
+// gerekir (bkz. architecture.md §11).
+function csrfTokenAl(): string | null {
+  const eslesme = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+  return eslesme ? decodeURIComponent(eslesme[1]) : null;
+}
+
+function _hataMesaji(govde: unknown, r: Response): string {
+  const h = (govde as ApiHata)?.hata;
+  if (h) return h;
+  if (r.status === 401 || r.status === 403) return "Bu işlem için giriş yapmalısınız.";
+  return `${r.status} ${r.statusText}`;
+}
+
 async function get<T>(yol: string): Promise<T> {
-  const r = await fetch(`${BASE}/api${yol}`);
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-  return r.json();
+  const r = await fetch(`${BASE}/api${yol}`, { credentials: "same-origin" });
+  const govde = await r.json().catch(() => null);
+  if (!r.ok) throw new Error(_hataMesaji(govde, r));
+  return govde as T;
 }
 async function post<T>(yol: string, govde: unknown): Promise<T> {
   const r = await fetch(`${BASE}/api${yol}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      ...(csrfTokenAl() ? { "X-CSRFToken": csrfTokenAl()! } : {}),
+    },
     body: JSON.stringify(govde),
   });
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-  return r.json();
+  const yanit = await r.json().catch(() => null);
+  if (!r.ok) throw new Error(_hataMesaji(yanit, r));
+  return yanit as T;
+}
+
+// multipart/form-data — Content-Type header'ı elle KONMAZ, tarayıcı boundary'yi
+// kendi ekler; elle "multipart/form-data" yazmak boundary'siz bırakır ve backend
+// isteği parse edemez.
+async function postDosya<T>(yol: string, form: FormData): Promise<T> {
+  const r = await fetch(`${BASE}/api${yol}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: csrfTokenAl() ? { "X-CSRFToken": csrfTokenAl()! } : undefined,
+    body: form,
+  });
+  const govde = await r.json();
+  if (!r.ok) throw new Error(_hataMesaji(govde, r));
+  return govde as T;
 }
 
 export interface Bilgi {
@@ -62,6 +100,11 @@ export interface SkorSonuc {
   pd_geleneksel_bant: number | null;
   pd_fark: number | null;
   kapasite_sinyali: number | null;
+  // §3b/U25 — anomali.py (İzolasyon Ormanı, denetimsiz). Anomali modeli artifact'ı
+  // yoksa (eski/yeniden eğitilmemiş kurulum) her ikisi de null — karar mekanizmasını
+  // ASLA etkilemez, yalnızca ek bir şeffaflık sinyalidir.
+  anomali_bayrak: boolean | null;
+  anomali_skoru: number | null;
 }
 
 export interface Portfoy {
@@ -119,6 +162,106 @@ export interface GecmisYanit {
 export interface AsistanYanit {
   yanit: string;
   mod: "llm" | "kural";
+}
+
+// POST /api/csv-skorla (U24) — belge/ekstre yükleme. Persona bilinmediği için
+// backend klasik_skor/Formülasyon B alanlarını hesaplamıyor (services.degerlendir
+// yalnızca persona verilirse bunları doldurur) — SkorSonuc'tan kasıtlı olarak dar.
+export interface CsvSkorSonuc {
+  islem_sayisi: number;
+  aks_skor: number;
+  risk_seviyesi: string;
+  karar: string;
+  onerilen_limit: number | null;
+  aciklama: Aciklama;
+  danisman: Danisman;
+  anomali_bayrak: boolean | null;
+  anomali_skoru: number | null;
+}
+
+export interface ApiHata {
+  hata: string;
+}
+
+// §3b Phase 6 — kullanıcı portalı (auth + kendi ekstresini yükleme/geçmiş).
+export interface KullaniciBilgisi {
+  id: number;
+  email: string;
+  ad: string;
+}
+
+export interface PortalGecmisKayit {
+  id: number;
+  zaman: string;
+  aks_skor: number;
+  risk_seviyesi: string;
+  karar: string;
+  onerilen_limit: number | null;
+}
+
+// POST /api/simulasyon (U23) — what-if senaryo simülatörü. `degisiklikler`
+// yalnızca DEĞİŞEN özellikleri taşır; backend geri kalanını mevcut müşterinin
+// özellikleriyle doldurur (views.py::simulasyon, ozellikler.update(degisiklikler)).
+export interface SimulasyonSonuc {
+  musteri_id: number;
+  mevcut_skor: number;
+  senaryo_skor: number;
+  skor_degisimi: number;
+  uygulanan_degisiklikler: Record<string, number>;
+  senaryo_karar: string;
+}
+
+// §3b/U26 — segmentasyon.py'nin (K-Means, denetimsiz keşif) persist ettiği rapor.
+// Hiçbir skorlama/karar yoluna beslenmez — yalnızca araştırma/şeffaflık amaçlı.
+export interface KumeProfili {
+  n: number;
+  persona_dagilimi: Record<string, number>;
+  temerrut_orani: number;
+  ozellik_ortalamalari: Record<string, number>;
+}
+
+export interface SegmentasyonRaporu {
+  zaman: string;
+  veri_kaynagi: "dekuple" | "dongusel";
+  n_musteri: number;
+  k: number;
+  silhouette_skoru: number;
+  bilinen_personalar: string[];
+  kume_profilleri: Record<string, KumeProfili>;
+  not: string;
+}
+
+// §4 R8/R10/R11 — genelleme_saglamlik.py'nin persist ettiği rapor.
+export interface PersonaGenellemeSonuc {
+  n_test: number;
+  n_train?: number;
+  auc: number | null;
+  not?: string;
+}
+
+export interface InceDosyaSonuc {
+  n: number;
+  ort_mutlak_sapma: number;
+  p90_mutlak_sapma: number;
+  anomali_bayrak_orani: number | null;
+}
+
+export interface OyunlanabilirlikSonuc {
+  ort_skor_kazanci: number;
+  p90_skor_kazanci: number;
+  degisim_orani: number;
+}
+
+export interface GenellemeSaglamlikRaporu {
+  zaman: string;
+  veri_kaynagi: string;
+  n_musteri: number;
+  model_adi_referans: string;
+  sure_sn: number;
+  persona_disi_genelleme: { aciklama: string; sonuc: Record<string, PersonaGenellemeSonuc> };
+  out_of_time_split: { durum: string; gerekce: string };
+  ince_dosya_stres_testi: { aciklama: string; sonuc: Record<string, InceDosyaSonuc> };
+  oyunlanabilirlik_duyarliligi: { aciklama: string; sonuc: Record<string, OyunlanabilirlikSonuc> };
 }
 
 // §3b/U15 — degerlendirme.py'nin (rigorous CV+CI+kalibrasyon harness'i) persist ettiği
@@ -179,4 +322,26 @@ export const api = {
   asistan: (soru: string, baglam: unknown = {}) => post<AsistanYanit>("/asistan", { soru, baglam }),
   metrikler: () => get<MetriklerRaporu>("/metrikler"),
   politika: () => get<Politika>("/politika"),
+  csvSkorla: (dosya: File) => {
+    const form = new FormData();
+    form.append("dosya", dosya);
+    return postDosya<CsvSkorSonuc>("/csv-skorla", form);
+  },
+  simulasyon: (musteriId: number, degisiklikler: Record<string, number>) =>
+    post<SimulasyonSonuc>("/simulasyon", { musteri_id: musteriId, degisiklikler }),
+  segmentasyon: () => get<SegmentasyonRaporu>("/segmentasyon"),
+  genellemeSaglamlik: () => get<GenellemeSaglamlikRaporu>("/genelleme-saglamlik"),
+
+  // §3b Phase 6 — kullanıcı portalı
+  ben: () => get<KullaniciBilgisi>("/auth/ben"),
+  kayitOl: (email: string, sifre: string, ad: string) =>
+    post<KullaniciBilgisi>("/auth/kayit", { email, sifre, ad }),
+  girisYap: (email: string, sifre: string) => post<KullaniciBilgisi>("/auth/giris", { email, sifre }),
+  cikisYap: () => post<{ cikis_yapildi: boolean }>("/auth/cikis", {}),
+  portalYukle: (dosya: File) => {
+    const form = new FormData();
+    form.append("dosya", dosya);
+    return postDosya<CsvSkorSonuc>("/portal/yukle", form);
+  },
+  portalGecmis: () => get<{ gecmis: PortalGecmisKayit[] }>("/portal/gecmis"),
 };

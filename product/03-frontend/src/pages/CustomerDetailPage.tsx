@@ -1,8 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, PERSONA_ETIKET, type SkorSonuc, type GecmisKayit } from "../api";
+import { api, PERSONA_ETIKET, type SkorSonuc, type GecmisKayit, type SimulasyonSonuc } from "../api";
 import { Icon } from "../components/Icon";
 import { durumBelirle, DURUM_ETIKET, paraFormat } from "../lib/skor";
+
+// §3b/U23 — /api/simulasyon'un kabul ettiği 9 özellik için kaydırıcı meta verisi.
+// Aralıklar sentetik demo dağılımından (min/maks gözlemlenen değerler, biraz pay
+// bırakılarak) türetildi — üretim/gerçek veri geldiğinde yeniden kalibre edilmeli.
+const SENARYO_OZELLIKLERI: { kod: string; etiket: string; min: number; max: number; adim: number }[] = [
+  { kod: "toplam_gelir_hacmi", etiket: "Toplam gelir hacmi (TL)", min: 0, max: 250000, adim: 1000 },
+  { kod: "toplam_gider_hacmi", etiket: "Toplam gider hacmi (TL)", min: 0, max: 250000, adim: 1000 },
+  { kod: "gelir_islem_sayisi", etiket: "Gelir işlem sayısı", min: 0, max: 30, adim: 1 },
+  { kod: "gelir_kaynagi_sayisi", etiket: "Gelir kaynağı çeşitliliği", min: 0, max: 6, adim: 1 },
+  { kod: "gelir_duzenliligi", etiket: "Gelir düzenliliği", min: 0, max: 1, adim: 0.05 },
+  { kod: "gider_gelir_orani", etiket: "Gider/gelir oranı", min: 0, max: 4.5, adim: 0.05 },
+  { kod: "bakiye_trendi", etiket: "Bakiye trendi (tasarruf eğilimi)", min: -35, max: 80, adim: 1 },
+  { kod: "fatura_odeme_duzeni", etiket: "Fatura ödeme düzeni", min: 0, max: 1, adim: 0.05 },
+  { kod: "hesap_hareket_yogunlugu", etiket: "Hesap hareket yoğunluğu", min: 0, max: 1.5, adim: 0.01 },
+];
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +31,39 @@ export default function CustomerDetailPage() {
   const [soru, setSoru] = useState("");
   const [yanit, setYanit] = useState<string | null>(null);
   const [soruYukleniyor, setSoruYukleniyor] = useState(false);
+
+  // §3b/U23 — What-if senaryo simülatörü (POST /api/simulasyon)
+  const [senaryoDegerler, setSenaryoDegerler] = useState<Record<string, number> | null>(null);
+  const [simSonuc, setSimSonuc] = useState<SimulasyonSonuc | null>(null);
+  const [simYukleniyor, setSimYukleniyor] = useState(false);
+  const [simHata, setSimHata] = useState("");
+
+  useEffect(() => {
+    if (sonuc) setSenaryoDegerler(sonuc.ozellikler);
+  }, [sonuc]);
+
+  useEffect(() => {
+    if (!sonuc || !senaryoDegerler) return;
+    const degisen: Record<string, number> = {};
+    for (const { kod } of SENARYO_OZELLIKLERI) {
+      if (senaryoDegerler[kod] !== sonuc.ozellikler[kod]) degisen[kod] = senaryoDegerler[kod];
+    }
+    if (Object.keys(degisen).length === 0) {
+      setSimSonuc(null);
+      setSimHata("");
+      return;
+    }
+    const zamanlayici = setTimeout(() => {
+      setSimYukleniyor(true);
+      setSimHata("");
+      api
+        .simulasyon(musteriId, degisen)
+        .then(setSimSonuc)
+        .catch((e) => setSimHata(String(e instanceof Error ? e.message : e)))
+        .finally(() => setSimYukleniyor(false));
+    }, 400);
+    return () => clearTimeout(zamanlayici);
+  }, [senaryoDegerler, sonuc, musteriId]);
 
   useEffect(() => {
     setYukleniyor(true);
@@ -92,7 +140,22 @@ export default function CustomerDetailPage() {
                   <Icon name="verified" className="text-[12px]" /> {DURUM_ETIKET[durum]}
                 </span>
               )}
+              {sonuc.anomali_bayrak && (
+                <span
+                  className="font-label-mono text-label-mono text-amber-400 px-2 py-1 bg-amber-400/10 rounded-DEFAULT border border-amber-400/20 flex items-center gap-1"
+                  title={`Tipiklik skoru: ${sonuc.anomali_skoru} — negatife yaklaştıkça daha aykırı`}
+                >
+                  <Icon name="warning" className="text-[12px]" /> Atipik Profil (OOD)
+                </span>
+              )}
             </div>
+            {sonuc.anomali_bayrak && (
+              <p className="font-body-sm text-body-sm text-amber-400/90 mt-2 max-w-md">
+                Bu profil, İzolasyon Ormanı'na (denetimsiz, §3b/U25) göre eğitim dağılımının tipik aralığının
+                dışında — skoru DEĞİŞTİRMEZ, yalnızca modele diğer profillere göre biraz daha az güvenilmesi
+                gerektiğini işaret eder.
+              </p>
+            )}
           </div>
         </div>
         <Link
@@ -240,6 +303,90 @@ export default function CustomerDetailPage() {
               </ul>
             </div>
           )}
+        </div>
+
+        {/* What-If Simulator (§3b/U23) */}
+        <div className="col-span-1 md:col-span-12 bg-surface-container hairline-border rounded-xl p-6">
+          <div className="glass-header w-full pb-4 mb-6 flex justify-between items-center flex-wrap gap-2">
+            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">
+              Senaryo Simülatörü (What-If)
+            </h2>
+            <button
+              onClick={() => sonuc && setSenaryoDegerler(sonuc.ozellikler)}
+              className="px-3 py-1.5 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-[10px] text-on-surface hover:bg-surface-container-high transition-colors"
+            >
+              Sıfırla
+            </button>
+          </div>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
+            Davranışsal özellikleri elle değiştirip skorun nasıl tepki verdiğini gözlemleyin —{" "}
+            <code className="font-label-mono text-[11px] bg-surface-container-high px-1 rounded">POST /api/simulasyon</code>{" "}
+            ile canlı model üzerinden hesaplanır (yeniden eğitim değil, aynı modelin farklı bir girdiyle tahmini).
+            Bu, gerçek işlemleri değiştirmez; yalnızca "ne olurdu" sorusuna cevap verir.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 mb-6">
+            {senaryoDegerler &&
+              SENARYO_OZELLIKLERI.map(({ kod, etiket, min, max, adim }) => (
+                <div key={kod}>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <label className="font-label-mono text-[11px] text-on-surface-variant">{etiket}</label>
+                    <span className="font-label-mono text-[11px] text-primary">
+                      {senaryoDegerler[kod]?.toLocaleString("tr-TR")}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={adim}
+                    value={senaryoDegerler[kod] ?? 0}
+                    onChange={(e) =>
+                      setSenaryoDegerler((prev) => ({ ...(prev ?? {}), [kod]: Number(e.target.value) }))
+                    }
+                    className="w-full accent-primary"
+                  />
+                </div>
+              ))}
+          </div>
+
+          {simHata && (
+            <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-body-sm text-body-sm mb-4">
+              {simHata}
+            </div>
+          )}
+
+          <div className="flex items-center justify-center gap-stack-lg bg-surface-container-low rounded-lg p-6 border border-outline-variant/20">
+            <div className="text-center">
+              <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Mevcut Skor</span>
+              <span className="font-display-sm text-display-sm text-on-surface">
+                {simSonuc?.mevcut_skor ?? sonuc.aks_skor}
+              </span>
+            </div>
+            <Icon name="arrow_forward" className="text-outline" />
+            <div className="text-center">
+              <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Senaryo Skoru</span>
+              <span className="font-display-sm text-display-sm text-primary">
+                {simYukleniyor ? "…" : (simSonuc?.senaryo_skor ?? sonuc.aks_skor)}
+              </span>
+            </div>
+            {simSonuc && (
+              <div className="text-center">
+                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Değişim</span>
+                <span
+                  className={`font-headline-md text-headline-md ${
+                    simSonuc.skor_degisimi >= 0 ? "text-emerald-400" : "text-error"
+                  }`}
+                >
+                  {simSonuc.skor_degisimi >= 0 ? "+" : ""}
+                  {simSonuc.skor_degisimi}
+                </span>
+                <span className="font-label-mono text-[10px] text-on-surface-variant block mt-1">
+                  {simSonuc.senaryo_karar}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* History */}

@@ -8,11 +8,13 @@ const NAV_LINKS = [
   { to: "/portfolio", label: "Portfolio" },
   { to: "/audit", label: "Audit" },
   { to: "/customers", label: "Customers" },
+  { to: "/upload", label: "Upload" },
 ];
 
 const BOTTOM_LINKS = [
   { to: "/", icon: "terminal", label: "Command", end: true },
   { to: "/customers", icon: "sensors", label: "Signals" },
+  { to: "/upload", icon: "upload_file", label: "Upload" },
   { to: "/audit", icon: "shield_with_heart", label: "Vault" },
   { to: "/portfolio", icon: "smart_toy", label: "Support" },
 ];
@@ -51,6 +53,14 @@ export default function Layout() {
             </div>
           </div>
           <div className="flex items-center gap-4 text-on-surface-variant">
+            <NavLink
+              to="/portal"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT border border-outline-variant/30 font-label-mono text-label-mono hover:bg-surface-container/50 transition-colors"
+              title="Kullanıcı Portalı — kendi ekstreni yükle"
+            >
+              <Icon name="open_in_new" className="text-[14px]" />
+              Kullanıcı Portalı
+            </NavLink>
             <button
               className="hover:bg-surface-container/50 p-2 rounded-full transition-all active:scale-95"
               title="Sistem canlı — Django API'ye bağlı"

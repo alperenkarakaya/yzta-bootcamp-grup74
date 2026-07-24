@@ -58,6 +58,8 @@ Companion to **[overview.md](overview.md)** (vision, status, decisions) and **[e
 | Business impact | `aks_core/model/is_etkisi.py` | Rescued-creditworthy segment sizing | Deterministic |
 | Evaluation harness | `aks_core/model/degerlendirme.py` | CV + CI + calibration + per-persona | Deterministic |
 | Circularity diagnostic | `aks_core/model/circularity_ablation.py` | Benchmark-validity proof | Deterministic |
+| Anomaly/OOD detection | `aks_core/model/anomali.py` | Flags profiles outside the training distribution (§5.4) | Unsupervised ML, auxiliary — never changes score/decision |
+| Segmentation | `aks_core/model/segmentasyon.py` | Unsupervised persona discovery, offline report (§5.5) | Unsupervised ML, research — not wired to any decision path |
 | `VeriAgent` | `aks_core/agents/veri_agent.py` | Calls feature extraction | **Not an agent** — pipeline stage |
 | `SkorlamaAgent` | `aks_core/agents/skorlama_agent.py` | `predict_proba` + scaling → score/decision | **Not an agent** — scoring service |
 | `DanismanAgent` | `aks_core/agents/danisman_agent.py` | Template-fills SHAP into advice | **Not an agent** — deterministic NLG (correct) |
@@ -165,6 +167,20 @@ The mission's exact words — *discover hidden capacity the pipeline **fails to 
 
 **Status: instrumented in `aks_core.model.formulasyon_b`** (execution.md §3b Phase 1, U10). `pd_geleneksel_bant` is fit as an isotonic (monotonic-decreasing) mapping from classic score → *empirical* observed default rate on the training split (not a formula); `pd_fark = pd_geleneksel_bant − pd_davranissal`; `kapasite_sinyali` is a simple 0–100, 50-neutral linear rescaling of `pd_fark` (documented as a v1 approximation, not a calibrated probability itself). `SkorlamaAgent.calistir()` accepts an optional `klasik_skor` argument and returns these fields when provided; wiring `klasik_skor` through from the backend (which already computes it) is Phase 2 (§3b, U17) — not yet done, so the API doesn't surface these fields yet.
 
+### 5.4 Anomaly / out-of-distribution detection (unsupervised, auxiliary)
+
+**Status: instrumented in `aks_core.model.anomali`** (execution.md §3b Phase 4, U25). An `IsolationForest` (`n_estimators=200`, `contamination=0.05`) is fit on the same train split `egit()` already uses — no leakage, same OOF discipline as calibration/Formulation B. Persisted portably via joblib (pure sklearn/NumPy state, no XGBoost-style C++ buffer issue). `SkorlamaAgent.calistir()` loads it optionally (`None` if the artifact is absent — scoring is never blocked by its absence) and emits `anomali_bayrak`/`anomali_skoru` alongside the score.
+
+**Why this exists (five-question test, overview.md §6):** not an agent — a deterministic auxiliary statistical component in the same category as SHAP (`aciklama.py`). **What it answers that SHAP doesn't:** SHAP explains *why* a score came out a given way assuming the model's fit is trustworthy for this input; the anomaly detector answers a prior question — *is this input even the kind of thing the model was fit on*. **Boundary (overview.md §7), explicitly re-verified:** this signal is additive-only — it cannot and does not modify `aks_skor`, `karar`, or `klasik_skor`; it is surfaced purely for human judgment (e.g. "trust this score a bit less").
+
+### 5.5 Unsupervised segmentation (research, not decision-facing)
+
+**Status: instrumented in `aks_core.model.segmentasyon`** (execution.md §3b Phase 4, U26). K-Means, sweeping k=2..6 and selecting by silhouette score, run over the 9 behavioral features (standardized). Produces an offline report (`artifacts/segmentasyon_raporu.json`), served read-only via `GET /api/segmentasyon` — same "generated artifact, 503 until produced" pattern as `/api/metrikler`. **Explicitly not wired into any scoring or decision path** — same category as `is_etkisi.py`/`degerlendirme.py`: a research script, not a pipeline stage.
+
+**Why this exists:** the product's 4 personas (`klasik_maasli` etc.) are a label baked in by the synthetic generator, not something discovered from behavior. This asks whether unsupervised clustering on the same 9 features the model actually sees would rediscover those groups (validating that the personas correspond to real behavioral structure) or not (a sign the personas are more of a narrative convenience than a behavioral reality).
+
+**Finding on the current synthetic/dekuple dataset, reported honestly (not smoothed over):** k=3 was selected (silhouette 0.389 — moderate, not sharp separation). `ogrenci_yuksek_hacim` (590/590) and mostly `klasik_maasli` (579/582) are cleanly recovered, but **`stajyer_degisken_gelir` and `dusuk_hacim_riskli` collapse into one cluster** — the 9 behavioral features alone do not cleanly distinguish these two personas. Per-cluster empirical default rates are also nearly flat (16.8–17.5%), so this clustering doesn't separate risk either. Consistent with "no-go is a valid outcome": this is reported as a real limitation of the current feature set/synthetic data, not cherry-picked. Not yet re-run on real data (OQ-36 still open).
+
 ## 6. Evaluation pipeline
 
 Built as `degerlendirme.py` — model-/data-agnostic, reusable regardless of how OQ-36/37 resolve. Produces: repeated stratified k-fold, bootstrap 95% CIs on ROC-AUC/PR-AUC, Brier score, ECE, reliability curve, and **per-persona subgroup breakdown**.
@@ -189,7 +205,9 @@ The 0.84 aggregate is carried by cleanly separating the negative-control group �
 
 ## 7. Feature engineering pipeline
 
-`aks_core/ozellik/cikarim.py` → `OZELLIK_ADLARI` (9 features): `toplam_gelir_hacmi`, `toplam_gider_hacmi`, `gelir_islem_sayisi`, `gelir_kaynagi_sayisi`, `gelir_duzenliligi`, `gider_gelir_orani`, `bakiye_trendi`, `fatura_odeme_duzeni`, `hesap_hareket_yogunlugu`. Pure deterministic function of raw transactions. **Gaming-resistance is an open research task (RQ-3):** of the 4 label-causal features, which are user-manipulable (e.g. can a customer structure transfers to inflate `gelir_duzenliligi`)? A production capacity signal must be robust to strategic behavior.
+`aks_core/ozellik/cikarim.py` → `OZELLIK_ADLARI` (9 features): `toplam_gelir_hacmi`, `toplam_gider_hacmi`, `gelir_islem_sayisi`, `gelir_kaynagi_sayisi`, `gelir_duzenliligi`, `gider_gelir_orani`, `bakiye_trendi`, `fatura_odeme_duzeni`, `hesap_hareket_yogunlugu`. Pure deterministic function of raw transactions.
+
+**Gaming-resistance (RQ-3) — first quantitative answer, execution.md §3b Phase 5 (R11):** of the 4 label-causal features, `gider_gelir_orani` (expense/income ratio) is disproportionately gameable — a fixed 25% "improvement" on this one feature alone buys an average **+73 AKS points** (p90 **+265**), versus +6/+1/−2 for `fatura_odeme_duzeni`/`bakiye_trendi`/`gelir_duzenliligi` respectively. This is a real, unresolved robustness risk (OQ-45, execution.md §8), not a closed question — a production capacity signal must be robust to strategic behavior, and right now the model's single most-leaned-on lever is also its most plausibly manipulable one.
 
 ## 8. Explainability & fairness
 
@@ -210,6 +228,18 @@ The boundary from overview.md §7 is operationalized here — it *is* the archit
 
 Django admin sets `has_change_permission = has_delete_permission = False` on `AuditLog`. Nothing in the request path can mutate the bank's segment: `SkorlamaAgent` only emits the *complementary* score + a within-policy limit suggestion; the classic score is read-only input.
 
+## 9b. User portal & authentication (execution.md §3b Phase 6)
+
+Two interfaces on one Django backend, one React app: the bank UI (routes under `Layout`, no login, internal tool) and the user portal (`/portal/*`, under `PortalLayout`, session-gated). They share the scoring pipeline (`services.degerlendir()` → same `aks_core` orchestrator) but nothing else — no shared nav, no shared session state, no page in either interface links into the other's protected pages.
+
+**Auth: Django's own `django.contrib.auth`, session-based** (OQ-33 resolved for this scope; Supabase Auth would need credentials that are still blocked, OQ-35). `django.contrib.auth.models.User` used directly — `username` = email, no custom user model. Passwords hashed with Django's default PBKDF2; `AUTH_PASSWORD_VALIDATORS` enforces an 8-character minimum (was empty before this phase).
+
+**CSRF, the part that isn't obvious:** DRF's `SessionAuthentication` enforces a CSRF token match on every state-changing request once a session exists (Django's blanket `CsrfViewMiddleware` is bypassed for DRF views — DRF does its own check instead). The frontend calls `GET /api/auth/ben` on load (decorated `@ensure_csrf_cookie`) to guarantee the `csrftoken` cookie exists, then reads it and sends it back as `X-CSRFToken` on every POST. Separately, Django 4+ also validates the request's `Origin` header against `CSRF_TRUSTED_ORIGINS` — this bit 403'd every authenticated POST during dev testing even with a correct token, because the Vite proxy makes requests arrive looking like a different origin than the browser sent; fixed by deriving `CSRF_TRUSTED_ORIGINS` from the existing `CORS_ALLOWED_ORIGINS` env var.
+
+**Data model:** `Assessment.user` (nullable FK to `auth.User`, migration `audit/0003_assessment_user.py`) — set only for `kaynak="portal"` rows. Bank/demo/API scoring paths never populate it. This is what powers a portal user's private "Geçmişim" (`GET /api/portal/gecmis`, filtered by `user=request.user` — no user can see another user's history, and the bank's `AuditLog`/aggregate views never expose portal users' identities).
+
+**Not yet done, explicitly (OQ-46):** password reset, email verification, KVKK/consent notice, data-retention policy. This is a working demo-grade login, not yet hardened for accepting real (non-demo) personal data at market.
+
 ## 10. API architecture
 
 Base `http://localhost:8000/api`. DRF views in `product/04-backend/api/views.py`; JSON bodies (except CSV upload = multipart).
@@ -217,6 +247,10 @@ Base `http://localhost:8000/api`. DRF views in `product/04-backend/api/views.py`
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/bilgi` | Service info: model name, feature list, demo count |
+| GET | `/metrikler` | Persisted CV+CI+calibration+per-persona report (`degerlendirme.py`); 503 until generated |
+| GET | `/politika` | Decision-mechanism config: AKS score bands/multipliers + portfolio thresholds |
+| GET | `/segmentasyon` | Unsupervised K-Means discovery report (§5.5); 503 until generated |
+| GET | `/genelleme-saglamlik` | Out-of-persona generalization + thin-file stress test + gaming-sensitivity report (R8/R10/R11); 503 until generated |
 | GET | `/demo-musteriler?adet_per_persona=3` | Sample customer IDs per persona |
 | GET | `/skorla/{musteri_id}` | Score a demo customer (writes audit row, `kaynak="demo"`) |
 | POST | `/skorla` | Score from raw transactions (audit, `kaynak="api"`) |
@@ -227,6 +261,14 @@ Base `http://localhost:8000/api`. DRF views in `product/04-backend/api/views.py`
 | POST | `/csv-skorla` | Score a user's own statement CSV (multipart; audit, `kaynak="csv"`) |
 | POST | `/asistan` | Ask the AKS Assistant (Gemini or rule-based) |
 | GET | `/gecmis/{musteri_id}` | Persisted assessment history (DB; falls back to orchestrator memory) |
+| GET | `/auth/ben` | Current portal session (also sets the CSRF cookie) — 401 if not logged in |
+| POST | `/auth/kayit` | Portal user registration (email/password/name) + auto-login |
+| POST | `/auth/giris` | Portal user login |
+| POST | `/auth/cikis` | Portal user logout (`IsAuthenticated`) |
+| POST | `/portal/yukle` | Authenticated user scores their own statement CSV (multipart; `IsAuthenticated`, `kaynak="portal"`, tied to `Assessment.user`) |
+| GET | `/portal/gecmis` | The logged-in user's own upload history only (`IsAuthenticated`) |
+
+All scoring responses (`/skorla`, `/skorla/{id}`, `/csv-skorla`) also carry `anomali_bayrak`/`anomali_skoru` (§5.4) when the optional anomaly-detection artifact is present; both are `null` otherwise, and neither ever affects `aks_skor`/`karar`.
 
 ## 11. Database & infrastructure
 

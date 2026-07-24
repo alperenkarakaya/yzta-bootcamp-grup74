@@ -36,6 +36,8 @@ class Orkestrator:
             "risk_seviyesi": skor["risk_seviyesi"],
             "karar": skor["karar"],
             "onerilen_limit": skor.get("onerilen_limit"),
+            "anomali_bayrak": skor.get("anomali_bayrak"),
+            "anomali_skoru": skor.get("anomali_skoru"),
             "ozellikler": veri["ozellikler"],
             "aciklama": aciklama,
             "danisman": danisman,

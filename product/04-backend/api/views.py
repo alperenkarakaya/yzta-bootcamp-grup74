@@ -57,6 +57,15 @@ def genelleme_saglamlik(request):
 
 
 @api_view(["GET"])
+def risk_istahi(request):
+    """§3b Phase 7/7.4: risk_istahi.py'nin persist ettiği 3 profil (ihtiyatli/
+    dengeli/atak) raporu — hedef kötü oranına göre seçilmiş eşikler + CI."""
+    if not services.risk_istahi_var():
+        return Response({"hata": "Henüz üretilmedi — python -m aks_core.model.risk_istahi çalıştırın"}, status=503)
+    return Response(services.risk_istahi())
+
+
+@api_view(["GET"])
 def demo_musteriler(request):
     return Response(services.demo_personalar(_int(request.query_params, "adet_per_persona", 3)))
 
@@ -160,20 +169,25 @@ def adalet(request):
 @api_view(["POST"])
 @parser_classes([MultiPartParser])
 def csv_skorla(request):
+    """§3b Phase 7 / 7.1: adı tarihsel nedenlerle "csv_skorla" (URL/frontend geriye
+    dönük uyumluluğu) ama artık CSV/XLSX/PDF'in üçünü de kabul eder — format
+    tespiti `aks_core.belge.okuyucu.ayristir()`'de uzantıya göre yapılır."""
+    from aks_core.belge.hatalar import BelgeHatasi
     dosya = request.FILES.get("dosya")
     if not dosya:
         return Response({"hata": "dosya alanı gerekli (multipart)"}, status=400)
     try:
-        islemler = services.csv_ayristir(dosya)
-    except ValueError as e:
+        islemler, meta = services.belge_ayristir(dosya)
+    except BelgeHatasi as e:
         return Response({"hata": str(e)}, status=400)
-    sonuc, _ = services.degerlendir(-1, islemler, kaynak="csv")
+    sonuc, _ = services.degerlendir(-1, islemler, kaynak="csv", belge_meta=meta)
     return Response({
         "islem_sayisi": len(islemler), "aks_skor": sonuc["aks_skor"],
         "risk_seviyesi": sonuc["risk_seviyesi"], "karar": sonuc["karar"],
         "onerilen_limit": sonuc.get("onerilen_limit"),
         "aciklama": sonuc["aciklama"], "danisman": sonuc["danisman"],
         "anomali_bayrak": sonuc.get("anomali_bayrak"), "anomali_skoru": sonuc.get("anomali_skoru"),
+        "belge_meta": meta,
     })
 
 

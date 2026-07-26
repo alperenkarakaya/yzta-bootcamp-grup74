@@ -88,6 +88,25 @@ def segmentasyon():
         return json.load(f)
 
 
+def risk_istahi_var():
+    """§3b Phase 7/7.4: risk_istahi.py'nin persist ettiği 3-profil raporu."""
+    import os
+    return os.path.exists(os.path.join(str(paths.ARTIFACTS_DIR), "risk_istahi_raporu.json"))
+
+
+def risk_istahi():
+    from aks_core.model import risk_istahi as risk_istahi_modul
+    return risk_istahi_modul.raporu_yukle()
+
+
+def musteri_risk_istahi(aks_skor):
+    """Verilen bir AKS skorunun 3 risk-iştahı profilinden hangilerinde
+    onaylanacağını döner — ağır hesaplama TEKRARLANMAZ, yalnızca persiste
+    edilmiş eşiklerle karşılaştırılır (bkz. risk_istahi.musteri_risk_istahi)."""
+    from aks_core.model import risk_istahi as risk_istahi_modul
+    return risk_istahi_modul.musteri_risk_istahi(aks_skor)
+
+
 def genelleme_saglamlik_var():
     """§4 R8/R10/R11: genelleme_saglamlik.py'nin persist ettiği rapor."""
     import os
@@ -122,32 +141,34 @@ def politika():
     return sozluk
 
 
+def belge_ayristir(dosya):
+    """Multipart dosyadan (CSV/XLSX/PDF) işlem listesi + kalite/meta raporu çıkarır.
+
+    §3b Phase 7 / 7.1 + 7.5: eski `csv_ayristir()`'in (yalnızca CSV, katı kolon
+    şeması) yerini alır — `aks_core.agents.belge_agent.BelgeAgent`'a devreder
+    (mantık burada kopyalanmaz). `BelgeAgent`, `aks_core.belge.okuyucu.ayristir()`
+    ile AYNI alt modülleri kullanır ama çok-stratejili karar sürecinin izini
+    (`meta["iz"]`) de taşır — gerçek agent davranışının kanıtı. Format hatasında
+    `aks_core.belge.BelgeHatasi` fırlatır (mesajı doğrudan kullanıcıya gösterilebilir,
+    `hata.iz` o ana kadarki izi taşır). Hem anonim `/api/csv-skorla` hem giriş
+    yapmış `/api/portal/yukle` tarafından paylaşılan tek ayrıştırma mantığı.
+
+    Döner: (islemler, meta) — meta; kaynak_format/kategori_guveni/pencere_uyumlu/
+    bayraklar/iz gibi şeffaflık alanları taşır (kalite.py + belge_agent.py).
+    """
+    from aks_core.agents.belge_agent import BelgeAgent
+    return BelgeAgent().calistir(dosya.name, dosya.read())
+
+
 def csv_ayristir(dosya):
-    """Multipart CSV dosyasından işlem listesi çıkarır. Format hatasında ValueError
-    fırlatır (mesajı doğrudan kullanıcıya gösterilebilir). Hem anonim `/api/csv-skorla`
-    hem giriş yapmış `/api/portal/yukle` tarafından paylaşılan tek ayrıştırma mantığı
-    (§3b Phase 6) — kolon/satır doğrulama iki yerde kopyalanmadı."""
-    import csv as _csv
-    import io
-    icerik = dosya.read().decode("utf-8-sig")
-    okuyucu = _csv.DictReader(io.StringIO(icerik))
-    gerekli = {"tarih", "islem_tipi", "kategori", "tutar"}
-    if not okuyucu.fieldnames or not gerekli.issubset(set(okuyucu.fieldnames)):
-        raise ValueError(f"CSV kolonları eksik. Gerekli: {sorted(gerekli)}")
-    islemler = []
-    for i, satir in enumerate(okuyucu):
-        try:
-            islemler.append({"tarih": satir["tarih"].strip(), "islem_tipi": satir["islem_tipi"].strip(),
-                             "kategori": satir["kategori"].strip(), "tutar": float(satir["tutar"]),
-                             "aciklama": satir.get("aciklama", "")})
-        except (ValueError, KeyError):
-            raise ValueError(f"Satır {i+2} okunamadı (tutar sayısal olmalı)")
-    if len(islemler) < 5:
-        raise ValueError("Anlamlı skor için en az 5 işlem gerekli")
+    """Geriye dönük uyumluluk sarmalayıcısı — yalnızca işlem listesini döner
+    (meta'yı görmezden gelir). Yeni çağıranlar `belge_ayristir()` kullanmalı."""
+    islemler, _meta = belge_ayristir(dosya)
     return islemler
 
 
-def degerlendir(musteri_id, islemler, kaynak="api", persona="", user=None):
+def degerlendir(musteri_id, islemler, kaynak="api", persona="", user=None, belge_meta=None,
+                 sahiplik_beyani=False, ip=None):
     """aks_core ile skorla + denetim izi yaz.
 
     §3b/U17: persona biliniyorsa (klasik skor hesaplanabiliyorsa) Formülasyon B
@@ -161,6 +182,17 @@ def degerlendir(musteri_id, islemler, kaynak="api", persona="", user=None):
     §3b/Phase 6: `user` verilirse (portal akışı) `Assessment.user`'a bağlanır —
     yalnızca o kullanıcının "Geçmişim" listesini besler, bankanın gördüğü hiçbir
     veriyi etkilemez.
+
+    §3b/Phase 7/7.1: `belge_meta` verilirse (belge hattından gelen kalite/kaynak
+    raporu, bkz. `belge_ayristir()`) `Assessment.kaynak_format`/`belge_parmak_izi`
+    alanlarını besler; `user`'ın bir `Profil`'i varsa `Assessment.profil`'e
+    bağlanır — kurum tarafının (`kimlik.kurum_views`) bu kaydı bulabilmesi için.
+
+    §3b/Phase 7/7.3: `user`'ın profili varsa iki sahiplik-savunma kontrolü
+    (`api.sahiplik`) çalışır — çakışan parmak izi / davranışsal tutarsızlık.
+    Bulunan bayraklar KARARI DEĞİŞTİRMEZ, yalnızca `sonuc["sahiplik_bayraklari"]`
+    ve denetim kaydına yazılır (anomali_bayrak ile aynı "şeffaflık sinyali,
+    karar mekanizması değil" deseni — overview.md §7 sınırı).
     """
     sonuc = orkestrator.degerlendir(musteri_id, islemler)
     klasik = None
@@ -172,11 +204,26 @@ def degerlendir(musteri_id, islemler, kaynak="api", persona="", user=None):
         sonuc["pd_geleneksel_bant"] = formulasyon_b.get("pd_geleneksel_bant")
         sonuc["pd_fark"] = formulasyon_b.get("pd_fark")
         sonuc["kapasite_sinyali"] = formulasyon_b.get("kapasite_sinyali")
-    _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=user)
+
+    sahiplik_bayraklari = []
+    gecerli_user = user if (user is not None and user.is_authenticated) else None
+    profil = getattr(gecerli_user, "profil", None) if gecerli_user else None
+    if profil is not None:
+        from api import sahiplik as sahiplik_modul
+        parmak_izi = (belge_meta or {}).get("parmak_izi", "")
+        if parmak_izi and sahiplik_modul.coklu_sahiplik_kontrol(parmak_izi, profil):
+            sahiplik_bayraklari.append("coklu_sahiplik_supheli")
+        if sahiplik_modul.davranissal_tutarlilik_kontrol(profil, sonuc.get("ozellikler", {})):
+            sahiplik_bayraklari.append("profil_tutarsiz")
+    sonuc["sahiplik_bayraklari"] = sahiplik_bayraklari
+
+    _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=user, belge_meta=belge_meta,
+                 sahiplik_beyani=sahiplik_beyani, sahiplik_bayraklari=sahiplik_bayraklari, ip=ip)
     return sonuc, klasik
 
 
-def _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=None):
+def _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=None, belge_meta=None,
+                  sahiplik_beyani=False, sahiplik_bayraklari=None, ip=None):
     """Best-effort: denetim yazımı skorlamayı asla düşürmemeli."""
     try:
         from audit.models import AuditLog, Assessment, Customer
@@ -188,13 +235,18 @@ def _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=None):
             )
         pd_fark = sonuc.get("pd_fark")
         kapasite_sinyali = sonuc.get("kapasite_sinyali")
+        gecerli_user = user if (user is not None and user.is_authenticated) else None
+        belge_meta = belge_meta or {}
         Assessment.objects.create(
             customer=cust, musteri_id=str(musteri_id), klasik_skor=klasik,
             aks_skor=sonuc["aks_skor"], risk_seviyesi=sonuc["risk_seviyesi"],
             karar=sonuc["karar"], onerilen_limit=sonuc.get("onerilen_limit"),
             ozellikler=sonuc.get("ozellikler", {}), kaynak=kaynak,
             pd_fark=pd_fark, kapasite_sinyali=kapasite_sinyali,
-            user=user if (user is not None and user.is_authenticated) else None,
+            user=gecerli_user, profil=getattr(gecerli_user, "profil", None) if gecerli_user else None,
+            belge_parmak_izi=belge_meta.get("parmak_izi", ""),
+            kaynak_format=belge_meta.get("kaynak_format", ""),
+            sahiplik_beyani=sahiplik_beyani, sahiplik_bayraklari=sahiplik_bayraklari or [], yukleme_ip=ip,
         )
         AuditLog.objects.create(
             musteri_id=str(musteri_id), klasik_skor=klasik, aks_skor=sonuc["aks_skor"],
@@ -287,5 +339,36 @@ def adalet(klasik_esik=680, aks_esik=650):
     return sonuc
 
 
+def _simulasyon_fn_olustur(baglam):
+    """§3b Phase 7/7.5: `baglam["ozellikler"]` verilmişse (frontend gönderirse),
+    `danisman_llm`'in `senaryo_calistir` aracının çağırabileceği bir kapanış
+    döner — what-if hesaplaması mevcut `SkorlamaAgent`'i kullanır, yeni bir
+    skorlama mantığı İCAT EDİLMEZ (aynı `/api/simulasyon`'un kullandığı yol)."""
+    ozellikler = baglam.get("ozellikler")
+    if not ozellikler:
+        return None
+
+    def _calistir(degisiklikler):
+        gecersiz = [k for k in degisiklikler if k not in ozellikler]
+        if gecersiz:
+            return {"hata": f"Geçersiz özellik(ler): {gecersiz}"}
+        yeni_ozellikler = dict(ozellikler)
+        yeni_ozellikler.update(degisiklikler)
+        vektor = [yeni_ozellikler[o] for o in orkestrator.skorlama_agent.ozellikler]
+        sonuc = orkestrator.skorlama_agent.calistir(vektor)
+        return {"senaryo_aks_skor": sonuc["aks_skor"], "senaryo_karar": sonuc["karar"]}
+
+    return _calistir
+
+
 def asistan_yanit(soru, baglam):
-    return asistan.yanitla(soru, baglam or {})
+    """§3b Phase 7/7.5: `ANTHROPIC_API_KEY` tanımlıysa tool-calling agent'ı
+    (`danisman_llm`) tercih edilir; tanımlı değilse eski yola (Gemini varsa
+    onu, yoksa deterministik kural motorunu deneyen `AsistanAgent`) hiçbir
+    davranış değişikliği olmadan düşülür — sıfır regresyon."""
+    import os
+    baglam = baglam or {}
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        from aks_core.agents import danisman_llm
+        return danisman_llm.yanitla(soru, baglam, simulasyon_fn=_simulasyon_fn_olustur(baglam))
+    return asistan.yanitla(soru, baglam)

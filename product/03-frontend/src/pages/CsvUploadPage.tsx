@@ -3,6 +3,13 @@ import { api, type CsvSkorSonuc } from "../api";
 import { Icon } from "../components/Icon";
 import { paraFormat } from "../lib/skor";
 
+const BELGE_BAYRAK_METNI: Record<string, string> = {
+  pencere_uyumsuz: "Ekstre süresi, modelin eğitildiği ~6 aylık pencereden belirgin şekilde sapıyor.",
+  dusuk_kategori_guveni: "İşlem kategorileri güvenle tahmin edilemedi — sonuç daha az kesin olabilir.",
+  yuksek_atlanan_satir_orani: "Dosyadaki satırların önemli bir kısmı okunamadı.",
+  bos_belge: "Belgeden hiç işlem çıkarılamadı.",
+};
+
 const ORNEK_CSV = `tarih,islem_tipi,kategori,tutar,aciklama
 2026-01-02,gelir,maas_odemesi,18000,Ocak maaşı
 2026-01-09,gider,yeme_icme,-1400,market
@@ -56,10 +63,10 @@ export default function CsvUploadPage() {
       <header>
         <h1 className="font-headline-md text-headline-md text-on-background">Belge / Ekstre Yükleme</h1>
         <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-          Kendi işlem ekstrenizi (CSV) yükleyin — AKS aynı davranışsal model ile (dekuple/LR eğitimli) canlı
-          bir skor üretir. Bu yol demo popülasyonundan bağımsızdır; her satır{" "}
+          Kendi işlem ekstrenizi (CSV, Excel ya da PDF) yükleyin — AKS aynı davranışsal model ile (dekuple/LR
+          eğitimli) canlı bir skor üretir. Bu yol demo popülasyonundan bağımsızdır; her istek{" "}
           <code className="font-label-mono text-[11px] bg-surface-container px-1 rounded">POST /api/csv-skorla</code>{" "}
-          uç noktasına gider.
+          uç noktasına gider (§3b Phase 7/7.1: artık üç format da kabul edilir).
         </p>
       </header>
 
@@ -68,7 +75,7 @@ export default function CsvUploadPage() {
         <div className="flex justify-between items-start gap-4 flex-wrap">
           <div>
             <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-2">
-              Beklenen Kolonlar
+              CSV İçin Beklenen Kolonlar (Excel/PDF Otomatik Tanınır)
             </h2>
             <div className="flex flex-wrap gap-2">
               {["tarih (YYYY-AA-GG)", "islem_tipi (gelir/gider)", "kategori", "tutar", "aciklama (opsiyonel)"].map(
@@ -116,7 +123,7 @@ export default function CsvUploadPage() {
         <input
           ref={girisRef}
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,text/csv,.xlsx,.xls,.pdf,application/pdf"
           className="hidden"
           onChange={(e) => dosyaSec(e.target.files?.[0] ?? null)}
         />
@@ -132,9 +139,9 @@ export default function CsvUploadPage() {
           ) : (
             <>
               <div className="font-body-sm text-body-sm text-on-surface">
-                CSV dosyasını buraya sürükleyin veya seçin
+                CSV, Excel ya da PDF dosyasını buraya sürükleyin veya seçin
               </div>
-              <div className="font-label-mono text-[11px] text-on-surface-variant">.csv — maks. birkaç MB</div>
+              <div className="font-label-mono text-[11px] text-on-surface-variant">.csv / .xlsx / .pdf</div>
             </>
           )}
           <div className="flex gap-3 mt-2">
@@ -171,6 +178,15 @@ export default function CsvUploadPage() {
               az güvenilmesi gerektiğini işaret eder (tipiklik skoru: {sonuc.anomali_skoru}).
             </div>
           )}
+          {(sonuc.belge_meta?.bayraklar ?? []).map((b) => (
+            <div
+              key={b}
+              className="col-span-1 md:col-span-12 bg-amber-400/10 border border-amber-400/30 text-amber-400 rounded-DEFAULT p-3 font-body-sm text-body-sm flex items-center gap-2"
+            >
+              <Icon name="warning" className="text-[16px] shrink-0" />
+              {BELGE_BAYRAK_METNI[b] ?? b}
+            </div>
+          ))}
           <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col items-center justify-center text-center">
             <span className="font-label-mono text-label-mono text-on-surface-variant mb-2">AKS Skoru</span>
             <span className="font-display-lg text-display-lg text-primary drop-shadow-[0_0_10px_rgba(195,192,255,0.5)]">
@@ -242,6 +258,22 @@ export default function CsvUploadPage() {
               </ul>
             )}
           </div>
+
+          {!!sonuc.belge_meta?.iz?.length && (
+            <details className="col-span-1 md:col-span-12 bg-surface-container hairline-border rounded-xl p-6">
+              <summary className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider cursor-pointer">
+                Belge Agent İzi ({sonuc.belge_meta.kaynak_format?.toUpperCase()})
+              </summary>
+              <ol className="mt-4 space-y-1.5">
+                {sonuc.belge_meta.iz.map((adim, i) => (
+                  <li key={i} className="font-label-mono text-[11px] text-on-surface-variant flex gap-2">
+                    <span className="text-primary shrink-0">{i + 1}.</span>
+                    {adim}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
         </section>
       )}
     </div>

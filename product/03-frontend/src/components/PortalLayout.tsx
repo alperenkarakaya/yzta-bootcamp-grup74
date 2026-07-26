@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
-import { Navigate, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { api, type KullaniciBilgisi } from "../api";
 import { Icon } from "./Icon";
+
+const PORTAL_NAV = [
+  { to: "/portal", label: "Yükle", uc: true },
+  { to: "/portal/profilim", label: "Profilim" },
+  { to: "/portal/erisim-talepleri", label: "Erişim Talepleri" },
+  { to: "/portal/riza-defterim", label: "Rıza Defterim" },
+];
 
 // §3b Phase 6 — kullanıcı portalı: banka arayüzünden (Layout.tsx) tamamen ayrı
 // nav/marka + oturum kapısı. `/portal/*` altındaki tüm sayfalar buradan geçer;
@@ -39,11 +46,29 @@ export default function PortalLayout() {
   return (
     <div className="min-h-screen bg-background text-on-background font-body-sm text-body-sm antialiased">
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-outline-variant/30">
-        <div className="flex justify-between items-center h-16 px-4 md:px-container-padding max-w-[1000px] mx-auto">
-          <span className="font-display-sm text-display-sm font-bold tracking-tighter text-on-background">
-            AKS Portal
-          </span>
-          <div className="flex items-center gap-4">
+        <div className="flex justify-between items-center h-16 px-4 md:px-container-padding max-w-[1000px] mx-auto gap-4">
+          <div className="flex items-center gap-6 min-w-0">
+            <span className="font-display-sm text-display-sm font-bold tracking-tighter text-on-background shrink-0">
+              AKS Portal
+            </span>
+            <div className="hidden md:flex items-center gap-1">
+              {PORTAL_NAV.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  end={n.uc}
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 rounded-DEFAULT font-label-mono text-label-mono transition-colors ${
+                      isActive ? "bg-surface-container-high text-on-background" : "text-on-surface-variant hover:bg-surface-container"
+                    }`
+                  }
+                >
+                  {n.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-4 shrink-0">
             <span className="font-label-mono text-label-mono text-on-surface-variant hidden sm:inline">
               {kullanici.ad}
             </span>
@@ -55,6 +80,22 @@ export default function PortalLayout() {
               Çıkış
             </button>
           </div>
+        </div>
+        <div className="flex md:hidden gap-1 px-4 pb-2 overflow-x-auto">
+          {PORTAL_NAV.map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              end={n.uc}
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-DEFAULT font-label-mono text-[11px] whitespace-nowrap transition-colors ${
+                  isActive ? "bg-surface-container-high text-on-background" : "text-on-surface-variant hover:bg-surface-container"
+                }`
+              }
+            >
+              {n.label}
+            </NavLink>
+          ))}
         </div>
       </nav>
       <main className="pt-24 pb-16 px-4 md:px-container-padding max-w-[1000px] mx-auto min-h-screen">

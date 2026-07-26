@@ -164,9 +164,26 @@ export interface AsistanYanit {
   mod: "llm" | "kural";
 }
 
-// POST /api/csv-skorla (U24) — belge/ekstre yükleme. Persona bilinmediği için
-// backend klasik_skor/Formülasyon B alanlarını hesaplamıyor (services.degerlendir
+// POST /api/csv-skorla (U24) — belge/ekstre yükleme (§3b Phase 7/7.1: artık
+// CSV/XLSX/PDF üçünü de kabul eder). Persona bilinmediği için backend
+// klasik_skor/Formülasyon B alanlarını hesaplamıyor (services.degerlendir
 // yalnızca persona verilirse bunları doldurur) — SkorSonuc'tan kasıtlı olarak dar.
+export interface BelgeMeta {
+  kaynak_format: "csv" | "xlsx" | "pdf";
+  kategori_guveni: number;
+  islem_sayisi: number;
+  tarih_araligi?: { baslangic: string; bitis: string };
+  pencere_gun?: number;
+  beklenen_pencere_gun?: number;
+  pencere_uyumlu?: boolean;
+  atlanan_satir_orani?: number | null;
+  bayraklar: string[];
+  parmak_izi?: string;
+  // §3b Phase 7/7.5 — belge_agent.py'nin çok-stratejili karar izini (insan-okur
+  // cümleler) taşır; jüriye "gerçek agent" davranışını GÖSTEREN alan.
+  iz?: string[];
+}
+
 export interface CsvSkorSonuc {
   islem_sayisi: number;
   aks_skor: number;
@@ -177,17 +194,24 @@ export interface CsvSkorSonuc {
   danisman: Danisman;
   anomali_bayrak: boolean | null;
   anomali_skoru: number | null;
+  // §3b Phase 7/7.3 — yalnızca portal (giriş yapmış) yüklemelerinde dolu;
+  // anonim /api/csv-skorla'da her zaman boş dizi. "coklu_sahiplik_supheli" /
+  // "profil_tutarsiz" olabilir — KARARI DEĞİŞTİRMEZ, yalnızca şeffaflık sinyali.
+  sahiplik_bayraklari?: string[];
+  belge_meta?: BelgeMeta;
 }
 
 export interface ApiHata {
   hata: string;
 }
 
-// §3b Phase 6 — kullanıcı portalı (auth + kendi ekstresini yükleme/geçmiş).
+// §3b Phase 6/7 — kullanıcı portalı (auth + kendi ekstresini yükleme/geçmiş).
 export interface KullaniciBilgisi {
   id: number;
   email: string;
   ad: string;
+  // §3b Phase 7/7.2 — kayıtta otomatik üretilir, isim/TCKN YERİNE kullanılır.
+  aks_no?: string;
 }
 
 export interface PortalGecmisKayit {
@@ -300,6 +324,97 @@ export interface Politika {
   portfoy_esikleri: { klasik_esik: number; aks_esik: number };
 }
 
+// §3b Phase 7/7.4 — risk_istahi.py'nin persist ettiği 3 profil (ihtiyatli/
+// dengeli/atak). Sentetik/dekuple veri üzerinde, held-out ama sentetik bir
+// benchmarkta üretildi — "doğrulanmış banka politikası" olarak alıntılanmamalı
+// (bkz. rapor.uyari).
+export interface RiskIstahiProfil {
+  ad: string;
+  hedef_kotu_oran: number;
+  secilen_esik: number;
+  gerceklesen_kotu_oran: number | null;
+  gerceklesen_kotu_oran_ci95: [number, number] | null;
+  onay_orani: number;
+  onay_orani_ci95: [number, number] | null;
+  n_onay: number;
+  n_test: number;
+  beklenen_net_kar: number;
+  uyari: string | null;
+}
+
+export interface RiskIstahiRaporu {
+  profiller: Record<"ihtiyatli" | "dengeli" | "atak", RiskIstahiProfil>;
+  varsayimlar: { ort_kredi: number; getiri_orani: number; zarar_orani: number };
+  n_test: number;
+  model_adi_referans: string;
+  zaman: string;
+  veri_kaynagi: string;
+  uyari: string;
+}
+
+// §3b Phase 7/7.2 — kimlik/rıza/kiracılık (müşteri + kurum taraflı).
+export interface ProfilBilgisi {
+  aks_no: string;
+  telefon_dogrulandi_mi: boolean;
+}
+
+export interface TelefonGonderSonuc {
+  gonderildi: boolean;
+  gecerlilik_dakika: number;
+  dogrulama_id: number;
+  debug_kod?: string; // yalnızca DEBUG=true iken (SMS sağlayıcısı henüz yok)
+}
+
+export interface ErisimTalebiKaydi {
+  id: number;
+  kurum: string;
+  kurum_kod: string;
+  amac: string;
+  durum: "bekliyor" | "onaylandi" | "reddedildi" | "iptal_edildi";
+  gecerlilik_bitis: string | null;
+  created_at: string;
+  aktif_mi: boolean;
+}
+
+export interface RizaDefteriKaydi {
+  id: number;
+  olay: string;
+  kurum: string;
+  amac: string;
+  created_at: string;
+}
+
+export interface KurumBilgisi {
+  kurum: string;
+  kurum_kod: string;
+}
+
+export interface KurumMusteriOzet {
+  aks_no: string;
+  amac: string;
+  gecerlilik_bitis: string;
+}
+
+export interface MusteriRiskIstahiSonucu {
+  ad: string;
+  onaylanir_mi: boolean;
+  esik: number;
+}
+
+export interface KurumMusteriDetay {
+  aks_no: string;
+  degerlendirme_var: boolean;
+  aks_skor?: number;
+  risk_seviyesi?: string;
+  karar?: string;
+  onerilen_limit?: number | null;
+  kaynak_format?: string;
+  sahiplik_bayraklari?: string[];
+  created_at?: string;
+  risk_istahi?: Record<"ihtiyatli" | "dengeli" | "atak", MusteriRiskIstahiSonucu> | null;
+  not?: string;
+}
+
 // Bilinen 4 persona (aks_core/ozellik + model/etiketleme'de sabit) — tasarımdaki
 // uydurma segment adları ("Digital Nomads" vb.) yerine gerçek etiketler.
 export const PERSONA_ETIKET: Record<string, string> = {
@@ -331,6 +446,7 @@ export const api = {
     post<SimulasyonSonuc>("/simulasyon", { musteri_id: musteriId, degisiklikler }),
   segmentasyon: () => get<SegmentasyonRaporu>("/segmentasyon"),
   genellemeSaglamlik: () => get<GenellemeSaglamlikRaporu>("/genelleme-saglamlik"),
+  riskIstahi: () => get<RiskIstahiRaporu>("/risk-istahi"),
 
   // §3b Phase 6 — kullanıcı portalı
   ben: () => get<KullaniciBilgisi>("/auth/ben"),
@@ -338,10 +454,34 @@ export const api = {
     post<KullaniciBilgisi>("/auth/kayit", { email, sifre, ad }),
   girisYap: (email: string, sifre: string) => post<KullaniciBilgisi>("/auth/giris", { email, sifre }),
   cikisYap: () => post<{ cikis_yapildi: boolean }>("/auth/cikis", {}),
-  portalYukle: (dosya: File) => {
+  // §3b Phase 7/7.3 — `beyan` ZORUNLU: "bu ekstre bana ait" onayı olmadan
+  // backend 400 döner (bkz. portal_views.py::portal_yukle).
+  portalYukle: (dosya: File, beyan: boolean) => {
     const form = new FormData();
     form.append("dosya", dosya);
+    form.append("beyan", beyan ? "true" : "false");
     return postDosya<CsvSkorSonuc>("/portal/yukle", form);
   },
   portalGecmis: () => get<{ gecmis: PortalGecmisKayit[] }>("/portal/gecmis"),
+
+  // §3b Phase 7/7.2 — kimlik: AKS no, telefon doğrulama, erişim talepleri, rıza defteri.
+  profilim: () => get<ProfilBilgisi>("/kimlik/profilim"),
+  telefonGonder: (telefon: string) => post<TelefonGonderSonuc>("/kimlik/telefon/gonder", { telefon }),
+  telefonDogrula: (dogrulamaId: number, kod: string) =>
+    post<{ dogrulandi: boolean }>("/kimlik/telefon/dogrula", { dogrulama_id: dogrulamaId, kod }),
+  erisimTalepleri: () => get<{ talepler: ErisimTalebiKaydi[] }>("/kimlik/erisim-talepleri"),
+  erisimTalebiOnayla: (id: number, gecerlilikGun = 30) =>
+    post<{ onaylandi: boolean; gecerlilik_bitis: string }>(`/kimlik/erisim-talebi/${id}/onayla`, {
+      gecerlilik_gun: gecerlilikGun,
+    }),
+  erisimTalebiReddet: (id: number) => post<{ reddedildi: boolean }>(`/kimlik/erisim-talebi/${id}/reddet`, {}),
+  erisimTalebiIptal: (id: number) => post<{ iptal_edildi: boolean }>(`/kimlik/erisim-talebi/${id}/iptal`, {}),
+  rizaDefterim: () => get<{ kayitlar: RizaDefteriKaydi[] }>("/kimlik/riza-defterim"),
+
+  // §3b Phase 7/7.2 — kurum (banka) tarafı: yalnızca rızası olan müşteriyi görebilir.
+  kurumBen: () => get<KurumBilgisi>("/kimlik/kurum/ben"),
+  kurumErisimTalebiOlustur: (aksNo: string, amac: string) =>
+    post<{ talep_id: number; durum: string }>("/kimlik/kurum/erisim-talebi", { aks_no: aksNo, amac }),
+  kurumMusteriler: () => get<{ musteriler: KurumMusteriOzet[] }>("/kimlik/kurum/musteriler"),
+  kurumMusteriDetay: (aksNo: string) => get<KurumMusteriDetay>(`/kimlik/kurum/musteri/${aksNo}`),
 };

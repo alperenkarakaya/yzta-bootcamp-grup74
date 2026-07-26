@@ -28,7 +28,7 @@ The active objective is **restore benchmark validity**, because every headline n
 | M3 | Circularity diagnosed & target defined | Finding documented; Formulation B chosen | ✅ DONE (B awaiting ratification, OQ-39) |
 | M4 | **Non-circular benchmark** | Real data OR redesigned simulator; honest headline number | 🟡 IN-PROGRESS — synthetic honest-fallback **built + proven** (`product/01-data/generator/uretici_kapasite.py`): label decoupled from persona (spread 0.015) and from features (no single feature = label; income channel 0.50, behavioral 0.84 genuine +0.34 lift). Still pending: OQ-36 (prefer real data if available) and porting the decoupled label into the training/eval path (DA2) — **now Phase 1 / U1 of §3b**. |
 | M5 | Model finalized on valid benchmark | LR-vs-XGBoost decided on non-circular data; calibrated | 🟡 IN-PROGRESS — LR-vs-XGBoost decided (LR, non-overlapping CIs) and calibration attempted (honest null result); still open: robustness (R8/R10/R11), monotonic constraints (E2), reason-code standardization (E3) |
-| M6 | Demo-ready product | Stitch UI integrated, deploy live, agent narrative honest | ⏳ TODO (after M4; UI last) |
+| M6 | Demo-ready product | Stitch UI integrated, deploy live, agent narrative honest | 🟡 IN-PROGRESS — Stitch UI integrated (E11); user portal + institution portal live with consent-gated access (§3b Phase 6/7); two real agent components added (`belge_agent.py`, `danisman_llm.py`, §3b Phase 7/7.5) alongside the still-honestly-labeled deterministic pipeline steps — agent narrative is now partially, not fully, corrected (OQ-38 stays open for the jury-facing framing); deploy-live (E12) still TODO |
 
 ## 3. Priorities (what to do, in order)
 
@@ -203,6 +203,92 @@ PO's ask, verbatim (paraphrased): a real user-side login where a user uploads th
 
 **Phase 6 exit gate: ✅ PASSED** for the two chosen architecture decisions (Django auth, same-app route split) — both implemented, both verified live. Compliance/consent hardening remains open (OQ-46) and should happen before any real (non-demo) user data is accepted.
 
+### Phase 7 — Market sürümü: belge işleme, kimlik/rıza, risk iştahı, gerçek agent katmanı
+
+PO's ask, verbatim (paraphrased): kullanıcılar PDF ekstre yükleyebilsin (CSV/Excel'e normalize edilip modele girsin); her kullanıcının kendi hesabı + "kimlik numarası gibi" bir AKS numarası olsun, şirketler bu numarayı müşteriden isteyebilsin; veri isim/soyisim tutulmadan bu numara üzerinden saklansın ama başkasının verisini yüklemek zorlaştırılsın; agent yapısı **gerçekten** doğrulanıp kullanılsın; bankalara **3 risk seviyesinde** (risksiz/orta/riskli) öneri üretilsin. "Veri kısmı çok önemli" vurgusu PO'nun kendi ifadesiyle kaydedildi.
+
+**PO ile bu turda netleştirilen kararlar (tahmin edilmedi, soruldu):**
+
+| Konu | Karar |
+|---|---|
+| Doküman | Bu bölüm `finalDecision.md` yerine buraya (execution.md §3b Phase 7) yazıldı — CLAUDE.md'nin "asla 4. doküman" kuralı korunuyor |
+| Kimlik | **E-posta + telefon OTP.** TCKN/isim/soyisim YOK. Telefon yalnızca `HMAC-SHA256` hash'i olarak saklanır. AKS numarası rastgele üretilir, hiçbir kişisel veriden türetilmez |
+| Erişim | **Müşteri onayı ile.** Kurum AKS no ile talep açar, müşteri onaylar/reddeder; onay süreli (varsayılan 30 gün) ve istenildiği an iptal edilebilir; her olay değiştirilemez rıza defterine yazılır |
+| LLM | **Claude API + tool-calling.** Yapı kuruldu, `ANTHROPIC_API_KEY` PO tarafından sonra eklenecek (aşağıda TODO) — anahtarsız ortamda sıfır regresyonla eski deterministik yola düşer |
+
+**Dürüstlük notu (bağlayıcı, plana da yazıldı):** "başkasının verisini yüklemeyi ENGELLEME" iddiası kasıtlı olarak yapılmadı — minimum kişisel veriyle (isim/TCKN yok) bir dosyanın gerçekten o kişiye ait olduğunu ispatlamak teknik olarak imkânsız. Ürün bunun yerine **tespit + izlenebilirlik + hesap verebilirlik** iddia ediyor: belge parmak izi çakışması, zorunlu sahiplik beyanı (zaman+IP ile rıza kaydına yazılır), davranışsal tutarlılık kontrolü. Gerçek çözüm (açık bankacılık — veri dosyadan değil bankadan yetkiyle gelir) üretim yolu olarak burada belgeleniyor, bu turda kurulmadı (yeni OQ-51).
+
+#### 7.1 — Belge işleme hattı (PDF/Excel/CSV → model)
+
+Yeni paket `aks_core/belge/` (`okuyucu.py`, `pdf_okuyucu.py` — pdfplumber, tablo→metin iki stratejili —, `tablo_okuyucu.py` — pandas/openpyxl, bulanık kolon eşleme —, `normalizer.py` — kanonik şema + kategori güveni —, `parmak_izi.py`, `kalite.py`). `services.csv_ayristir` yerini `services.belge_ayristir`'e bıraktı (geriye uyumlu sarmalayıcı korundu); `/api/csv-skorla` ve `/api/portal/yukle` artık CSV/XLSX/PDF üçünü de kabul ediyor (URL/adlandırma tarihsel nedenlerle "csv" kalmaya devam ediyor).
+
+**İki kritik bulgu, sessizce geçilmedi:**
+- `ozellik_cikar()`'ın 9 özelliğinden 2'si (`gelir_kaynagi_sayisi`, `fatura_odeme_duzeni`) doğrudan `kategori` alanına bağımlı — PDF/Excel'den kategori çıkarımı hatalıysa bu ikisi bozulur. Çözüm: `normalizer.py` her satır için bir kategori güveni üretir, ortalama `<0.6` ise `dusuk_kategori_guveni` bayrağı.
+- Model **180 günlük** pencerede eğitildi; yüklenen bir PDF 3 aylık olabilir. `ozellik_cikar()` **DEĞİŞTİRİLMEDİ** (eğitim/servis tutarlılığı, P1 > her şey) — bunun yerine `kalite.py` pencere ±%35'ten fazla sapınca `pencere_uyumsuz` bayrağı üretiyor. Pencerenin gerçekten normalize edilmesi ancak modelin farklı pencere uzunluklarıyla yeniden eğitilmesiyle mümkün — **yeni OQ-52**.
+
+`requirements.txt`/`pyproject.toml`'a `pdfplumber`/`pandas`/`openpyxl` **açıkça** eklendi (önceden kurulu ama beyan edilmemiş bağımlılıklardı). Test: `test_belge.py` (20 test) — aynı içeriğin CSV/XLSX/PDF hâllerinin **aynı parmak izini** verdiği, bozuk PDF'in anlamlı hata verdiği, kategori tahmin doğruluğunun ölçüldüğü doğrulandı.
+
+#### 7.2 — Kimlik, rıza ve çok kiracılılık
+
+Yeni Django app `kimlik/`: `Profil` (aks_no, telefon_hash), `TelefonDogrulama` (OTP, hash'li kod, 5 dk/5 deneme sınırı), `Kurum`, `KurumUyeligi`, `ErisimTalebi`, `RizaKaydi` (`audit.AuditLog` ile AYNI append-only desen — `save()`/`delete()` `RizaIhlali` fırlatır).
+
+- **AKS numarası** (`kimlik/aks_no.py`): rastgele 45-bit → Crockford Base32 + checksum → `AKS-XXXX-XXXX-XC`. Hiçbir kişisel veriden türetilmiyor; kayıt anında (`auth_views.kayit`) otomatik üretiliyor.
+- **Telefon** (`kimlik/telefon.py`): yalnızca `HMAC-SHA256(AKS_PEPPER, numara)` saklanıyor, `unique=True` (bir numara bir hesap — Sybil direnci). SMS sağlayıcısı yok — `DEBUG=True` iken kod API yanıtında görünür (**yeni OQ-47**: gerçek SMS sağlayıcısı).
+- **Kiracılık zorlaması** (`kimlik/izinler.py`): `KurumUyesi` (DRF permission) + `aktif_riza()` (durum=`onaylandi` VE `gecerlilik_bitis > now`). Kurum kapsamlı her view ikisinden de geçiyor.
+- `audit.Assessment` genişletildi: `profil` (FK, string referans `"kimlik.Profil"` — dairesel import yok), `belge_parmak_izi`, `sahiplik_beyani`, `sahiplik_bayraklari` (JSON), `kaynak_format`, `yukleme_ip`.
+- Kurum onboarding **öz-kayıt değil**, kasıtlı olarak provizyonlanır — `kimlik/management/commands/bootstrap_kurum.py` demo kurum + personel oluşturur (**yeni OQ-53**: gerçek kurum onboarding süreci — sözleşme+manuel doğrulama mı, otomatik mi).
+
+Test: `kimlik/tests.py` (17 test) — çapraz kurum sızıntısı yok, süresi dolmuş/iptal edilmiş rıza erişim vermiyor, `RizaKaydi` değiştirilemez, kayıt otomatik AKS no üretiyor; hepsi canlı Django test client ile (mock değil).
+
+#### 7.3 — Sahiplik savunması (3 katman, TESPİT — ENGELLEME değil)
+
+| Katman | Uygulama | Kişisel veri |
+|---|---|---|
+| Belge parmak izi | `api/sahiplik.py::coklu_sahiplik_kontrol` — aynı içerik farklı profil altında görülürse HER İKİ kayıt da (yeni + retroaktif eski) `coklu_sahiplik_supheli` ile işaretlenir | Yok |
+| Zorunlu beyan | `portal_yukle` artık `beyan` alanı olmadan 400 döner; zaman (`Assessment.created_at`) + IP (`yukleme_ip`) ile kaydedilir | IP |
+| Davranışsal tutarlılık | `api/sahiplik.py::davranissal_tutarlilik_kontrol` — yeni yüklemenin gelir ölçeği, aynı profilin geçmiş medyanından 3 kattan fazla saparsa `profil_tutarsiz` | Yok |
+
+Bayraklar **kararı hiçbir zaman değiştirmez** — `anomali_bayrak` ile aynı desen (şeffaflık sinyali, overview.md §7 sınırı korunuyor). Canlı doğrulama (curl, aşağıda): aynı CSV içeriği ikinci bir hesapla yüklendiğinde ikisi de `coklu_sahiplik_supheli` alıyor; beyan olmadan istek 400 dönüyor.
+
+#### 7.4 — Risk iştahı: 3 seviyeli banka önerisi
+
+Yeni `aks_core/model/risk_istahi.py`. Üç profil **keyfi skor kesimiyle değil hedef kötü oranla** tanımlı: `ihtiyatli` (≤%3), `dengeli` (≤%6), `atak` (≤%10). Yöntem: `egitim.py::egit()`'in AYNI train/test bölmesi (seed=42, `test_size=0.25`, stratify=y) yeniden üretilerek gerçek bir held-out küme elde edilir (sızıntı yok); her aday AKS eşiği için onay oranı/kötü oran/beklenen kâr-zarar (`is_etkisi.py` ile AYNI varsayımlar: ort_kredi=25000, getiri_orani=0.12, zarar_orani=0.55) hesaplanır, kötü oran hedefini aşmayan eşikler arasından net kârı maksimize eden seçilir. Bootstrap %95 CI raporlanır. **Yalnızca dekuple veri kaynağıyla çalışır** — döngüsel veri üzerinde "hedef kötü oran" anlamsız olurdu, kod bunu zorluyor (`ValueError`).
+
+Gerçekleşen sonuç (`risk_istahi_raporu.json`, n_test=500): ihtiyatlı eşik 835 (kötü oran %2.8, onay %35.4), dengeli eşik 760 (kötü oran %5.0, onay %60.2), atak eşik 690 (kötü oran %7.5, onay %79.6) — monoton, beklenen yönde.
+
+`GET /api/risk-istahi` (genel rapor) + `kimlik/kurum_views.py::musteri_detay`'a gömülü müşteri-bazlı 3-profil onay/red (`GET /api/kimlik/kurum/musteri/<aks_no>` yanıtının `risk_istahi` alanı) — ağır hesaplama tekrarlanmıyor, yalnızca persiste edilmiş eşiklerle karşılaştırma. Rapor `_METRIK_UYARISI` ile aynı ruhta dürüstlük şerhi taşıyor: sentetik/dekuple, held-out ama sentetik, "nihai politika" değil. Test: `test_risk_istahi.py` (8 test).
+
+#### 7.5 — Gerçek agent katmanı (OQ-38'in kısmi kapanışı)
+
+**Dürüst tespit:** `veri_agent`/`skorlama_agent` gerçek agent değil — deterministik pipeline adımları (OQ-38 hâlâ tam kapanmadı, jüriye sunum diline nasıl yansıtılacağı ayrı bir karar). Bunun üstüne **iki gerçek** bileşen eklendi:
+
+- **`agents/belge_agent.py`** — hedefi var (dosyayı başarılı şekilde skorlanabilir listeye çevirmek), birden fazla strateji dener (format-özel okuyucu, PDF için tablo→metin sırasıyla), kendi çıktısını denetler (kalite bayrakları, min. işlem sayısı), her adımı bir İZ olarak bırakır (`meta["iz"]`, kullanıcı arayüzünde "Belge Agent İzi" paneli olarak görünür). Beş-soru testini (overview.md §6) gerçekten geçiyor.
+- **`agents/danisman_llm.py`** — Claude API (`claude-sonnet-5`) tool-calling: model yalnızca 5 tanımlı araçla (`skor_getir`, `faktor_getir`, `politika_getir`, `senaryo_calistir`, `gecmis_getir`) veri okuyabilir, sayı uyduramaz. **İki katmanlı zorlama:** (1) `aks_skor`/`karar`/`onerilen_limit` her zaman `SkorlamaAgent`'ten gelir, LLM çıktısı ayrı bir `anlati` alanı; (2) yanıt-sonrası doğrulama (`_dogrula`) — metindeki sayılar araç çıktılarında (+ AKS'nin sabit 300/850 ölçeği + ≤12 doğal-dil sayıları) yoksa yanıt reddedilir, deterministik kural motoruna düşülür (`anlati_reddedildi=True`). `ANTHROPIC_API_KEY` yoksa (test ortamı dahil her zaman) `services.asistan_yanit()` eski yola (Gemini varsa dener, yoksa kural motoru) sıfır regresyonla düşer.
+
+**TODO, açıkça bırakıldı:** `ANTHROPIC_API_KEY` PO tarafından eklenip canlı tool-calling + guard'ın gerçekten tetiklendiğinin uçtan uca doğrulanması gerekiyor — mock'lanmış unit testler (`test_danisman_llm.py`, 10 test, sahte `anthropic.Anthropic` ile) akışı kanıtlıyor ama gerçek API çağrısı bu turda yapılmadı.
+
+#### 7.6 — Frontend (iki ayrı, genişletilmiş arayüz)
+
+**Kullanıcı portalı** (`/portal/*`, `PortalLayout` genişletildi — üst nav): `PortalPage` artık PDF/XLSX/CSV kabul ediyor, zorunlu sahiplik beyanı checkbox'ı (beyansız gönder butonu disabled), sahiplik/kalite bayrak uyarıları, "Belge Agent İzi" paneli; yeni `PortalProfilPage` (AKS no + kopyala, telefon OTP akışı), `PortalTaleplerPage` (gelen talepleri onayla/reddet/iptal et), `PortalRizaPage` (rıza defteri).
+
+**Kurum arayüzü** (yeni, `/kurum/*`, ayrı `KurumLayout` + login-only giriş — öz-kayıt yok): `KurumMusterilerPage` (AKS no + amaç ile talep aç, aktif erişimleri listele), `KurumMusteriDetayPage` (skor/SHAP/bayraklar + **3 seviyeli risk iştahı kartları**, onaylanır/onaylanmaz + eşik). Mevcut banka demo sayfaları (`Layout`, Intelligence/Portfolio/Audit/Customers) **değiştirilmedi** — model kanıtı olarak jüriye gerekli; nav'a "Kurum Girişi" linki eklendi. `CsvUploadPage` de PDF/XLSX kabul edecek şekilde genişletildi (anonim yol, `sahiplik_bayraklari` her zaman boş).
+
+`src/api.ts`: yeni tipler (`BelgeMeta`, `RiskIstahiRaporu`, `ProfilBilgisi`, `ErisimTalebiKaydi`, `RizaDefteriKaydi`, `KurumBilgisi`, `KurumMusteriDetay`, vb.) + 12 yeni `api.*` fonksiyonu — mevcut `csrfTokenAl()`/`_hataMesaji()`/`credentials:"same-origin"` deseni aynen kullanıldı, yeni bir HTTP katmanı yazılmadı. `tsc --noEmit` temiz.
+
+**Canlı uçtan uca doğrulama (Chrome eklentisi bu oturumda bağlanamadı — curl + cookie jar ile HTTP seviyesinde, frontend'in kullandığı aynı API sözleşmesiyle doğrulandı, tıklama-tabanlı değil):** kayıt → AKS no üretildi → beyansız yükleme 400 → beyanlı yükleme 200 (agent izi + `pencere_uyumsuz` bayrağı gerçekten tetiklendi, 47 günlük test verisiyle) → kurum rızasız erişim denedi → 403 → kurum talep açtı → müşteri talebi gördü ve onayladı → kurum artık görebiliyor + 3 seviyeli risk kartları doğru (skor 850, üç profilde de onay) → rıza defteri tam geçmişi gösterdi → müşteri rızayı iptal etti → kurum tekrar 403 → aynı CSV ikinci bir hesapla yüklendi → **her iki** kayıt da `coklu_sahiplik_supheli` aldı.
+
+#### 7.7 — Test durumu ve regresyon
+
+`aks_core` pytest: 24 → **67 passing** (belge: 20, belge_agent: 5, risk_istahi: 8, danisman_llm: 10). `04-backend` Django: 15 → **41 passing** (kimlik kiracılık: 17, sahiplik savunması: 6, risk iştahı/asistan wiring: 2, önceki 15 dahil). `tsc --noEmit` temiz. **Model regresyon kontrolü:** `python -m aks_core.model.egitim` yeniden çalıştırıldı — LR AUC **0.8499** ve ECE **0.0391→0.0394** birebir aynı üretildi (seed=42) — belge/kimlik/agent katmanlarının hiçbiri modele dokunmadığının kanıtı.
+
+**Bu turda bilinçli olarak yapılmayanlar (sessizce atlanmadı):**
+- Açık bankacılık entegrasyonu (gerçek sahiplik ispatı) — üretim yolu olarak belgelendi, kurulmadı.
+- Gerçek SMS sağlayıcısı (OQ-47) ve gerçek kurum onboarding süreci (OQ-53) — demo/manuel seviyede bırakıldı.
+- `ozellik_cikar()`'ın pencere-bağımsız hale getirilmesi (OQ-52) — modelin yeniden eğitilmesini gerektirir, bu turun kapsamı dışında tutuldu.
+- Canlı `ANTHROPIC_API_KEY` testi — anahtar PO'da, TODO olarak kaldı.
+
+**Phase 7 exit gate: ✅ PASSED** — 7 alt fazın hepsi (belge hattı, kimlik/rıza/kiracılık, sahiplik savunması, risk iştahı, agent katmanı, frontend, doküman) tamamlandı ve test edildi; sıfır regresyon.
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |
@@ -287,7 +373,14 @@ Design specs in [`planning/data-architecture.md`](planning/data-architecture.md)
 | OQ-43 | Are the stretch frontend items (U23 what-if simulator, U24 CSV upload) in scope this cycle or deferred? | Phase 3 sizing | 🟢 RESOLVED — PO chose to build both; U24 shipped and verified live in-browser, U23 shipped and verified live in-browser (score correctly moves 850→300 in the tested scenario) |
 | OQ-44 | Should the *live* demo dataset (`sentetik_islemler.csv`, powers `/api/demo-musteriler`, `/api/skorla/{id}`, `/api/portfoy`, `/api/adalet`) be switched to the decoupled `kapasite_islemler.csv` so the whole live product reflects M4, not just offline training/eval scripts? Changes which demo customers/personas appear throughout the UI. | `services.py::VERI_YOLU`, `_skorla_hepsi()` | 🔴 Awaiting PO — `/api/portfoy`/`/api/adalet` carry an explicit `"veri_kaynagi":"dongusel"` caveat in the meantime (§3b Phase 2) |
 | OQ-45 | R11 (§3b Phase 5) found `gider_gelir_orani` alone buys +73 (avg) to +265 (p90) AKS points for a fixed 25% "improvement" — far more than the other 3 causal features combined. Cap its influence (monotonic constraint) now, or corroborate with a longer window/independent signal first, or accept the risk and just disclose it? | `cikarim.py`, model retraining, architecture.md §8 (planned monotonic constraints) | 🔴 Awaiting PO |
-| OQ-46 | User portal (§3b Phase 6) now accepts real end-user-uploaded statements tied to a real account — this makes DA5 (KVKK/consent/lawful-basis governance, already TODO before this phase) more urgent. What's the minimum before accepting *real* (non-demo) user data: explicit consent checkbox + privacy notice text only, or a full data-retention/deletion policy + DPA-style documentation? | `PortalPage.tsx`, `PortalLoginPage.tsx`, DA5 | 🔴 Awaiting PO — current portal is demo-grade, not yet market-ready on this axis |
+| OQ-46 | User portal (§3b Phase 6) now accepts real end-user-uploaded statements tied to a real account — this makes DA5 (KVKK/consent/lawful-basis governance, already TODO before this phase) more urgent. What's the minimum before accepting *real* (non-demo) user data: explicit consent checkbox + privacy notice text only, or a full data-retention/deletion policy + DPA-style documentation? | `PortalPage.tsx`, `PortalLoginPage.tsx`, DA5 | 🔴 Awaiting PO — current portal is demo-grade, not yet market-ready on this axis. §3b Phase 7 added the ownership-declaration checkbox (7.3) but not a full retention/deletion policy — this OQ stays open |
+| OQ-47 | §3b Phase 7/7.2: no real SMS provider is wired — OTP codes are demo-mode only (`DEBUG=True` returns the code in the API response). Which provider (Twilio, Netgsm, İleti Merkezi, …) and who sets up the account/credentials? | `kimlik/telefon.py`, `kimlik/views.py::telefon_gonder` | 🔴 Awaiting PO |
+| OQ-48 | §3b Phase 7/7.5: `ANTHROPIC_API_KEY` is not yet set — `danisman_llm.py`'s tool-calling path is unit-tested (mocked) but never exercised against the real Claude API. Who adds the key and when should the live end-to-end verification happen? | `.env`, `danisman_llm.py` | 🔴 Awaiting PO (TODO, not blocking — deterministic fallback works today) |
+| OQ-49 | §3b Phase 7/7.6: the bank-side `Layout.tsx` demo/research pages (Intelligence, Portfolio, Audit, Customers) were kept untouched alongside the new consent-gated `kurum/*` pages. Once the product is genuinely market-facing, should the demo pages be removed/gated behind a flag, or do they stay permanently as the research/evidence surface (jury-facing, not customer-facing)? | `Layout.tsx`, `App.tsx` route tree | 🔴 Awaiting PO |
+| OQ-50 | §3b Phase 7/7.4: `risk_istahi.py`'s three profiles (ihtiyatli/dengeli/atak) use illustrative bad-rate targets (≤3%/6%/10%) and the same `is_etkisi.py` profit assumptions (ort_kredi=25000, getiri_orani=0.12, zarar_orani=0.55) chosen without bank input. Should these targets/assumptions be configurable per bank (a real product would let each institution set its own), or are they meant to stay fixed, illustrative defaults? | `risk_istahi.py::PROFILLER` | 🔴 Awaiting PO |
+| OQ-51 | §3b Phase 7 "honesty note": minimum-PII ownership defense (fingerprint + declaration + behavioral consistency) can only *detect*, never *prove*, document ownership. The real fix is open banking (data arrives from the bank with authorization, not as a user-uploaded file). Is open banking integration a near-term roadmap item, or an accepted long-term limitation for this product? | `aks_core/belge/`, `kimlik/`, architecture.md | 🔴 Awaiting PO |
+| OQ-52 | §3b Phase 7/7.1: the model was trained on a 180-day transaction window; uploaded PDFs/statements are often shorter (a `pencere_uyumsuz` flag now surfaces this, verified live at 47 days). Fixing this properly requires retraining on variable/normalized windows. Prioritize this retraining now, or keep flagging the mismatch and defer? | `ozellik/cikarim.py`, `egitim.py`, `belge/kalite.py` | 🔴 Awaiting PO |
+| OQ-53 | §3b Phase 7/7.2: institution ("kurum") onboarding is currently manual (`bootstrap_kurum` management command, no self-serve registration) — a deliberate choice since a self-registering "institution" would weaken the consent system's "the institution's identity is verified" assumption. What should real institution onboarding look like: a contract + manual verification process, or an automated one with its own trust mechanism? | `kimlik/management/commands/bootstrap_kurum.py`, `kimlik/models.py::Kurum` | 🔴 Awaiting PO |
 
 ## 9. Future features (post-validation, not committed)
 

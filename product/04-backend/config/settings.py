@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "api",
     "audit",
+    "kimlik",  # §3b Phase 7/7.2 — kimlik, rıza defteri, kurum çok kiracılılığı
 ]
 
 MIDDLEWARE = [
@@ -99,6 +100,8 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.MultiPartParser",
     ],
+    # §3b Phase 7/7.2 — OTP/erişim-talebi uçlarının hız sınırlaması (kimlik/throttle.py)
+    "DEFAULT_THROTTLE_RATES": {"otp": "5/min", "erisim_talebi": "20/hour"},
 }
 
 CORS_ALLOWED_ORIGINS = os.environ.get(

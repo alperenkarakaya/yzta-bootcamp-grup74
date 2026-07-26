@@ -61,6 +61,14 @@ export default function Layout() {
               <Icon name="open_in_new" className="text-[14px]" />
               Kullanıcı Portalı
             </NavLink>
+            <NavLink
+              to="/kurum/musteriler"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT border border-outline-variant/30 font-label-mono text-label-mono hover:bg-surface-container/50 transition-colors"
+              title="Kurum Girişi — rıza-tabanlı gerçek müşteri erişimi (§3b Phase 7)"
+            >
+              <Icon name="account_balance" className="text-[14px]" />
+              Kurum Girişi
+            </NavLink>
             <button
               className="hover:bg-surface-container/50 p-2 rounded-full transition-all active:scale-95"
               title="Sistem canlı — Django API'ye bağlı"

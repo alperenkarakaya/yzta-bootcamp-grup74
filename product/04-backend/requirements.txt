@@ -7,6 +7,9 @@ django-redis>=5.4
 psycopg2-binary>=2.9
 python-dotenv>=1.0
 gunicorn>=21.2
+anthropic>=0.40  # §3b Phase 7/7.5 — danisman_llm.py tool-calling; anahtar yoksa fallback
 
 # AI çekirdeği ayrı paket olarak kurulur (editable):
 #   pip install -e ../02-ai-agents
+# (o paketin belge/ modülü pdfplumber/pandas/openpyxl'e bağımlı — bkz.
+#  02-ai-agents/pyproject.toml)

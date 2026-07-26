@@ -16,4 +16,5 @@ urlpatterns = [
     path("", kok),
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
+    path("api/kimlik/", include("kimlik.urls")),  # §3b Phase 7/7.2
 ]

@@ -60,11 +60,15 @@ Companion to **[overview.md](overview.md)** (vision, status, decisions) and **[e
 | Circularity diagnostic | `aks_core/model/circularity_ablation.py` | Benchmark-validity proof | Deterministic |
 | Anomaly/OOD detection | `aks_core/model/anomali.py` | Flags profiles outside the training distribution (§5.4) | Unsupervised ML, auxiliary — never changes score/decision |
 | Segmentation | `aks_core/model/segmentasyon.py` | Unsupervised persona discovery, offline report (§5.5) | Unsupervised ML, research — not wired to any decision path |
+| Risk appetite policies | `aks_core/model/risk_istahi.py` | 3-tier bank recommendation from target bad-rate (§5.6) | Deterministic, held-out benchmark |
+| Document pipeline | `aks_core/belge/` | PDF/XLSX/CSV → canonical transaction schema (§5.7) | Deterministic, format-agnostic |
 | `VeriAgent` | `aks_core/agents/veri_agent.py` | Calls feature extraction | **Not an agent** — pipeline stage |
 | `SkorlamaAgent` | `aks_core/agents/skorlama_agent.py` | `predict_proba` + scaling → score/decision | **Not an agent** — scoring service |
 | `DanismanAgent` | `aks_core/agents/danisman_agent.py` | Template-fills SHAP into advice | **Not an agent** — deterministic NLG (correct) |
 | `Orkestrator` | `aks_core/agents/orkestrator.py` | Sequential coordination + in-memory log | **Not an agent** — orchestration |
-| `AsistanAgent` | `aks_core/agents/asistan.py` | Grounded NL Q&A over precomputed context | **The one genuine agent** |
+| `AsistanAgent` | `aks_core/agents/asistan.py` | Grounded NL Q&A over precomputed context (Gemini-optional/rule fallback) | Genuine agent — now the fallback path behind `danisman_llm` (§4) |
+| `BelgeAgent` | `aks_core/agents/belge_agent.py` | Multi-strategy document parsing with self-check + trace (§4, §5.7) | **Genuine agent** |
+| Danışman LLM agent | `aks_core/agents/danisman_llm.py` | Claude tool-calling over 5 grounded tools; verifies its own numbers (§4) | **Genuine agent** — preferred path when `ANTHROPIC_API_KEY` set |
 
 ## 3. Data flow (one scoring request)
 
@@ -99,10 +103,12 @@ Applying overview.md §6's five-question test to each "agent":
 | `SkorlamaAgent` | No | `predict_proba` + scaling. A scoring service, not an agent. |
 | `DanismanAgent` | No — **and that is correct** | Templated NLG from SHAP. Keep deterministic: this is a regulated-adjacent explanation surface; templated text is more auditable than an LLM. Do **not** add an LLM here without a specific justification. |
 | `Orkestrator` | No | Sequential coordinator + log. Orchestration code. |
-| `AsistanAgent` | **Yes (all five)** | Solves an open-ended NL interface over fixed facts; classical code can't; an LLM is the right tool; value = user comprehension/trust (measurable via task success + hallucination rate); validated by grounding checks. **Hardening required:** it must never state a number not present in its context (`baglam`); needs a hallucination-rate eval harness before it can be trusted on a compliance-adjacent surface. |
+| `AsistanAgent` | **Yes (all five)** | Solves an open-ended NL interface over fixed facts; classical code can't; an LLM is the right tool; value = user comprehension/trust (measurable via task success + hallucination rate); validated by grounding checks. Still the fallback implementation behind `services.asistan_yanit()` when `ANTHROPIC_API_KEY` is unset (execution.md §3b Phase 7/7.5) — Gemini if `GEMINI_API_KEY` is set, otherwise its own rule-based grounding. |
+| `BelgeAgent` (execution.md §3b Phase 7/7.5) | **Yes (all five)** | Goal: turn an arbitrary uploaded file into a scorable transaction list. Tries multiple strategies (format-specific reader; for PDF, table-extraction then text-regex, in order); self-checks its own output (quality flags, minimum-row threshold) rather than trusting the first parse; leaves a step-by-step trace (`meta["iz"]`) a human can audit; a classical fixed pipeline can't branch on "did strategy 1 actually work" the way this does. Deterministic (no LLM) — being agentic doesn't require an LLM; it requires a goal, strategy selection, self-monitoring, and traceability, all of which this has. |
+| Danışman LLM agent (`danisman_llm.py`, execution.md §3b Phase 7/7.5) | **Yes (all five)** | Solves the same open-ended NL interface as `AsistanAgent` but via genuine tool-calling (Claude, 5 grounded tools: `skor_getir`/`faktor_getir`/`politika_getir`/`senaryo_calistir`/`gecmis_getir`) instead of one prompt with everything pre-embedded — the model *chooses* which facts it needs. **Hardening implemented, not just planned:** (1) `aks_skor`/`karar`/`onerilen_limit` in the API response always come from `SkorlamaAgent`, never from the LLM; (2) post-response verification (`_dogrula`) rejects any reply containing a number absent from its own tool outputs (the AKS 300/850 scale and natural-language counts ≤12 are allow-listed), falling back to the deterministic rule engine (`anlati_reddedildi=True`) rather than surface an unverified number. This is the hallucination guard `AsistanAgent`'s row above says is still needed — implemented here, for this newer path, not yet ported back onto `AsistanAgent` itself. Preferred path when `ANTHROPIC_API_KEY` is set; falls back to `AsistanAgent` otherwise (zero regression, unit-tested with a mocked Anthropic client — live end-to-end verification is TODO, OQ-48). |
 | Fairness audit (`adalet.py`) | N/A | Deterministic equal-opportunity statistics. Do **not** wrap in agent framing. |
 
-**Bottom line:** one real agent (`AsistanAgent`), honestly scoped. This is the stronger research story than an inflated "3–5 agent" narrative.
+**Bottom line:** three genuine agents now (`AsistanAgent`, `BelgeAgent`, the Claude tool-calling danışman), honestly scoped — up from one. `VeriAgent`/`SkorlamaAgent`/`DanismanAgent`/`Orkestrator` remain correctly labeled as pipeline stages, not agents; renaming them in jury-facing material (vs. keeping the code names for backward compatibility) is still an open framing decision (OQ-38) — this cycle added real agentic capability rather than resolving the narrative question.
 
 ## 5. Statistical & model pipeline
 
@@ -181,6 +187,28 @@ The mission's exact words — *discover hidden capacity the pipeline **fails to 
 
 **Finding on the current synthetic/dekuple dataset, reported honestly (not smoothed over):** k=3 was selected (silhouette 0.389 — moderate, not sharp separation). `ogrenci_yuksek_hacim` (590/590) and mostly `klasik_maasli` (579/582) are cleanly recovered, but **`stajyer_degisken_gelir` and `dusuk_hacim_riskli` collapse into one cluster** — the 9 behavioral features alone do not cleanly distinguish these two personas. Per-cluster empirical default rates are also nearly flat (16.8–17.5%), so this clustering doesn't separate risk either. Consistent with "no-go is a valid outcome": this is reported as a real limitation of the current feature set/synthetic data, not cherry-picked. Not yet re-run on real data (OQ-36 still open).
 
+### 5.6 Risk appetite policies — 3-tier bank recommendation
+
+**Status: instrumented in `aks_core.model.risk_istahi`** (execution.md §3b Phase 7/7.4). PO's ask: give banks a **risksiz / orta / riskli** (3-tier) recommendation rather than one fixed decision band. Each tier is defined by a **target bad rate**, not an arbitrary score cut: `ihtiyatli` ≤3%, `dengeli` ≤6%, `atak` ≤10%.
+
+**Method (no leakage, genuinely held-out):** reproduces `egitim.py::egit()`'s exact `train_test_split` (`seed=42`, `test_size=0.25`, `stratify=y`) on the decoupled dataset — since the split is deterministic given the same data ordering, this recovers the identical held-out set the production model never trained on, without needing to persist split indices separately. For each candidate AKS threshold, computes approval rate, realized bad rate, and expected profit/loss using the **same illustrative assumptions as `is_etkisi.py`** (ort_kredi=25000 TL, getiri_orani=0.12, zarar_orani=0.55 — deliberately the same numbers, so the two modules aren't quietly assuming different economics). For each tier, picks the threshold that maximizes expected profit among thresholds satisfying the bad-rate target; bootstraps a 95% CI on both the approval rate and the realized bad rate.
+
+**Runs only on `veri_kaynagi="dekuple"`** — the function raises `ValueError` on the circular dataset rather than silently producing a number, because "target bad rate" is only meaningful against a genuine outcome label.
+
+**Result on the current synthetic/dekuple benchmark** (n_test=500): ihtiyatlı threshold 835 (realized bad rate 2.8%, approval 35.4%), dengeli threshold 760 (5.0%, 60.2%), atak threshold 690 (7.5%, 79.6%) — monotonic in the expected direction, all three respecting their target.
+
+**Surfaced two ways:** `GET /api/risk-istahi` (the full report) and, per customer, embedded in `GET /api/kimlik/kurum/musteri/<aks_no>` (institution-side, consent-gated — §9c) — the latter only *compares* a given score against the persisted thresholds, it does not re-run the benchmark per request. Carries the same honesty caveat as `_METRIK_UYARISI`: synthetic/decoupled data, held-out but not real-world, not a validated bank policy (OQ-50: should these targets/assumptions become bank-configurable?).
+
+### 5.7 Document processing pipeline (PDF/Excel/CSV → model)
+
+**Status: instrumented in `aks_core.belge` + `aks_core.agents.belge_agent`** (execution.md §3b Phase 7/7.1, 7.5). Turns an uploaded statement — CSV, XLSX, or PDF — into the canonical transaction schema `ozellik_cikar()` already expects: `{tarih, islem_tipi, kategori, tutar, aciklama}`. Modules: `okuyucu.py` (format router), `pdf_okuyucu.py` (pdfplumber — table extraction first, regex-over-text fallback second), `tablo_okuyucu.py` (pandas/openpyxl, fuzzy column matching for real bank-statement headers vs. the product's own simple CSV template), `normalizer.py` (canonicalization + a per-row category-confidence score), `parmak_izi.py` (content fingerprint, §9c), `kalite.py` (quality/fit report). `BelgeAgent` (§4) wraps this with strategy selection + self-checking + a human-readable trace; `04-backend`'s `services.belge_ayristir()` calls the agent, not the low-level `okuyucu.ayristir()` directly.
+
+**Two risks identified and mitigated, not glossed over:**
+1. **Category dependency.** 2 of the model's 9 features (`gelir_kaynagi_sayisi`, `fatura_odeme_duzeni`) are computed directly from the `kategori` field. A document without an explicit category column (most real bank PDFs) falls back to keyword-based category inference, which is necessarily less reliable than a user-supplied category — `normalizer.py` scores this per row and surfaces the average as `kategori_guveni`; below 0.6 triggers a `dusuk_kategori_guveni` flag alongside the score, not a silent best-guess.
+2. **Window mismatch.** The model was trained assuming a ~180-day transaction window (`fatura_odeme_duzeni`'s `/6.0` normalization, `limit_oner()`'s 6-month assumption). A shorter uploaded statement doesn't match that assumption, and **`ozellik_cikar()` was deliberately left unchanged** (train/serve consistency is priority #1) rather than patched ad hoc for this one input path. `kalite.py` instead flags `pencere_uyumsuz` when the observed window deviates >35% from 180 days — verified live at a 47-day statement. A proper fix requires retraining across variable/normalized windows (OQ-52), not a frontend workaround.
+
+Content fingerprinting (`parmak_izi.py`, SHA-256 over the sorted, canonicalized `(tarih, islem_tipi, kategori, tutar)` tuples — deliberately excluding free-text `aciklama`, which can differ slightly across extraction methods for the same underlying document) feeds the ownership-conflict detection in §9c.
+
 ## 6. Evaluation pipeline
 
 Built as `degerlendirme.py` — model-/data-agnostic, reusable regardless of how OQ-36/37 resolve. Produces: repeated stratified k-fold, bootstrap 95% CIs on ROC-AUC/PR-AUC, Brier score, ECE, reliability curve, and **per-persona subgroup breakdown**.
@@ -240,6 +268,28 @@ Two interfaces on one Django backend, one React app: the bank UI (routes under `
 
 **Not yet done, explicitly (OQ-46):** password reset, email verification, KVKK/consent notice, data-retention policy. This is a working demo-grade login, not yet hardened for accepting real (non-demo) personal data at market.
 
+## 9c. Identity, consent & multi-tenancy (execution.md §3b Phase 7/7.2–7.4)
+
+Extends §9b with what a *market* product needs beyond a demo login: a pseudonymous customer identifier institutions can request, consent-gated institution access, and an append-only consent ledger. New Django app `kimlik/`, deliberately separate from `audit/` (a different concern — identity/consent, not scoring history) and from `api/` (reusable by any future non-web client).
+
+**Design principle — minimum personal data (PO decision, not assumed):** no name, no national ID. `Profil.aks_no` (§ below) is generated, not derived from any personal attribute. Phone number is collected **only** for one-account-per-number enforcement (Sybil resistance) and is never stored in plaintext — only `HMAC-SHA256(AKS_PEPPER, number)` is persisted (`kimlik/telefon.py`).
+
+**AKS number** (`kimlik/aks_no.py`): 45 random bits, Crockford Base32-encoded (excludes the visually-confusable I/L/O/U), with a checksum digit — `AKS-XXXX-XXXX-XC`. Format: `gecerli_mi()` catches transcription typos when an institution's staff types the number in by hand; this is format validation, **not** identity verification (see the honesty note below). Generated automatically at registration (`api/auth_views.py::kayit` → `kimlik/aks_no.py::uret()`), retried on the (statistically negligible) chance of a collision against the DB `unique` constraint.
+
+**Consent model — "institution access requires customer approval" (PO decision):** `Kurum` (institution) ↔ `KurumUyeligi` (staff membership, provisioned via `manage.py bootstrap_kurum`, deliberately **not** self-service — a self-registering "institution" would undermine the assumption that the institution's identity is trustworthy, OQ-53) ↔ `ErisimTalebi` (a named institution requests access to a named `Profil`, with a stated purpose) ↔ `RizaKaydi` (append-only ledger of every `talep_olusturuldu`/`onaylandi`/`reddedildi`/`iptal_edildi`/`erisim_kullanildi` event — same immutability pattern as `audit.AuditLog`: `save()` raises on any attempted update, `delete()` is blocked outright). An approval is **time-boxed** (`gecerlilik_bitis`, default 30 days) and **revocable at any time** by the customer — revocation is immediate: `izinler.aktif_riza()` (the single function every institution-facing view calls) checks `durum="onaylandi"` **and** `gecerlilik_bitis > now` on every request, not just at approval time.
+
+**Enforcement, not just data modeling:** `kimlik/izinler.py::KurumUyesi` (DRF permission — is this user staff at *any* institution) and `aktif_riza(kurum, profil)` (is *this specific* institution's access to *this specific* customer currently valid) are composed on every institution-facing view in `kurum_views.py`. Verified live (curl, cookie-jar driven, mirroring the exact frontend request shape): an institution with no consent gets 403; after approval it can view the customer; after the customer revokes, the *same* institution immediately gets 403 again; a second institution never granted access gets 403 throughout.
+
+**Ownership defense — three layers, explicitly a detection posture, not a prevention claim.** With name/national-ID collection ruled out by the minimum-data decision above, *proving* a statement belongs to the uploader is not technically achievable — the product does not claim otherwise. Instead (`api/sahiplik.py`, wired into `services.degerlendir()`):
+
+1. **Document fingerprinting** (§5.7) — if the same statement content surfaces under a second `Profil`, **both** records (the new one and, retroactively, the earlier one) are flagged `coklu_sahiplik_supheli`. Verified live: uploading the identical statement under a second account flagged both sides.
+2. **Mandatory declaration** — `portal_yukle` rejects (400) any upload without an explicit "this statement is mine" confirmation; the declaration is timestamped (`Assessment.created_at`) and IP-stamped (`Assessment.yukleme_ip`).
+3. **Behavioral consistency** — if a profile's new upload's income scale deviates more than 3× from that profile's own upload history median, `profil_tutarsiz` is flagged.
+
+All three flags are **transparency signals only** — same additive-only pattern as `anomali_bayrak` (§5.4): they are never read by `SkorlamaAgent`, never change `aks_skor`/`karar`/`onerilen_limit` (overview.md §7 boundary, re-verified for this addition too). The real fix — open banking, where data arrives from the bank under authorization rather than as a user-uploaded file — is documented as the production path but not built this cycle (OQ-51).
+
+**Data model additions:** `audit.Assessment` gained `profil` (FK to `kimlik.Profil`, declared as the string `"kimlik.Profil"` to avoid a hard import cycle between `audit` and `kimlik`), `belge_parmak_izi`, `sahiplik_beyani`, `sahiplik_bayraklari` (JSON), `kaynak_format`, `yukleme_ip` — all nullable/best-effort, none touch the pre-existing `klasik_skor`/`aks_skor` boundary fields.
+
 ## 10. API architecture
 
 Base `http://localhost:8000/api`. DRF views in `product/04-backend/api/views.py`; JSON bodies (except CSV upload = multipart).
@@ -251,6 +301,7 @@ Base `http://localhost:8000/api`. DRF views in `product/04-backend/api/views.py`
 | GET | `/politika` | Decision-mechanism config: AKS score bands/multipliers + portfolio thresholds |
 | GET | `/segmentasyon` | Unsupervised K-Means discovery report (§5.5); 503 until generated |
 | GET | `/genelleme-saglamlik` | Out-of-persona generalization + thin-file stress test + gaming-sensitivity report (R8/R10/R11); 503 until generated |
+| GET | `/risk-istahi` | 3-tier (ihtiyatli/dengeli/atak) bank recommendation report (§5.6); 503 until generated |
 | GET | `/demo-musteriler?adet_per_persona=3` | Sample customer IDs per persona |
 | GET | `/skorla/{musteri_id}` | Score a demo customer (writes audit row, `kaynak="demo"`) |
 | POST | `/skorla` | Score from raw transactions (audit, `kaynak="api"`) |
@@ -258,23 +309,32 @@ Base `http://localhost:8000/api`. DRF views in `product/04-backend/api/views.py`
 | POST | `/simulasyon` | "What-if" — effect of feature changes on the score |
 | GET | `/portfoy?...` | Portfolio analysis: rescued creditworthy segment + illustrative revenue (**Redis cache, TTL 600s**) |
 | GET | `/adalet?...` | Equal-opportunity fairness report (**Redis cache, TTL 600s**) |
-| POST | `/csv-skorla` | Score a user's own statement CSV (multipart; audit, `kaynak="csv"`) |
-| POST | `/asistan` | Ask the AKS Assistant (Gemini or rule-based) |
+| POST | `/csv-skorla` | Score a statement — CSV, XLSX, **or PDF** (§5.7; multipart; audit, `kaynak="csv"`; URL name kept for backward compatibility) |
+| POST | `/asistan` | Ask the AKS Assistant — Claude tool-calling (`danisman_llm`) if `ANTHROPIC_API_KEY` set, else Gemini/rule-based `AsistanAgent` (§4) |
 | GET | `/gecmis/{musteri_id}` | Persisted assessment history (DB; falls back to orchestrator memory) |
 | GET | `/auth/ben` | Current portal session (also sets the CSRF cookie) — 401 if not logged in |
-| POST | `/auth/kayit` | Portal user registration (email/password/name) + auto-login |
+| POST | `/auth/kayit` | Portal user registration (email/password/name) + auto-login; auto-provisions a `kimlik.Profil` (AKS number, §9c) |
 | POST | `/auth/giris` | Portal user login |
 | POST | `/auth/cikis` | Portal user logout (`IsAuthenticated`) |
-| POST | `/portal/yukle` | Authenticated user scores their own statement CSV (multipart; `IsAuthenticated`, `kaynak="portal"`, tied to `Assessment.user`) |
+| POST | `/portal/yukle` | Authenticated user scores their own statement — CSV/XLSX/PDF (multipart; `IsAuthenticated`; requires `beyan` ownership declaration, §9c; `kaynak="portal"`, tied to `Assessment.user`+`Assessment.profil`) |
 | GET | `/portal/gecmis` | The logged-in user's own upload history only (`IsAuthenticated`) |
+| GET | `/kimlik/profilim` | The logged-in user's AKS number + phone-verification status (`IsAuthenticated`) |
+| POST | `/kimlik/telefon/gonder`, `/kimlik/telefon/dogrula` | Phone OTP send/verify (`IsAuthenticated`, throttled, §9c) |
+| GET | `/kimlik/erisim-talepleri` | Access requests received by the logged-in customer (`IsAuthenticated`) |
+| POST | `/kimlik/erisim-talebi/{id}/onayla`\|`/reddet`\|`/iptal` | Customer approves/rejects/revokes an access request (`IsAuthenticated`, §9c) |
+| GET | `/kimlik/riza-defterim` | The logged-in customer's own append-only consent ledger (`IsAuthenticated`) |
+| GET | `/kimlik/kurum/ben` | Current institution-staff session info (`KurumUyesi`) |
+| POST | `/kimlik/kurum/erisim-talebi` | Institution requests access to a customer by AKS number + stated purpose (`KurumUyesi`, throttled) |
+| GET | `/kimlik/kurum/musteriler` | Customers with a currently-active consent for this institution only (`KurumUyesi`) |
+| GET | `/kimlik/kurum/musteri/{aks_no}` | Customer detail + 3-tier risk-appetite recommendation (§5.6) — 403 without active consent (`KurumUyesi` + `aktif_riza`, §9c) |
 
-All scoring responses (`/skorla`, `/skorla/{id}`, `/csv-skorla`) also carry `anomali_bayrak`/`anomali_skoru` (§5.4) when the optional anomaly-detection artifact is present; both are `null` otherwise, and neither ever affects `aks_skor`/`karar`.
+All scoring responses (`/skorla`, `/skorla/{id}`, `/csv-skorla`) also carry `anomali_bayrak`/`anomali_skoru` (§5.4) when the optional anomaly-detection artifact is present; both are `null` otherwise, and neither ever affects `aks_skor`/`karar`. `/csv-skorla` and `/portal/yukle` additionally carry `belge_meta` (§5.7 — format, quality flags, `BelgeAgent`'s trace) and, for the portal path, `sahiplik_bayraklari` (§9c) — none of these affect the score either.
 
 ## 11. Database & infrastructure
 
 - **Database:** Supabase (Postgres) via Django ORM. `DATABASE_URL` unset → local SQLite (`aks_dev.sqlite3`). `python manage.py check_connections` reports live-vs-fallback for both DB and cache.
 - **Cache:** Upstash Redis via `django-redis` (`rediss://` TLS). `REDIS_URL` unset → Django `LocMemCache`. Caches the heavy `/portfoy` & `/adalet` aggregates (they re-score *all* customers per call) and rate-limits the LLM assistant.
-- **Secrets contract (`.env`, never committed; `.env.example` documents it):** `GEMINI_API_KEY`, `DATABASE_URL`, `SUPABASE_URL/ANON_KEY/SERVICE_ROLE_KEY`, `REDIS_URL`, `DJANGO_SECRET_KEY/DEBUG/ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `AKS_DATA_DIR`, `AKS_MODEL`. **All optional** — empty → SQLite + LocMem + rule-based assistant.
+- **Secrets contract (`.env`, never committed; `.env.example` documents it):** `ANTHROPIC_API_KEY` (§3b Phase 7/7.5 — preferred assistant path, tool-calling; still TODO to test live, OQ-48), `GEMINI_API_KEY` (fallback assistant enrichment), `AKS_PEPPER` (§9c — phone-number HMAC key; empty → falls back to `DJANGO_SECRET_KEY`, same "empty env → sane default" pattern as everything else here), `DATABASE_URL`, `SUPABASE_URL/ANON_KEY/SERVICE_ROLE_KEY`, `REDIS_URL`, `DJANGO_SECRET_KEY/DEBUG/ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `AKS_DATA_DIR`, `AKS_MODEL`. **All optional** — empty → SQLite + LocMem + rule-based assistant.
 
 ## 12. Deployment
 
@@ -284,7 +344,10 @@ Target: Docker + Render, Django serving the built React bundle as a single web s
 
 - **Real-data path (OQ-36):** if Home Credit / LendingClub / open-banking data is available, demote the synthetic generator to unit-test fixtures and make real outcomes the benchmark.
 - **Simulator redesign (A2):** if staying synthetic, rebuild `uretici.py` so a *calibratable* behavioral capacity signal exists and diverges from a traditional-thin signal for a knowable subpopulation — with persona **not** determining both features and label.
-- **Second genuine agent (OQ-38, optional):** the most plausible candidate is an explanation/recommendation *ranker* doing genuine constrained optimization over candidate interventions (not template lookup) — only if it passes the five-question test.
+- **Open banking as the real ownership fix (OQ-51):** replace user-uploaded statements with bank-authorized data access (e.g. an Open Banking API) — this is the only way to make the sahiplik claim a *proof* rather than the current best-effort detection (§9c). The three-layer detection posture built this cycle stays useful as a defense-in-depth signal even after open banking lands.
+- **Configurable risk appetite (OQ-50):** let each institution set its own target bad-rate tiers and profit assumptions instead of the current fixed illustrative defaults in `risk_istahi.py::PROFILLER`.
+- **Real SMS provider (OQ-47):** wire an actual provider (Twilio/Netgsm/İleti Merkezi) behind `kimlik/telefon.py`'s OTP send path, replacing the current DEBUG-mode "code in the API response" placeholder.
+- **Second genuine agent, beyond what Phase 7 already added (OQ-38, narrative framing still open):** `belge_agent.py` and `danisman_llm.py` (§4) already raised the genuine-agent count to three; the open question now is jury-facing *framing* (rename the pipeline stages, or explain the distinction), not "build a second agent."
 - **Calibration layer:** isotonic/Platt on top of the base model, per-segment.
 - **Drift monitoring:** PSI-based hook wired into `Orkestrator`'s score-over-time tracking.
 - **Optimization pipeline:** convert the calibrated capacity PD + PD-gap into a policy engine that recommends the maximal within-policy limit at a fixed portfolio bad-rate — the productized decision-curve output.

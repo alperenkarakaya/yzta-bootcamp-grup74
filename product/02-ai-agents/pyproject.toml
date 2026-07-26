@@ -14,6 +14,9 @@ dependencies = [
     "shap>=0.52",   # 0.49 ve altı xgboost>=3 base_score formatını okuyamıyor
     "joblib>=1.3",
     "numpy>=1.26",
+    "pandas>=2.0",       # §3b Phase 7/7.1 — belge/tablo_okuyucu.py (CSV/XLSX ayrıştırma)
+    "openpyxl>=3.1",     # belge/tablo_okuyucu.py (.xlsx okuma)
+    "pdfplumber>=0.11",  # belge/pdf_okuyucu.py (PDF tablo/metin çıkarımı)
 ]
 
 [tool.setuptools.packages.find]
@@ -24,4 +27,4 @@ include = ["aks_core*"]
 aks_core = ["artifacts/*.joblib", "artifacts/*.json"]
 
 [project.optional-dependencies]
-test = ["pytest>=8.0"]
+test = ["pytest>=8.0", "reportlab>=4.0"]  # reportlab yalnızca test_belge.py'nin PDF fixture'ı için

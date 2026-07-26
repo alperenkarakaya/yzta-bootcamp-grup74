@@ -57,7 +57,7 @@ Every AI / LLM / agent component must pass a **five-question test** or be remove
 4. How is its value measured?
 5. How is its improvement validated?
 
-**LLMs must never become the decision engine.** The result of applying this test honestly (architecture.md §4): of the components historically narrated as a "3–5 agent architecture", exactly **one** — `AsistanAgent` (a grounded Q&A assistant) — is genuinely agentic. The rest are deterministic pipeline stages and are named as such.
+**LLMs must never become the decision engine.** The result of applying this test honestly (architecture.md §4): of the components historically narrated as a "3–5 agent architecture", originally exactly **one** — `AsistanAgent` (a grounded Q&A assistant) — was genuinely agentic; the rest were deterministic pipeline stages and are named as such. Execution.md §3b Phase 7 added two more genuine agents (`BelgeAgent` — multi-strategy document parsing with self-checking and a traceable decision log; a Claude tool-calling danışman agent that can only state numbers it retrieved through defined tools, with a post-response verifier that rejects and falls back on anything it can't ground) — **three genuine agents now**, still each independently justified against the five-question test, not added for narrative padding.
 
 ## 7. Boundary principles (the one rule that shapes the whole architecture)
 
@@ -65,6 +65,8 @@ Every AI / LLM / agent component must pass a **five-question test** or be remove
 > *(AKS never overrides or changes the bank's classic score/segment — it only complements it.)*
 
 The bridge layer shall **never**: re-score the customer inside the bank's model, override the segment automatically, adjust the engine's inputs, or auto-approve above policy. This is not a paper promise — it is enforced in code: every scoring writes an **immutable audit row** that records the bank's classic score *unchanged*. See architecture.md §9 (policy + audit layer).
+
+**A second, related but distinct boundary was added with the institution portal (execution.md §3b Phase 7):** *who may even see a customer's data* is gated on that customer's explicit, time-boxed, revocable consent — enforced the same way, in code, not policy (architecture.md §9c). This doesn't change the original boundary (AKS still never overrides the bank's score); it extends the same "the code enforces the promise, not a document" discipline to a second question the market-facing product raises: access, not just decision authority.
 
 ## 8. Current architecture summary
 
@@ -83,10 +85,10 @@ The AI/ML core (`aks_core`) is an installable Python package imported identicall
 |---|---|---|
 | Frontend | React 18 + Vite 5 + TypeScript | Polished multi-view bank panel; hosts the Google Stitch design |
 | Backend / API | Django 5.2 + Django REST Framework 3.17 | Batteries-included ORM + migrations + read-only admin (free audit browser) + auth; pairs with Supabase Postgres |
-| AI core | `aks_core` installable package (pipeline + `AsistanAgent`) | One clean import for both API and research scripts |
+| AI core | `aks_core` installable package (pipeline + 3 genuine agents) | One clean import for both API and research scripts |
 | ML | scikit-learn (logistic regression — **preferred**), XGBoost / LightGBM (under review, see §14) | Simplest model that wins; complexity must be earned |
 | Explainability | SHAP → adverse-action-style reason codes | Regulatory-adjacent explanation surface |
-| LLM | Google Gemini (optional), deterministic rule-based fallback | The single justified agent; never the decision engine |
+| LLM | Claude (tool-calling, preferred — execution.md §3b Phase 7/7.5), Google Gemini (optional fallback), deterministic rule-based fallback | Justified, five-question-tested agents; never the decision engine |
 | Database | Supabase (Postgres) via Django ORM; SQLite fallback | Assessments, per-customer history, immutable audit trail |
 | Cache | Upstash Redis (`django-redis`); LocMem fallback | Cache heavy portfolio/fairness aggregates |
 | Deploy (target) | Docker + Render; Supabase + Upstash hosted | One web service |
@@ -120,7 +122,7 @@ The five product sections map 1:1 to five workstreams: 01-data, 02-ai-agents (hi
 - Trained model artifact + baseline comparison (`aks_core.model.egitim`, `etiketleme`).
 - SHAP explainability, equal-opportunity fairness report, business-impact analysis.
 - Deterministic pipeline (`VeriAgent → SkorlamaAgent → DanismanAgent`, `Orkestrator`) + `AsistanAgent` (Gemini/rule-based).
-- Django + DRF backend: **21 endpoints** (15 bank/scoring + 6 user-portal auth/upload/history), verified at parity with the retired FastAPI backend for the original set.
+- Django + DRF backend: **34 endpoints** (15 bank/scoring + 6 user-portal auth/upload/history + 1 risk-appetite report + 12 identity/consent/institution, execution.md §3b Phase 7), the original 15 verified at parity with the retired FastAPI backend.
 - Immutable audit trail (`Customer`, `Assessment`, `AuditLog`) with read-only Django admin.
 - Supabase + Upstash integration code (graceful fallback) + `check_connections` diagnostic.
 - React + Vite + TS + Tailwind frontend, **two interfaces** (execution.md §3b Phase 6): bank side — 6 pages (Intelligence, Portfolio, Audit, Customers, Customer Detail, CSV Upload) implementing the Google Stitch design; user portal — 2 pages (login/register, upload+history dashboard) under `/portal`, session-gated, fully separate nav/branding. All wired live to real `/api/*` endpoints — no fabricated data or invented compliance claims. Customer Detail also includes a live what-if scenario simulator (`/api/simulasyon`).
@@ -128,6 +130,7 @@ The five product sections map 1:1 to five workstreams: 01-data, 02-ai-agents (hi
 - **Unsupervised auxiliary components** (execution.md §3b Phase 4): anomaly/out-of-distribution detection (`anomali.py`, IsolationForest — flags atypical profiles, never changes the decision) and unsupervised segment discovery (`segmentasyon.py`, K-Means — offline research report, not decision-facing). Architecture.md §5.4/§5.5.
 - **Generalization & robustness testing** (execution.md §3b Phase 5, R8/R10/R11): out-of-persona holdout (model generalizes to a never-seen persona, AUC 0.857–0.881), thin-file stress test (score degrades gracefully — the anomaly detector correctly flags 100% of severely-truncated profiles, falling to 14% at near-full history), and a gaming-resistance sensitivity analysis (found `gider_gelir_orani` disproportionately gameable — flagged as open decision OQ-45, not silently accepted).
 - **User portal — two interfaces, market-facing** (execution.md §3b Phase 6): a real login (Django session auth, OQ-33 resolved for this scope) at `/portal`, fully separate from the bank's internal UI — a logged-in end user uploads their own statement, sees their own AKS score/limit/SHAP factors, and a personal "Geçmişim" history tied to their account. Demo-grade, not yet market-hardened on consent/KVKK (OQ-46 open).
+- **Market uplift — document pipeline, identity/consent, risk-tier recommendations, two more genuine agents** (execution.md §3b Phase 7): statements can now be uploaded as PDF/Excel/CSV (`aks_core/belge/`, architecture.md §5.7), not CSV-only; every user gets a pseudonymous, minimum-PII "AKS number" (no name/national ID) at registration; institutions can only view a customer's data after that customer explicitly, revocably consents (`kimlik/` app, architecture.md §9c, verified live end-to-end — consent grant, institution access, revocation, and a cross-account duplicate-statement detection all round-tripped over real HTTP requests); a new 3-tier (ihtiyatlı/dengeli/atak) bank recommendation is generated from held-out, target-bad-rate thresholds (architecture.md §5.6); and two more genuinely agentic components were added (`BelgeAgent`, a Claude tool-calling danışman agent) — see §6 above. `aks_core` test count: 24 → 67; Django test count: 15 → 41; zero regression on the production model (identical AUC/ECE reproduced).
 
 ## 12. Current limitations
 
@@ -155,7 +158,8 @@ Ordered by the §5 priority list, not sprint convenience (full task table: execu
 - **Circularity finding (fatal, code-grounded).** The default label in `etiketleme.py` is generated from 4 of the 9 features the model then trains on; the "classical baseline" is structurally barred from those 4. So "behavioral 0.829 vs classical 0.729" is true *by construction* for any model class — not evidence of hidden capacity. Ablation confirmed: XGBoost vs 9-feature logistic regression differ by **0.0004 AUC**; and the confounding is *structural* (the 5 "non-causal" features alone still reach 0.82 AUC via persona-conditioning), so the fix cannot be "hide the 4 columns" — it must decouple feature generation from label generation at the generator level, or move to real data.
 - **Target definition = Formulation B** (calibrated behavioral capacity + PD-gap overlay), engineered to graduate into C (uplift/reject-inference) once a design-partner bank provides champion/challenger data. Rejected A (within-segment risk ranking) because it *is* default prediction, which the mission forbids, and carries the heaviest regulatory load. This makes **calibration, not raw AUC, the headline metric.** Full comparison: architecture.md §5.
 - **Prefer logistic regression over XGBoost** until a non-circular benchmark says otherwise (mandate: classical wins by default).
-- **One real agent, honestly scoped.** `AsistanAgent` passes the five-question test; the other "agents" are renamed to pipeline stages in any jury-facing material.
+- **Three real agents, honestly scoped, up from one.** `AsistanAgent`, `BelgeAgent`, and the Claude tool-calling danışman agent (execution.md §3b Phase 7/7.5) each independently pass the five-question test; the pipeline stages historically over-narrated as "agents" (`VeriAgent`/`SkorlamaAgent`/`DanismanAgent`/`Orkestrator`) are still deterministic and are named as such in any jury-facing material — how to *frame* that distinction to a jury remains open (OQ-38), but the underlying agent count grew for real reasons, not narrative ones.
+- **Minimum personal data for the market-facing identity layer.** No name, no national ID — customers are identified by a randomly-generated "AKS number" institutions can request but that reveals nothing about the holder. This is a genuine trade-off, stated plainly: it means the product can *detect* (not *prove*) that an uploaded statement belongs to its uploader (architecture.md §9c); open banking is the documented future fix (OQ-51), not built this cycle.
 - **Django replaced FastAPI** for the free admin/ORM/migrations/auth that the audit-trail and Supabase requirements need. Old FastAPI kept in `_legacy_fastapi/` for reference only.
 - **All external services optional** — the product must run offline for the demo.
 

@@ -41,6 +41,27 @@ class Assessment(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="degerlendirmeler"
     )
+    # §3b Phase 7/7.2 — kurumun (banka) rıza-tabanlı erişimle görebildiği kayıt
+    # bu FK üzerinden bulunur (`kimlik.kurum_views.musteri_detay`). String
+    # referans kullanılıyor ('kimlik.Profil') — audit app'i kimlik'i DOĞRUDAN
+    # import ETMEZ, yalnızca migration bağımlılığı kurulur (uygulama sırası
+    # gevşek kalır). `user` alanından ayrı: `user` portal oturumunu, `profil`
+    # kimlik/rıza katmanını temsil eder — ikisi normalde aynı kullanıcıya
+    # işaret eder ama kavramsal olarak farklı katmanlardır.
+    profil = models.ForeignKey(
+        "kimlik.Profil", on_delete=models.SET_NULL, null=True, blank=True, related_name="degerlendirmeler"
+    )
+    # §3b Phase 7/7.3 (sahiplik savunması) — bu turda ŞEMA eklenir, doldurma
+    # mantığı 7.3'te gelir. `sahiplik_bayraklari` örn. ["coklu_sahiplik_supheli"].
+    belge_parmak_izi = models.CharField(max_length=64, blank=True, default="")
+    sahiplik_beyani = models.BooleanField(default=False, help_text="Yükleyen 'bu ekstre bana ait' onayı verdi mi")
+    # Planın ilk taslağı bu olayı RizaKaydi'na yazmayı öngörmüştü; RizaKaydi
+    # zorunlu bir ErisimTalebi FK'sine bağlı (KURUM erişim rızası içindir) —
+    # kendi-yükleme beyanı kavramsal olarak farklı bir olay, o modele
+    # zorlanmadı. Zaman zaten `created_at`'te var; IP burada tutulur.
+    yukleme_ip = models.GenericIPAddressField(null=True, blank=True)
+    sahiplik_bayraklari = models.JSONField(default=list, blank=True)
+    kaynak_format = models.CharField(max_length=16, blank=True, default="", help_text="csv/xlsx/pdf")
     # Formülasyon B (architecture.md §5.3, §3b U10/U18) — yalnızca klasik skor
     # biliniyorsa (persona verildiyse) hesaplanır; aksi halde null.
     pd_fark = models.FloatField(null=True, blank=True, help_text="pd_geleneksel_bant − pd_davranissal")

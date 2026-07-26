@@ -1,0 +1,72 @@
+{
+  "profiller": {
+    "ihtiyatli": {
+      "ad": "İhtiyatlı (risksiz)",
+      "hedef_kotu_oran": 0.03,
+      "secilen_esik": 835,
+      "gerceklesen_kotu_oran": 0.0282,
+      "gerceklesen_kotu_oran_ci95": [
+        0.0056,
+        0.0565
+      ],
+      "onay_orani": 0.354,
+      "onay_orani_ci95": [
+        0.314,
+        0.396
+      ],
+      "n_onay": 177,
+      "n_test": 500,
+      "beklenen_net_kar": 447250.0,
+      "uyari": null
+    },
+    "dengeli": {
+      "ad": "Dengeli (orta risk)",
+      "hedef_kotu_oran": 0.06,
+      "secilen_esik": 760,
+      "gerceklesen_kotu_oran": 0.0498,
+      "gerceklesen_kotu_oran_ci95": [
+        0.0266,
+        0.0764
+      ],
+      "onay_orani": 0.602,
+      "onay_orani_ci95": [
+        0.558,
+        0.642
+      ],
+      "n_onay": 301,
+      "n_test": 500,
+      "beklenen_net_kar": 651750.0,
+      "uyari": null
+    },
+    "atak": {
+      "ad": "Atak (riskli)",
+      "hedef_kotu_oran": 0.1,
+      "secilen_esik": 690,
+      "gerceklesen_kotu_oran": 0.0754,
+      "gerceklesen_kotu_oran_ci95": [
+        0.0503,
+        0.1005
+      ],
+      "onay_orani": 0.796,
+      "onay_orani_ci95": [
+        0.762,
+        0.828
+      ],
+      "n_onay": 398,
+      "n_test": 500,
+      "beklenen_net_kar": 691500.0,
+      "uyari": null
+    }
+  },
+  "varsayimlar": {
+    "ort_kredi": 25000,
+    "getiri_orani": 0.12,
+    "zarar_orani": 0.55
+  },
+  "n_test": 500,
+  "model_adi_referans": "LogisticRegression",
+  "zaman": "2026-07-26T18:55:43",
+  "veri_kaynagi": "dekuple",
+  "sure_sn": 1.2,
+  "uyari": "Bu profiller sentetik/dekuple veri üzerinde, held-out (out-of-sample) ama sentetik bir benchmarkta üretildi (architecture.md §5.1). Gerçek veri (OQ-36) doğrulaması olmadan 'nihai/doğrulanmış banka politikası' olarak alıntılanmamalı."
+}

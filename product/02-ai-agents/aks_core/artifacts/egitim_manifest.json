@@ -1,5 +1,5 @@
 {
-  "zaman": "2026-07-24T22:19:41",
+  "zaman": "2026-07-26T19:30:39",
   "veri_kaynagi": "dekuple",
   "n_musteri": 2000,
   "n_egitim": 1500,
@@ -26,7 +26,7 @@
       "C": 1.0
     }
   },
-  "arama_suresi_sn": 30.3,
+  "arama_suresi_sn": 52.0,
   "kalibrasyon_uygulandi": true,
   "ece_kalibrasyon_oncesi": 0.0391,
   "ece_kalibrasyon_sonrasi": 0.0394,

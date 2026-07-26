@@ -8,6 +8,7 @@ urlpatterns = [
     path("politika", views.politika),
     path("segmentasyon", views.segmentasyon),
     path("genelleme-saglamlik", views.genelleme_saglamlik),
+    path("risk-istahi", views.risk_istahi),
     path("demo-musteriler", views.demo_musteriler),
     path("skorla", views.skorla),
     path("skorla/<int:musteri_id>", views.skorla_demo),

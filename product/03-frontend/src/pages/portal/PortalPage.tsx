@@ -31,6 +31,9 @@ export default function PortalPage() {
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState("");
   const [sonuc, setSonuc] = useState<CsvSkorSonuc | null>(null);
+  // §3b Phase 7/7.3 — zorunlu sahiplik beyanı: backend bu onay olmadan
+  // yüklemeyi 400 ile reddeder (bkz. portal_views.py::portal_yukle).
+  const [beyan, setBeyan] = useState(false);
   const girisRef = useRef<HTMLInputElement>(null);
 
   const [gecmis, setGecmis] = useState<PortalGecmisKayit[]>([]);
@@ -56,12 +59,12 @@ export default function PortalPage() {
   }
 
   async function gonder() {
-    if (!dosya) return;
+    if (!dosya || !beyan) return;
     setYukleniyor(true);
     setHata("");
     setSonuc(null);
     try {
-      const r = await api.portalYukle(dosya);
+      const r = await api.portalYukle(dosya, beyan);
       setSonuc(r);
       gecmisiYenile();
     } catch (e) {
@@ -70,6 +73,14 @@ export default function PortalPage() {
       setYukleniyor(false);
     }
   }
+
+  const BAYRAK_METNI: Record<string, string> = {
+    coklu_sahiplik_supheli: "Bu ekstre içeriği başka bir hesap altında da yüklenmiş görünüyor.",
+    profil_tutarsiz: "Bu yükleme, geçmiş yüklemelerinizden belirgin şekilde farklı bir gelir ölçeği gösteriyor.",
+    pencere_uyumsuz: "Ekstre süresi, modelin eğitildiği ~6 aylık pencereden belirgin şekilde sapıyor.",
+    dusuk_kategori_guveni: "İşlem kategorileri güvenle tahmin edilemedi — sonuç daha az kesin olabilir.",
+    yuksek_atlanan_satir_orani: "Dosyadaki satırların önemli bir kısmı okunamadı.",
+  };
 
   return (
     <div className="flex flex-col gap-stack-lg pb-8">
@@ -122,7 +133,7 @@ export default function PortalPage() {
           <input
             ref={girisRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,text/csv,.xlsx,.xls,.pdf,application/pdf"
             className="hidden"
             onChange={(e) => dosyaSec(e.target.files?.[0] ?? null)}
           />
@@ -136,7 +147,9 @@ export default function PortalPage() {
                 </div>
               </>
             ) : (
-              <div className="font-body-sm text-body-sm text-on-surface">CSV dosyasını sürükleyin veya seçin</div>
+              <div className="font-body-sm text-body-sm text-on-surface">
+                CSV, Excel ya da PDF ekstrenizi sürükleyin veya seçin
+              </div>
             )}
             <div className="flex gap-3 mt-2">
               <button
@@ -147,7 +160,7 @@ export default function PortalPage() {
               </button>
               <button
                 onClick={gonder}
-                disabled={!dosya || yukleniyor}
+                disabled={!dosya || !beyan || yukleniyor}
                 className="px-4 py-2 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors disabled:opacity-40"
               >
                 {yukleniyor ? "Analiz ediliyor…" : "Analiz Et"}
@@ -155,6 +168,24 @@ export default function PortalPage() {
             </div>
           </div>
         </div>
+
+        {/* §3b Phase 7/7.3 — zorunlu sahiplik beyanı */}
+        <label className="flex items-start gap-3 mt-4 px-1 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={beyan}
+            onChange={(e) => setBeyan(e.target.checked)}
+            className="mt-0.5 accent-primary"
+          />
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            Bu ekstrenin <strong className="text-on-surface">bana ait</strong> olduğunu onaylıyorum. AKS isim/kimlik
+            bilgisi tutmaz; sahiplik yalnızca beyan + otomatik tutarlılık kontrolleriyle izlenir — bkz.{" "}
+            <a href="/portal/riza-defterim" className="text-primary underline">
+              rıza defterim
+            </a>
+            .
+          </span>
+        </label>
       </section>
 
       {hata && (
@@ -172,6 +203,16 @@ export default function PortalPage() {
               yalnızca sonuca biraz daha az güvenilmesi gerektiğini işaret eder.
             </div>
           )}
+          {/* §3b Phase 7/7.3 — sahiplik/kalite bayrakları: hepsi TESPİT amaçlı, karar mekanizmasını değiştirmez */}
+          {[...(sonuc.sahiplik_bayraklari ?? []), ...(sonuc.belge_meta?.bayraklar ?? [])].map((b) => (
+            <div
+              key={b}
+              className="col-span-1 md:col-span-12 bg-amber-400/10 border border-amber-400/30 text-amber-400 rounded-DEFAULT p-3 font-body-sm text-body-sm flex items-center gap-2"
+            >
+              <Icon name="warning" className="text-[16px] shrink-0" />
+              {BAYRAK_METNI[b] ?? b}
+            </div>
+          ))}
           <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col items-center justify-center text-center">
             <span className="font-label-mono text-label-mono text-on-surface-variant mb-2">AKS Skoru</span>
             <span className="font-display-lg text-display-lg text-primary drop-shadow-[0_0_10px_rgba(195,192,255,0.5)]">
@@ -225,6 +266,23 @@ export default function PortalPage() {
               </ul>
             )}
           </div>
+
+          {/* §3b Phase 7/7.5 — belge_agent'ın çok-stratejili karar izi (gerçek agent kanıtı) */}
+          {!!sonuc.belge_meta?.iz?.length && (
+            <details className="col-span-1 md:col-span-12 bg-surface-container hairline-border rounded-xl p-6">
+              <summary className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider cursor-pointer">
+                Belge Agent İzi ({sonuc.belge_meta.kaynak_format?.toUpperCase()})
+              </summary>
+              <ol className="mt-4 space-y-1.5">
+                {sonuc.belge_meta.iz.map((adim, i) => (
+                  <li key={i} className="font-label-mono text-[11px] text-on-surface-variant flex gap-2">
+                    <span className="text-primary shrink-0">{i + 1}.</span>
+                    {adim}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
         </section>
       )}
 

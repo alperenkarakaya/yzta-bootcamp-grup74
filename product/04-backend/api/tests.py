@@ -187,6 +187,32 @@ class ApiUclariTesti(TestCase):
         esikler = [b["esik"] for b in veri["bantlar"]]
         self.assertEqual(esikler, sorted(esikler, reverse=True), "Bantlar eşiğe göre azalan sırada olmalı")
 
+    def test_asistan_ucu_anahtarsiz_kural_moduna_duser(self):
+        """§3b Phase 7/7.5: ANTHROPIC_API_KEY tanımlı değilse (test ortamında
+        normal durum) /api/asistan sıfır regresyonla eski kural motoruna düşmeli."""
+        import os
+        self.assertFalse(os.environ.get("ANTHROPIC_API_KEY"), "Bu test anahtarsız ortam varsayar")
+        r = self.client.post("/api/asistan", {
+            "soru": "skorum neden düşük?",
+            "baglam": {"aks_skor": 600, "risk_seviyesi": "orta risk",
+                       "aciklama": {"riski_azaltan": [], "riski_artiran": []}},
+        }, content_type="application/json")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("yanit", r.json())
+
+    def test_risk_istahi_ucu_uc_profil_donuyor(self):
+        """§3b Phase 7/7.4: ihtiyatli/dengeli/atak profilleri, artan onay oranıyla."""
+        from api import services
+        if not services.risk_istahi_var():
+            self.skipTest("risk_istahi_raporu.json henüz üretilmedi")
+        r = self.client.get("/api/risk-istahi")
+        self.assertEqual(r.status_code, 200)
+        veri = r.json()
+        self.assertEqual(set(veri["profiller"]), {"ihtiyatli", "dengeli", "atak"})
+        onay = {k: v["onay_orani"] for k, v in veri["profiller"].items()}
+        self.assertLessEqual(onay["ihtiyatli"], onay["dengeli"])
+        self.assertLessEqual(onay["dengeli"], onay["atak"])
+
     def test_skorla_demo_formulasyon_b_alanlarini_iceriyor(self):
         """§3b/U17/U19: persona biliniyorsa pd_geleneksel_bant/pd_fark/kapasite_sinyali dönmeli."""
         from api import services
@@ -236,3 +262,107 @@ class FormulasyonBSinirTesti(TestCase):
         # pd_fark salt-okunur türetilmiş bir alan; klasik_skor'dan bağımsız olarak var/None olabilir
         # ama asla klasik_skor kolonunun YERİNE geçmemeli (ayrı kolon).
         self.assertNotEqual(log.klasik_skor, log.aks_skor)
+
+
+_ORNEK_EKSTRE_CSV = b"""tarih,islem_tipi,kategori,tutar,aciklama
+2026-01-05,gelir,maas,15000,Maas Odemesi
+2026-01-10,gider,market,-450.5,Migros Market
+2026-01-15,gider,fatura,-320,Elektrik Faturasi
+2026-02-05,gelir,maas,15000,Maas Odemesi
+2026-02-12,gider,kira,-6000,Kira Odemesi
+2026-02-20,gider,eglence,-149.99,Netflix Aboneligi
+"""
+
+_BASKA_EKSTRE_CSV = b"""tarih,islem_tipi,kategori,tutar,aciklama
+2026-01-03,gelir,maas,9000,Maas
+2026-01-08,gider,market,-200,Market
+2026-01-14,gider,fatura,-150,Fatura
+2026-02-02,gelir,maas,9000,Maas
+2026-02-11,gider,kira,-2500,Kira
+"""
+
+
+class SahiplikSavunmasiTesti(TestCase):
+    """§3b Phase 7/7.3: engelleme değil TESPİT — bkz. plan "Dürüstlük notu".
+    Bu testler üç katmandan ikisini (parmak izi çakışması + zorunlu beyan)
+    kanıtlar; davranışsal tutarlılık `kimlik` app'inin dışında, `api.sahiplik`
+    modülünde ayrı test edilir."""
+
+    def _kayit_ol_ve_giris_yap(self, email):
+        r = self.client.post("/api/auth/kayit", {"email": email, "sifre": "GucluSifre123"})
+        self.assertEqual(r.status_code, 201)
+        return r.json()
+
+    def _yukle(self, icerik, beyan="true", dosya_adi="ekstre.csv"):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        dosya = SimpleUploadedFile(dosya_adi, icerik, content_type="text/csv")
+        veri = {"dosya": dosya}
+        if beyan is not None:
+            veri["beyan"] = beyan
+        return self.client.post("/api/portal/yukle", veri)
+
+    def test_beyan_olmadan_yukleme_reddedilir(self):
+        self._kayit_ol_ve_giris_yap("beyansiz@example.com")
+        r = self._yukle(_ORNEK_EKSTRE_CSV, beyan=None)
+        self.assertEqual(r.status_code, 400)
+
+    def test_beyan_ile_yukleme_kabul_edilir(self):
+        self._kayit_ol_ve_giris_yap("beyanli@example.com")
+        r = self._yukle(_ORNEK_EKSTRE_CSV)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json().get("sahiplik_bayraklari"), [])
+
+    def test_ayni_belge_iki_hesapla_yuklenince_ikisi_de_bayraklanir(self):
+        from audit.models import Assessment
+
+        self._kayit_ol_ve_giris_yap("kisi1@example.com")
+        r1 = self._yukle(_ORNEK_EKSTRE_CSV)
+        self.assertEqual(r1.status_code, 200)
+        self.assertNotIn("coklu_sahiplik_supheli", r1.json()["sahiplik_bayraklari"],
+                          "İlk yükleyen için henüz çakışma yok")
+
+        self.client.post("/api/auth/cikis")
+        self._kayit_ol_ve_giris_yap("kisi2@example.com")
+        r2 = self._yukle(_ORNEK_EKSTRE_CSV)  # AYNI içerik, farklı hesap
+        self.assertEqual(r2.status_code, 200)
+        self.assertIn("coklu_sahiplik_supheli", r2.json()["sahiplik_bayraklari"],
+                       "İkinci yükleyen için çakışma bayrağı beklenir")
+
+        # Retroaktif: ilk kaydın bayrağı da güncellenmiş olmalı
+        ilk_kayit = Assessment.objects.filter(kaynak="portal").order_by("created_at").first()
+        self.assertIn("coklu_sahiplik_supheli", ilk_kayit.sahiplik_bayraklari)
+
+    def test_farkli_belge_bayrak_almiyor(self):
+        self._kayit_ol_ve_giris_yap("kisi3@example.com")
+        self._yukle(_ORNEK_EKSTRE_CSV)
+        self.client.post("/api/auth/cikis")
+        self._kayit_ol_ve_giris_yap("kisi4@example.com")
+        r = self._yukle(_BASKA_EKSTRE_CSV)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn("coklu_sahiplik_supheli", r.json()["sahiplik_bayraklari"])
+
+    def test_belge_meta_ve_ip_kaydediliyor(self):
+        from audit.models import Assessment
+
+        self._kayit_ol_ve_giris_yap("kisi5@example.com")
+        self._yukle(_ORNEK_EKSTRE_CSV)
+        kayit = Assessment.objects.filter(kaynak="portal").latest("created_at")
+        self.assertTrue(kayit.sahiplik_beyani)
+        self.assertEqual(kayit.kaynak_format, "csv")
+        self.assertTrue(kayit.belge_parmak_izi)
+        self.assertIsNotNone(kayit.yukleme_ip)
+
+    def test_gelir_olceginde_ani_sicrama_tutarsizlik_bayragi_uretir(self):
+        """Aynı profilin geçmiş yüklemelerine göre gelir ölçeği 3 kattan fazla
+        sıçrarsa `profil_tutarsiz` üretilmeli (davranışsal tutarlılık katmanı,
+        bkz. `api/sahiplik.py::davranissal_tutarlilik_kontrol`)."""
+        self._kayit_ol_ve_giris_yap("tutarsiz@example.com")
+        # İki normal yükleme (aynı ölçek) — medyan oluşturmak için
+        self._yukle(_BASKA_EKSTRE_CSV, dosya_adi="e1.csv")
+        self._yukle(_BASKA_EKSTRE_CSV.replace(b"9000", b"9100"), dosya_adi="e2.csv")
+
+        # Üçüncü yükleme: gelir ~15x büyük (kanonik format korunarak)
+        buyuk_gelirli = _BASKA_EKSTRE_CSV.replace(b"9000", b"140000")
+        r = self._yukle(buyuk_gelirli, dosya_adi="e3.csv")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("profil_tutarsiz", r.json()["sahiplik_bayraklari"])

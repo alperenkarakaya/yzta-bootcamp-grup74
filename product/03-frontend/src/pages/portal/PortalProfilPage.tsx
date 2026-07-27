@@ -109,7 +109,7 @@ export default function PortalProfilPage() {
           <div className="flex flex-col gap-4 max-w-sm">
             <p className="font-body-sm text-body-sm text-on-surface-variant">
               Aynı telefon numarası yalnızca bir hesaba bağlanabilir — bu, birinin sizin adınıza ikinci bir hesap
-              açmasını zorlaştırır (SMS sağlayıcısı henüz demo modda; kod aşağıda görünür).
+              açmasını zorlaştırır.
             </p>
             {!dogrulamaId ? (
               <div className="flex gap-2">
@@ -146,7 +146,7 @@ export default function PortalProfilPage() {
             )}
             {debugKod && (
               <p className="font-label-mono text-[11px] text-amber-400">
-                DEBUG modu: kod = {debugKod} (SMS sağlayıcısı kurulana kadar geçici)
+                Demo modu — doğrulama kodunuz: {debugKod}
               </p>
             )}
             {mesaj && <p className="font-label-mono text-[11px] text-emerald-400">{mesaj}</p>}

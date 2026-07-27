@@ -95,9 +95,6 @@ export default function KurumLoginPage() {
           >
             {yukleniyor ? "…" : "Giriş Yap"}
           </button>
-          <p className="font-label-mono text-[10px] text-on-surface-variant text-center">
-            Demo hesap: <code>python manage.py bootstrap_kurum</code> ile oluşturulur.
-          </p>
         </form>
       </div>
     </div>

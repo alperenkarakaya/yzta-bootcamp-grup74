@@ -201,7 +201,7 @@ def rapor_uret(veri_kaynagi="dekuple", seed=42, dosya_yolu=None):
                        "(2026-01-01–2026-06-29) yayılmış; üretici zamana bağlı bir kayma (concept drift) "
                        "simüle etmiyor. Müşterileri tarihe göre erken/geç ayırmak üretici rastgeleliğini "
                        "ölçmekten başka bir şey olmazdı — sahte bir sonuç yerine bu boşluk açıkça bırakıldı. "
-                       "Gerçek bir out-of-time testi gerçek veri gerektirir (OQ-36).",
+                       "Gerçek bir out-of-time testi gerçek veri gerektirir.",
         },
         "ince_dosya_stres_testi": {
             "aciklama": "150 rastgele müşterinin TAM geçmişiyle skoru taban alınıp, geçmiş ilk K işleme "

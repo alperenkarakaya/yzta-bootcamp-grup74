@@ -151,9 +151,8 @@ export default function CustomerDetailPage() {
             </div>
             {sonuc.anomali_bayrak && (
               <p className="font-body-sm text-body-sm text-amber-400/90 mt-2 max-w-md">
-                Bu profil, İzolasyon Ormanı'na (denetimsiz, §3b/U25) göre eğitim dağılımının tipik aralığının
-                dışında — skoru DEĞİŞTİRMEZ, yalnızca modele diğer profillere göre biraz daha az güvenilmesi
-                gerektiğini işaret eder.
+                Bu profil, eğitim dağılımının tipik aralığının dışında — skoru DEĞİŞTİRMEZ, yalnızca modele diğer
+                profillere göre biraz daha az güvenilmesi gerektiğini işaret eder.
               </p>
             )}
           </div>
@@ -215,8 +214,8 @@ export default function CustomerDetailPage() {
             </div>
           )}
           <p className="font-label-mono text-[10px] text-on-surface-variant mt-3 relative z-20 text-center">
-            Formülasyon B (architecture.md §5.3) — pozitif PD-Gap: davranışsal kanıt, geleneksel bandın ima ettiğinden
-            daha fazla kapasite gösteriyor. Bankanın skorunu değiştirmez, yalnızca tamamlar.
+            Pozitif PD-Gap: davranışsal kanıt, geleneksel bandın ima ettiğinden daha fazla kapasite gösteriyor.
+            Bankanın skorunu değiştirmez, yalnızca tamamlar.
           </p>
         </div>
 
@@ -232,7 +231,7 @@ export default function CustomerDetailPage() {
             </div>
           </div>
           <p className="mt-8 text-center font-label-mono text-[10px] text-on-surface-variant">
-            Bu değerlendirme /api/skorla/{musteriId} ile denetim izine (AuditLog) otomatik kaydedildi.
+            Bu değerlendirme, değiştirilemez denetim iziyle otomatik olarak kaydedildi.
           </p>
         </div>
 

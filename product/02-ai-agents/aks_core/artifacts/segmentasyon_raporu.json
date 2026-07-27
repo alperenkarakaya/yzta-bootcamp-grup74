@@ -1,5 +1,5 @@
 {
-  "zaman": "2026-07-24T22:20:07",
+  "zaman": "2026-07-27T20:40:56",
   "veri_kaynagi": "dekuple",
   "n_musteri": 2000,
   "k": 3,
@@ -69,5 +69,5 @@
       }
     }
   },
-  "not": "Denetimsiz keşif raporu (§3b/U26) — hiçbir skorlama/karar yoluna beslenmez. Silhouette skoru 1'e yakınsa kümeler iyi ayrışmış, 0'a yakınsa örtüşüyor demektir. Bu sentetik veri üzerinde 4 persona ETİKETİ zaten üretici tarafından gömülü olduğundan, kümelerin bunu 'yeniden keşfetmesi' beklenir; gerçek veride bu doğrulanmadı (OQ-36)."
+  "not": "Denetimsiz keşif raporu — hiçbir skorlama/karar yoluna beslenmez. Silhouette skoru 1'e yakınsa kümeler iyi ayrışmış, 0'a yakınsa örtüşüyor demektir. Bu sentetik veri üzerinde 4 persona ETİKETİ zaten üretici tarafından gömülü olduğundan, kümelerin bunu 'yeniden keşfetmesi' beklenir; gerçek veride bu doğrulanmadı."
 }

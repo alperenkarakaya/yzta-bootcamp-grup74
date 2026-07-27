@@ -71,8 +71,7 @@ export default function AuditPage() {
         <div>
           <h1 className="font-display-lg text-display-lg text-on-background mb-2">Fairness &amp; Bias Audit</h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
-            AKS'nin equal-opportunity metriğiyle gruplar arası davranışını gösterir. Bu bir yasal görüş değildir —
-            düzenleyici duruş için execution.md §8'e bakınız.
+            AKS'nin equal-opportunity metriğiyle gruplar arası davranışını gösterir. Bu bir yasal görüş değildir.
           </p>
         </div>
         <div className="flex items-center gap-stack-sm bg-surface-container rounded-lg p-2 border border-outline-variant/30">
@@ -273,9 +272,6 @@ export default function AuditPage() {
                 <div className="text-on-surface">klasik_skor (DEĞİŞTİRİLMEDİ)</div>
               </div>
             </div>
-            <p className="font-label-mono text-[10px] text-on-surface-variant opacity-70">
-              Bkz. architecture.md §9 — audit/models.py: Customer, Assessment, AuditLog.
-            </p>
           </div>
         </section>
 
@@ -295,12 +291,12 @@ export default function AuditPage() {
           <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 max-w-3xl">
             Repeated stratified k-fold ROC-AUC/PR-AUC (bootstrap %95 CI), Brier skoru ve ECE (kalibrasyon hatası).
             <span className="text-primary font-semibold"> Bu, gerçek veriyle doğrulanmış bir sonuç değildir</span> —
-            sentetik/dekuple bir benchmark üzerinde (execution.md §3b). "No-go is a valid outcome": bu sayılar
-            bir iş tezini kanıtlamaz, yalnızca bu benchmark üzerindeki istatistiksel davranışı gösterir.
+            sentetik/dekuple bir benchmark üzerinde ölçülmüştür. Bu sayılar bir iş tezini kanıtlamaz, yalnızca bu
+            benchmark üzerindeki istatistiksel davranışı gösterir.
           </p>
           {metriklerHata && (
             <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono mb-4">
-              Henüz üretilmedi — <code>python -m aks_core.model.degerlendirme</code> çalıştırın.
+              Bu rapor henüz üretilmedi.
             </div>
           )}
           {metrikler && (
@@ -360,7 +356,7 @@ export default function AuditPage() {
           </p>
           {segmentasyonHata && (
             <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono mb-4">
-              Henüz üretilmedi — <code>python -m aks_core.model.segmentasyon</code> çalıştırın.
+              Bu rapor henüz üretilmedi.
             </div>
           )}
           {segmentasyon && (
@@ -402,7 +398,7 @@ export default function AuditPage() {
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <Icon name="rule" className="text-tertiary" />
-              <h2 className="font-headline-md text-headline-md">Genelleme &amp; Sağlamlık (R8 / R10 / R11)</h2>
+              <h2 className="font-headline-md text-headline-md">Genelleme &amp; Sağlamlık</h2>
             </div>
             {genelleme && (
               <span className="font-label-mono text-label-mono text-[10px] text-on-surface-variant uppercase">
@@ -412,12 +408,12 @@ export default function AuditPage() {
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 max-w-3xl">
             Rastgele k-fold CV'nin (Model Validity paneli) test edemediği üç soru: model hiç görmediği bir davranış
-            profiline genelleşiyor mu (R8), ince işlem geçmişinde zarifçe mi kararsızlaşıyor yoksa güvenle mi
-            yanılıyor (R10), ve 4 nedensel özellikten hangisi en kolay "oyunlanıyor" (R11).
+            profiline genelleşiyor mu, ince işlem geçmişinde zarifçe mi kararsızlaşıyor yoksa güvenle mi yanılıyor,
+            ve nedensel özelliklerden hangisi en kolay "oyunlanıyor".
           </p>
           {genellemeHata && (
             <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono mb-4">
-              Henüz üretilmedi — <code>python -m aks_core.model.genelleme_saglamlik</code> çalıştırın.
+              Bu rapor henüz üretilmedi.
             </div>
           )}
           {genelleme && (

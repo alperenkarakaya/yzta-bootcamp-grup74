@@ -65,8 +65,8 @@
   },
   "n_test": 500,
   "model_adi_referans": "LogisticRegression",
-  "zaman": "2026-07-26T18:55:43",
+  "zaman": "2026-07-27T20:42:23",
   "veri_kaynagi": "dekuple",
-  "sure_sn": 1.2,
-  "uyari": "Bu profiller sentetik/dekuple veri üzerinde, held-out (out-of-sample) ama sentetik bir benchmarkta üretildi (architecture.md §5.1). Gerçek veri (OQ-36) doğrulaması olmadan 'nihai/doğrulanmış banka politikası' olarak alıntılanmamalı."
+  "sure_sn": 1.5,
+  "uyari": "Bu profiller sentetik/dekuple veri üzerinde, held-out (out-of-sample) ama sentetik bir benchmarkta üretildi. Gerçek veri doğrulaması olmadan 'nihai/doğrulanmış banka politikası' olarak alıntılanmamalı."
 }

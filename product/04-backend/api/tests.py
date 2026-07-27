@@ -366,3 +366,65 @@ class SahiplikSavunmasiTesti(TestCase):
         r = self._yukle(buyuk_gelirli, dosya_adi="e3.csv")
         self.assertEqual(r.status_code, 200)
         self.assertIn("profil_tutarsiz", r.json()["sahiplik_bayraklari"])
+
+
+class HamIslemSaklamaTesti(TestCase):
+    """PO kararı: müşteri tarafından yüklenen ham işlemler müşteri bazlı
+    saklanmalı, yalnızca türetilmiş özellikler değil — böylece müşteri kendi
+    geçmiş yüklemesinin detayını (hangi işlem, hangi tarih/tutar) görebilir."""
+
+    def _kayit_ol_ve_giris_yap(self, email):
+        r = self.client.post("/api/auth/kayit", {"email": email, "sifre": "GucluSifre123"})
+        self.assertEqual(r.status_code, 201)
+        return r.json()
+
+    def _yukle(self, icerik=_ORNEK_EKSTRE_CSV, dosya_adi="ekstre.csv"):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        dosya = SimpleUploadedFile(dosya_adi, icerik, content_type="text/csv")
+        return self.client.post("/api/portal/yukle", {"dosya": dosya, "beyan": "true"})
+
+    def test_portal_yuklemesi_ham_islemleri_saklar(self):
+        from audit.models import Assessment
+        self._kayit_ol_ve_giris_yap("hamveri1@example.com")
+        r = self._yukle()
+        self.assertEqual(r.status_code, 200)
+        kayit = Assessment.objects.filter(kaynak="portal").latest("created_at")
+        self.assertTrue(kayit.ham_islemler, "Yüklenen işlemler saklanmalı")
+        self.assertEqual(len(kayit.ham_islemler), r.json()["islem_sayisi"])
+        ilk = kayit.ham_islemler[0]
+        self.assertIn("tarih", ilk)
+        self.assertIn("tutar", ilk)
+
+    def test_musteri_kendi_gecmis_detayini_gorebilir(self):
+        self._kayit_ol_ve_giris_yap("hamveri2@example.com")
+        self._yukle()
+        liste = self.client.get("/api/portal/gecmis").json()["gecmis"]
+        self.assertEqual(len(liste), 1)
+        kayit_id = liste[0]["id"]
+
+        detay = self.client.get(f"/api/portal/gecmis/{kayit_id}")
+        self.assertEqual(detay.status_code, 200)
+        gövde = detay.json()
+        self.assertTrue(gövde["islemler"], "Detay uç noktası ham işlemleri döndürmeli")
+        self.assertEqual(len(gövde["islemler"]), liste[0]["islem_sayisi"])
+
+    def test_baska_kullanicinin_gecmis_detayina_erisilemez(self):
+        self._kayit_ol_ve_giris_yap("sahip@example.com")
+        self._yukle()
+        from audit.models import Assessment
+        kayit_id = Assessment.objects.filter(kaynak="portal").latest("created_at").id
+
+        self.client.post("/api/auth/cikis")
+        self._kayit_ol_ve_giris_yap("baskasi@example.com")
+        r = self.client.get(f"/api/portal/gecmis/{kayit_id}")
+        self.assertEqual(r.status_code, 404, "Başka hesabın kaydı asla görünmemeli")
+
+    def test_demo_skorlama_ham_islem_saklamaz(self):
+        """Bankanın demo/anonim skorlaması (profilsiz) — veri zaten kaynak
+        CSV'de duruyor, ikinci kez saklamaya gerek yok (kişisel veri ayak izi
+        büyümesin)."""
+        from audit.models import Assessment
+        r = self.client.get("/api/skorla/1")
+        self.assertEqual(r.status_code, 200)
+        kayit = Assessment.objects.filter(kaynak="demo").latest("created_at")
+        self.assertEqual(kayit.ham_islemler, [])

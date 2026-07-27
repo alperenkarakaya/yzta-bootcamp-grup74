@@ -1,9 +1,9 @@
 {
-  "zaman": "2026-07-24T22:42:46",
+  "zaman": "2026-07-27T20:42:09",
   "veri_kaynagi": "dekuple",
   "n_musteri": 2000,
   "model_adi_referans": "LogisticRegression",
-  "sure_sn": 89.8,
+  "sure_sn": 52.0,
   "persona_disi_genelleme": {
     "aciklama": "Her persona sırayla eğitim setinden tamamen çıkarılıp kalan 3 personayla eğitilen ayrı bir LogisticRegression(C=1.0) ile test edildi — üretim modeliyle aynı hiperparametre (egitim_manifest.json), ama rastgele k-fold DEĞİL: gerçek 'hiç görmedim' testi.",
     "sonuc": {
@@ -31,7 +31,7 @@
   },
   "out_of_time_split": {
     "durum": "YAPILMADI (atlanmadı, gerekçeli)",
-    "gerekce": "kapasite_islemler.csv'deki her müşterinin işlemleri aynı 6 aylık pencereye (2026-01-01–2026-06-29) yayılmış; üretici zamana bağlı bir kayma (concept drift) simüle etmiyor. Müşterileri tarihe göre erken/geç ayırmak üretici rastgeleliğini ölçmekten başka bir şey olmazdı — sahte bir sonuç yerine bu boşluk açıkça bırakıldı. Gerçek bir out-of-time testi gerçek veri gerektirir (OQ-36)."
+    "gerekce": "kapasite_islemler.csv'deki her müşterinin işlemleri aynı 6 aylık pencereye (2026-01-01–2026-06-29) yayılmış; üretici zamana bağlı bir kayma (concept drift) simüle etmiyor. Müşterileri tarihe göre erken/geç ayırmak üretici rastgeleliğini ölçmekten başka bir şey olmazdı — sahte bir sonuç yerine bu boşluk açıkça bırakıldı. Gerçek bir out-of-time testi gerçek veri gerektirir."
   },
   "ince_dosya_stres_testi": {
     "aciklama": "150 rastgele müşterinin TAM geçmişiyle skoru taban alınıp, geçmiş ilk K işleme kırpıldığında skorun ne kadar SAPTIĞI ve anomali bayrağının ne sıklıkla tetiklendiği ölçüldü. K küçüldükçe sapma artıyor VE anomali oranı artıyorsa, model 'zarifçe' bozuluyor demektir (güvenle yanılmak yerine daha az güvenilir olduğunu işaretliyor).",

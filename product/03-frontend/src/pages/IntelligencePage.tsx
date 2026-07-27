@@ -68,7 +68,7 @@ export default function IntelligencePage() {
 
       {hata && (
         <div className="col-span-1 md:col-span-12 bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono">
-          Backend'e bağlanılamadı: {hata} — Django çalışıyor mu? (<code>python manage.py runserver</code>)
+          Sunucuya bağlanılamadı: {hata}
         </div>
       )}
 
@@ -165,9 +165,8 @@ export default function IntelligencePage() {
           ))}
           <div className="mt-auto pt-4 border-t border-outline-variant/20">
             <p className="font-label-mono text-[9px] text-on-surface-variant leading-relaxed">
-              Veri/Skorlama/Danışman deterministik pipeline aşamalarıdır (agent değil). Beş-soru testini geçen
-              üç gerçek agent ayrıdır: AsistanAgent, BelgeAgent ve Claude tool-calling danışmanı. Bkz.
-              architecture.md §4.
+              Veri/Skorlama/Danışman deterministik pipeline aşamalarıdır (agent değil). Ayrıca üç gerçek agent
+              çalışıyor: AsistanAgent, BelgeAgent ve Claude tool-calling danışmanı.
             </p>
           </div>
         </div>
@@ -231,7 +230,7 @@ export default function IntelligencePage() {
           </div>
           <div className="text-body-sm text-on-surface-variant border-l-2 border-primary-container pl-3">
             AKS eşiğinde ({"≥650"}) hedef segmentteki kredibl müşterilerin onaylanma oranı — davranışsal modelin
-            asıl iddia ettiği yerde ölçülen gerçek performans (bkz. architecture.md §6, per-persona bulgular).
+            asıl iddia ettiği yerde ölçülen gerçek performans.
           </div>
         </div>
       </section>

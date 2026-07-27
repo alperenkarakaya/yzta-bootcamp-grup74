@@ -26,4 +26,5 @@ urlpatterns = [
     path("auth/cikis", auth_views.cikis),
     path("portal/yukle", portal_views.portal_yukle),
     path("portal/gecmis", portal_views.portal_gecmis),
+    path("portal/gecmis/<int:kayit_id>", portal_views.portal_gecmis_detay),
 ]

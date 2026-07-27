@@ -64,7 +64,7 @@ export default function Layout() {
             <NavLink
               to="/kurum/musteriler"
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT border border-outline-variant/30 font-label-mono text-label-mono hover:bg-surface-container/50 transition-colors"
-              title="Kurum Girişi — rıza-tabanlı gerçek müşteri erişimi (§3b Phase 7)"
+              title="Kurum Girişi — rıza-tabanlı gerçek müşteri erişimi"
             >
               <Icon name="account_balance" className="text-[14px]" />
               Kurum Girişi

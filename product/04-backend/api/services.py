@@ -233,12 +233,13 @@ def degerlendir(musteri_id, islemler, kaynak="api", persona="", user=None, belge
     sonuc["sahiplik_bayraklari"] = sahiplik_bayraklari
 
     _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=user, belge_meta=belge_meta,
-                 sahiplik_beyani=sahiplik_beyani, sahiplik_bayraklari=sahiplik_bayraklari, ip=ip)
+                 sahiplik_beyani=sahiplik_beyani, sahiplik_bayraklari=sahiplik_bayraklari, ip=ip,
+                 islemler=islemler)
     return sonuc, klasik
 
 
 def _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=None, belge_meta=None,
-                  sahiplik_beyani=False, sahiplik_bayraklari=None, ip=None):
+                  sahiplik_beyani=False, sahiplik_bayraklari=None, ip=None, islemler=None):
     """Best-effort: denetim yazımı skorlamayı asla düşürmemeli."""
     try:
         from audit.models import AuditLog, Assessment, Customer
@@ -251,17 +252,31 @@ def _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=None, belge_meta=None,
         pd_fark = sonuc.get("pd_fark")
         kapasite_sinyali = sonuc.get("kapasite_sinyali")
         gecerli_user = user if (user is not None and user.is_authenticated) else None
+        profil = getattr(gecerli_user, "profil", None) if gecerli_user else None
         belge_meta = belge_meta or {}
+        # PO kararı: müşteri tarafından yüklenen ham işlemler müşteri bazlı
+        # saklanmalı. Yalnızca kimliği doğrulanmış bir profile bağlıyken
+        # yazılır (bankanın demo/anonim skorlamalarında değil — bkz.
+        # Assessment.ham_islemler docstring'i). Yalnızca kanonik şema alanları
+        # (`normalizer.py::normalize()`'ın ürettiği dört alan + tarih) —
+        # olası içsel/geçici anahtarlar (ör. `tarih_obj`) asla saklanmaz;
+        # hem JSON-serileştirilebilirlik hem "gerekli olandan fazlasını
+        # tutma" ilkesi için (bkz. §9c minimum-PII duruşu).
+        ham_islemler = [
+            {k: i.get(k) for k in ("tarih", "islem_tipi", "kategori", "tutar", "aciklama")}
+            for i in islemler
+        ] if (profil is not None and islemler) else []
         Assessment.objects.create(
             customer=cust, musteri_id=str(musteri_id), klasik_skor=klasik,
             aks_skor=sonuc["aks_skor"], risk_seviyesi=sonuc["risk_seviyesi"],
             karar=sonuc["karar"], onerilen_limit=sonuc.get("onerilen_limit"),
             ozellikler=sonuc.get("ozellikler", {}), kaynak=kaynak,
             pd_fark=pd_fark, kapasite_sinyali=kapasite_sinyali,
-            user=gecerli_user, profil=getattr(gecerli_user, "profil", None) if gecerli_user else None,
+            user=gecerli_user, profil=profil,
             belge_parmak_izi=belge_meta.get("parmak_izi", ""),
             kaynak_format=belge_meta.get("kaynak_format", ""),
             sahiplik_beyani=sahiplik_beyani, sahiplik_bayraklari=sahiplik_bayraklari or [], yukleme_ip=ip,
+            ham_islemler=ham_islemler,
         )
         AuditLog.objects.create(
             musteri_id=str(musteri_id), klasik_skor=klasik, aks_skor=sonuc["aks_skor"],
@@ -306,9 +321,12 @@ def _skorla_hepsi():
     return musteriler
 
 
-_METRIK_UYARISI = ("Bu toplu istatistikler döngüsel etiketli demo verisi üzerinden "
-                    "hesaplanıyor (bkz. architecture.md §5.1); henüz M4'ün dekuple "
-                    "veri kaynağına taşınmadı (OQ-44). Doğrulanmış olarak alıntılamayın.")
+# İçerik korunmalı (statistical-validity mandate — bu sayılar gerçekten döngüsel
+# etiketli demo verisinden geliyor ve doğrulanmamış), yalnızca dahili dosya/OQ
+# atıfları kullanıcıya sızmasın diye kaldırıldı (execution.md §3b Phase 7/7.8).
+_METRIK_UYARISI = ("Bu toplu istatistikler döngüsel etiketli demo verisi üzerinden hesaplanıyor; "
+                    "tekil skorlama gerçek (dekuple/LR) modeli kullanır ama bu toplu görünüm henüz "
+                    "aynı kaynağa taşınmadı. Doğrulanmış olarak alıntılamayın.")
 
 
 def portfoy(klasik_esik=680, aks_esik=650, ort_kredi=25000, getiri_orani=0.12, zarar_orani=0.55):

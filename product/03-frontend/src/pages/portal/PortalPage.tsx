@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { api, type CsvSkorSonuc, type KullaniciBilgisi, type PortalGecmisKayit } from "../../api";
+import {
+  api,
+  type CsvSkorSonuc,
+  type KullaniciBilgisi,
+  type PortalGecmisDetay,
+  type PortalGecmisKayit,
+} from "../../api";
 import { Icon } from "../../components/Icon";
 import { paraFormat } from "../../lib/skor";
 
@@ -38,6 +44,9 @@ export default function PortalPage() {
 
   const [gecmis, setGecmis] = useState<PortalGecmisKayit[]>([]);
   const [gecmisYukleniyor, setGecmisYukleniyor] = useState(true);
+  const [acikKayitId, setAcikKayitId] = useState<number | null>(null);
+  const [detay, setDetay] = useState<PortalGecmisDetay | null>(null);
+  const [detayYukleniyor, setDetayYukleniyor] = useState(false);
 
   function gecmisiYenile() {
     setGecmisYukleniyor(true);
@@ -51,6 +60,22 @@ export default function PortalPage() {
   useEffect(() => {
     gecmisiYenile();
   }, []);
+
+  function kayitAcKapat(id: number) {
+    if (acikKayitId === id) {
+      setAcikKayitId(null);
+      setDetay(null);
+      return;
+    }
+    setAcikKayitId(id);
+    setDetay(null);
+    setDetayYukleniyor(true);
+    api
+      .portalGecmisDetay(id)
+      .then(setDetay)
+      .catch(() => setDetay(null))
+      .finally(() => setDetayYukleniyor(false));
+  }
 
   function dosyaSec(f: File | null) {
     setSonuc(null);
@@ -300,11 +325,61 @@ export default function PortalPage() {
         ) : (
           <ul className="space-y-2 font-label-mono text-label-mono">
             {gecmis.map((g) => (
-              <li key={g.id} className="flex justify-between border-b border-outline-variant/10 pb-2 flex-wrap gap-2">
-                <span className="text-on-surface-variant">{g.zaman.replace("T", " ")}</span>
-                <span className="text-primary">AKS {g.aks_skor}</span>
-                <span className="text-on-surface-variant">{g.risk_seviyesi}</span>
-                <span className="text-on-surface">{paraFormat(g.onerilen_limit)}</span>
+              <li key={g.id} className="border-b border-outline-variant/10 pb-2">
+                <button
+                  onClick={() => kayitAcKapat(g.id)}
+                  className="w-full flex justify-between items-center flex-wrap gap-2 text-left hover:text-on-surface transition-colors"
+                >
+                  <span className="text-on-surface-variant">{g.zaman.replace("T", " ")}</span>
+                  <span className="text-primary">AKS {g.aks_skor}</span>
+                  <span className="text-on-surface-variant">{g.risk_seviyesi}</span>
+                  <span className="text-on-surface">{paraFormat(g.onerilen_limit)}</span>
+                  <span className="text-on-surface-variant flex items-center gap-1">
+                    {g.islem_sayisi} işlem
+                    <Icon
+                      name={acikKayitId === g.id ? "expand_less" : "expand_more"}
+                      className="text-[16px]"
+                    />
+                  </span>
+                </button>
+                {acikKayitId === g.id && (
+                  <div className="mt-3 mb-1 bg-surface-container-low rounded-lg p-3 overflow-x-auto">
+                    {detayYukleniyor ? (
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">Yükleniyor…</p>
+                    ) : !detay?.islemler.length ? (
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">
+                        Bu kayıt için saklanmış işlem bulunamadı.
+                      </p>
+                    ) : (
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="text-on-surface-variant border-b border-outline-variant/20">
+                            <th className="text-left font-normal pb-1 pr-3">Tarih</th>
+                            <th className="text-left font-normal pb-1 pr-3">Kategori</th>
+                            <th className="text-left font-normal pb-1 pr-3">Açıklama</th>
+                            <th className="text-right font-normal pb-1">Tutar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detay.islemler.map((i, idx) => (
+                            <tr key={idx} className="border-b border-outline-variant/10 last:border-0">
+                              <td className="py-1 pr-3 text-on-surface-variant whitespace-nowrap">{i.tarih}</td>
+                              <td className="py-1 pr-3 text-on-surface-variant">{i.kategori}</td>
+                              <td className="py-1 pr-3 text-on-surface-variant">{i.aciklama || "—"}</td>
+                              <td
+                                className={`py-1 text-right whitespace-nowrap ${
+                                  i.tutar >= 0 ? "text-emerald-400" : "text-error"
+                                }`}
+                              >
+                                {paraFormat(i.tutar)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

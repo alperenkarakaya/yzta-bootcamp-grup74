@@ -12,12 +12,17 @@ class VeriAgent:
     ad = "veri_agent"
 
     def calistir(self, islemler):
-        # Tarih alanını normalize et (API'den string gelebilir)
-        for i in islemler:
-            if "tarih_obj" not in i:
-                i["tarih_obj"] = datetime.strptime(i["tarih"], "%Y-%m-%d")
+        # Çağıranın listesini/sözlüklerini MUTATE ETMEZ — kopya üzerinde çalışır.
+        # (Bulundu: bu fonksiyon eskiden `islemler` içindeki her dict'e doğrudan
+        # `tarih_obj` (bir `datetime` nesnesi) yazıyordu; çağıran taraf aynı
+        # referansı sonradan ham veri olarak saklamaya/serialize etmeye çalışınca
+        # "datetime is not JSON serializable" hatasıyla patlıyordu — bkz.
+        # api/services.py::_denetim_yaz, Assessment.ham_islemler.)
+        calisma = [dict(i) for i in islemler]
+        for i in calisma:
+            i["tarih_obj"] = datetime.strptime(i["tarih"], "%Y-%m-%d")
             i["tutar"] = float(i["tutar"])
-        ozellikler = ozellik_cikar(islemler)
+        ozellikler = ozellik_cikar(calisma)
         return {
             "ozellikler": ozellikler,
             "vektor": [ozellikler[o] for o in OZELLIK_ADLARI],

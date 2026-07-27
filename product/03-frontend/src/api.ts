@@ -221,6 +221,27 @@ export interface PortalGecmisKayit {
   risk_seviyesi: string;
   karar: string;
   onerilen_limit: number | null;
+  islem_sayisi: number;
+}
+
+export interface PortalIslem {
+  tarih: string;
+  islem_tipi: string;
+  kategori: string;
+  tutar: number;
+  aciklama: string;
+}
+
+export interface PortalGecmisDetay {
+  id: number;
+  zaman: string;
+  aks_skor: number;
+  risk_seviyesi: string;
+  karar: string;
+  onerilen_limit: number | null;
+  kaynak_format: string;
+  sahiplik_bayraklari: string[];
+  islemler: PortalIslem[];
 }
 
 // POST /api/simulasyon (U23) — what-if senaryo simülatörü. `degisiklikler`
@@ -463,6 +484,7 @@ export const api = {
     return postDosya<CsvSkorSonuc>("/portal/yukle", form);
   },
   portalGecmis: () => get<{ gecmis: PortalGecmisKayit[] }>("/portal/gecmis"),
+  portalGecmisDetay: (id: number) => get<PortalGecmisDetay>(`/portal/gecmis/${id}`),
 
   // §3b Phase 7/7.2 — kimlik: AKS no, telefon doğrulama, erişim talepleri, rıza defteri.
   profilim: () => get<ProfilBilgisi>("/kimlik/profilim"),

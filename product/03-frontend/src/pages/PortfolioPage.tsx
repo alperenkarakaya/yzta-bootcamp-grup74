@@ -233,7 +233,7 @@ export default function PortfolioPage() {
                 Varsayımlar: ort. kredi {paraFormat(portfoy.illustratif_getiri.varsayimlar.ort_kredi)}, getiri oranı{" "}
                 {(portfoy.illustratif_getiri.varsayimlar.getiri_orani * 100).toFixed(0)}%, zarar oranı{" "}
                 {(portfoy.illustratif_getiri.varsayimlar.zarar_orani * 100).toFixed(0)}% — illüstratiftir, doğrulanmış
-                gerçek para birimi tahmini değildir (bkz. architecture.md §5.1).
+                gerçek para birimi tahmini değildir.
               </p>
             </div>
             <div className="flex gap-8">

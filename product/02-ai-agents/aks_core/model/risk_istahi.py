@@ -189,9 +189,9 @@ def rapor_uret(veri_kaynagi="dekuple", seed=42, dosya_yolu=None):
     rapor["veri_kaynagi"] = veri_kaynagi
     rapor["sure_sn"] = round(time.time() - t0, 1)
     rapor["uyari"] = (
-        "Bu profiller sentetik/dekuple veri üzerinde, held-out (out-of-sample) ama "
-        "sentetik bir benchmarkta üretildi (architecture.md §5.1). Gerçek veri (OQ-36) "
-        "doğrulaması olmadan 'nihai/doğrulanmış banka politikası' olarak alıntılanmamalı."
+        "Bu profiller sentetik/dekuple veri üzerinde, held-out (out-of-sample) ama sentetik bir "
+        "benchmarkta üretildi. Gerçek veri doğrulaması olmadan 'nihai/doğrulanmış banka politikası' "
+        "olarak alıntılanmamalı."
     )
     kaydet(rapor, dosya_yolu)
     return rapor

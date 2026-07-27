@@ -68,7 +68,36 @@ def portal_gecmis(request):
                 "risk_seviyesi": a.risk_seviyesi,
                 "karar": a.karar,
                 "onerilen_limit": a.onerilen_limit,
+                "islem_sayisi": len(a.ham_islemler),
             }
             for a in kayitlar
         ]
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def portal_gecmis_detay(request, kayit_id: int):
+    """Geçmişteki tek bir yüklemenin tam detayı — saklanan ham işlemler dahil.
+
+    PO kararı: müşteri tarafından yüklenen veriler müşteri bazlı saklanmalı ve
+    kendisine gösterilebilmeli, yalnızca skora indirgenmiş özet değil. Yalnızca
+    KENDİ kaydı — `user=request.user` filtresi başka bir hesabın kaydına asla
+    eşleşmez (var olmayan id gibi 404 döner, sızıntı yok).
+    """
+    from audit.models import Assessment
+    try:
+        a = Assessment.objects.get(id=kayit_id, user=request.user)
+    except Assessment.DoesNotExist:
+        return Response({"hata": "Kayıt bulunamadı"}, status=404)
+    return Response({
+        "id": a.id,
+        "zaman": a.created_at.isoformat(timespec="seconds"),
+        "aks_skor": a.aks_skor,
+        "risk_seviyesi": a.risk_seviyesi,
+        "karar": a.karar,
+        "onerilen_limit": a.onerilen_limit,
+        "kaynak_format": a.kaynak_format,
+        "sahiplik_bayraklari": a.sahiplik_bayraklari,
+        "islemler": a.ham_islemler,
     })

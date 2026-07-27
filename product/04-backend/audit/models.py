@@ -62,6 +62,17 @@ class Assessment(models.Model):
     yukleme_ip = models.GenericIPAddressField(null=True, blank=True)
     sahiplik_bayraklari = models.JSONField(default=list, blank=True)
     kaynak_format = models.CharField(max_length=16, blank=True, default="", help_text="csv/xlsx/pdf")
+    # PO kararı: müşteri tarafından yüklenen ham işlemler (normalize edilmiş
+    # {tarih, islem_tipi, kategori, tutar, aciklama} listesi) müşteri bazlı
+    # saklanmalı — yalnızca türetilmiş `ozellikler` yeterli değil. Yalnızca
+    # `profil` doluyken (yani kimliği doğrulanmış bir müşterinin kendi portal
+    # yüklemesinde) doldurulur; bankanın demo/anonim skorlamalarında (kaynak
+    # in {"demo","api"}, `profil` yok) boş kalır — o veri zaten kaynak CSV'de
+    # duruyor, ikinci kez saklamanın kişisel veri ayak izini büyütmekten başka
+    # faydası yok. `aciklama` serbest metin alanı da dahildir; bu nedenle bu
+    # alan yalnızca `ProfilSahibi` sahibine (`portal_gecmis_detay`) ve rızalı
+    # erişimi olan kuruma DEĞİL, YALNIZCA müşterinin kendisine açılır.
+    ham_islemler = models.JSONField(default=list, blank=True)
     # Formülasyon B (architecture.md §5.3, §3b U10/U18) — yalnızca klasik skor
     # biliniyorsa (persona verildiyse) hesaplanır; aksi halde null.
     pd_fark = models.FloatField(null=True, blank=True, help_text="pd_geleneksel_bant − pd_davranissal")

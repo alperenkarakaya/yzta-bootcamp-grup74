@@ -66,7 +66,7 @@ export default function CsvUploadPage() {
           Kendi işlem ekstrenizi (CSV, Excel ya da PDF) yükleyin — AKS aynı davranışsal model ile (dekuple/LR
           eğitimli) canlı bir skor üretir. Bu yol demo popülasyonundan bağımsızdır; her istek{" "}
           <code className="font-label-mono text-[11px] bg-surface-container px-1 rounded">POST /api/csv-skorla</code>{" "}
-          uç noktasına gider (§3b Phase 7/7.1: artık üç format da kabul edilir).
+          uç noktasına gider.
         </p>
       </header>
 

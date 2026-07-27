@@ -90,7 +90,7 @@ export default function KurumMusteriDetayPage() {
             </h2>
             {!detay.risk_istahi ? (
               <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Risk iştahı raporu henüz üretilmedi (<code>python -m aks_core.model.risk_istahi</code>).
+                Risk iştahı raporu henüz üretilmedi.
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md">
@@ -146,8 +146,7 @@ export default function KurumMusteriDetayPage() {
                 ))}
               </div>
               <p className="font-label-mono text-[10px] text-on-surface-variant mt-4">
-                AKS bankanın klasik skorunu/segmentini değiştirmez — yalnızca davranışsal kanıt sunar
-                (architecture.md §9).
+                AKS bankanın klasik skorunu/segmentini değiştirmez — yalnızca davranışsal kanıt sunar.
               </p>
             </section>
           )}

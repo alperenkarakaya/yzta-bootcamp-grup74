@@ -86,10 +86,10 @@ def rapor_uret(veri_kaynagi="dekuple", seed=42, dosya_yolu=None):
         "bilinen_personalar": sorted(set(m["persona"] for m in musteriler)),
         "kume_profilleri": profil,
         "not": (
-            "Denetimsiz keşif raporu (§3b/U26) — hiçbir skorlama/karar yoluna beslenmez. "
+            "Denetimsiz keşif raporu — hiçbir skorlama/karar yoluna beslenmez. "
             "Silhouette skoru 1'e yakınsa kümeler iyi ayrışmış, 0'a yakınsa örtüşüyor demektir. "
             "Bu sentetik veri üzerinde 4 persona ETİKETİ zaten üretici tarafından gömülü olduğundan, "
-            "kümelerin bunu 'yeniden keşfetmesi' beklenir; gerçek veride bu doğrulanmadı (OQ-36)."
+            "kümelerin bunu 'yeniden keşfetmesi' beklenir; gerçek veride bu doğrulanmadı."
         ),
     }
     yol = Path(dosya_yolu) if dosya_yolu else paths.ARTIFACTS_DIR / RAPOR_ADI

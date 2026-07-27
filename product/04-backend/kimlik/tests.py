@@ -249,3 +249,40 @@ class ErisimTalebiUcNoktalariTesti(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()["talepler"]), 1)
         self.assertEqual(r.json()["talepler"][0]["durum"], "bekliyor")
+
+
+class ProfilsizKullaniciTesti(TestCase):
+    """Kurum personeli hesaplarının `Profil`'i yoktur. Müşteri-taraflı uçlar
+    `request.user.profil`'i doğrudan okuduğu için bu hesaplar 500 alıyordu
+    (kurum kullanıcısı portal sayfalarına girdiğinde tetiklenen gerçek bir
+    hataydı). Artık `ProfilSahibi` izniyle 403 dönmeli."""
+
+    UCLAR = [
+        "/api/kimlik/profilim",
+        "/api/kimlik/erisim-talepleri",
+        "/api/kimlik/riza-defterim",
+    ]
+
+    def setUp(self):
+        self.kurum = Kurum.objects.create(ad="Profilsiz Bankası", kod="profilsiz-bankasi")
+        self.kurum_kullanici = User.objects.create_user(username="profilsiz@example.com", password="x")
+        KurumUyeligi.objects.create(user=self.kurum_kullanici, kurum=self.kurum)
+
+    def test_profilsiz_kullanici_403_alir_500_degil(self):
+        self.client.force_login(self.kurum_kullanici)
+        for uc in self.UCLAR:
+            with self.subTest(uc=uc):
+                self.assertEqual(self.client.get(uc).status_code, 403)
+
+    def test_profilsiz_kullanici_telefon_dogrulama_baslatamaz(self):
+        self.client.force_login(self.kurum_kullanici)
+        r = self.client.post("/api/kimlik/telefon/gonder", {"telefon": "+905551112233"})
+        self.assertEqual(r.status_code, 403)
+
+    def test_profilli_kullanici_ayni_uclara_erisebilir(self):
+        user = User.objects.create_user(username="profilli@example.com", password="x")
+        Profil.objects.create(user=user, aks_no=aks_no_modul.uret())
+        self.client.force_login(user)
+        for uc in self.UCLAR:
+            with self.subTest(uc=uc):
+                self.assertEqual(self.client.get(uc).status_code, 200)

@@ -30,7 +30,9 @@ from rest_framework.response import Response
 
 
 def _kullanici_sozluk(user):
-    sozluk = {"id": user.id, "email": user.email, "ad": user.first_name or user.email.split("@")[0]}
+    # "ad" yalnızca arayüzde selamlama için türetilir (e-posta yerel kısmı) —
+    # saklanan bir kişisel veri DEĞİLDİR (§3b Phase 7/7.2: isim/soyisim istenmez).
+    sozluk = {"id": user.id, "email": user.email, "ad": user.email.split("@")[0]}
     profil = getattr(user, "profil", None)
     if profil is not None:
         sozluk["aks_no"] = profil.aks_no
@@ -65,7 +67,6 @@ def ben(request):
 def kayit(request):
     email = (request.data.get("email") or "").strip().lower()
     sifre = request.data.get("sifre") or ""
-    ad = (request.data.get("ad") or "").strip()
     try:
         validate_email(email)
     except DjangoValidationError:
@@ -76,7 +77,7 @@ def kayit(request):
         validate_password(sifre)
     except DjangoValidationError as e:
         return Response({"hata": " ".join(e.messages)}, status=400)
-    user = User.objects.create_user(username=email, email=email, password=sifre, first_name=ad)
+    user = User.objects.create_user(username=email, email=email, password=sifre)
     _profil_olustur(user)
     login(request, user)
     return Response(_kullanici_sozluk(user), status=201)

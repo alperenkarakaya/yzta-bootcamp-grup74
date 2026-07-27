@@ -8,6 +8,7 @@ import AuditPage from "./pages/AuditPage";
 import CustomersPage from "./pages/CustomersPage";
 import CustomerDetailPage from "./pages/CustomerDetailPage";
 import CsvUploadPage from "./pages/CsvUploadPage";
+import BulunamadiPage from "./pages/BulunamadiPage";
 import PortalLoginPage from "./pages/portal/PortalLoginPage";
 import PortalPage from "./pages/portal/PortalPage";
 import PortalProfilPage from "./pages/portal/PortalProfilPage";
@@ -46,6 +47,9 @@ export default function App() {
           <Route path="kurum/musteriler" element={<KurumMusterilerPage />} />
           <Route path="kurum/musteri/:aksNo" element={<KurumMusteriDetayPage />} />
         </Route>
+
+        {/* Eşleşmeyen her yol: aksi halde bomboş bir sayfa render ediliyordu. */}
+        <Route path="*" element={<BulunamadiPage />} />
       </Routes>
     </BrowserRouter>
   );

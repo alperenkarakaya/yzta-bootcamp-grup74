@@ -274,7 +274,7 @@ export default function CustomerDetailPage() {
             {sonuc.aciklama.riski_azaltan.map((f) => (
               <div className="bg-surface-container-low border border-emerald-400/20 p-3 rounded-lg hover:border-emerald-400/50 transition-colors" key={f.kod}>
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-label-mono text-[10px] text-emerald-400">AZALTAN</span>
+                  <span className="font-label-mono text-[10px] text-emerald-400">RİSKİ AZALTIR</span>
                   <span className="font-label-mono text-label-mono text-on-surface">{f.etki.toFixed(3)}</span>
                 </div>
                 <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>
@@ -283,7 +283,7 @@ export default function CustomerDetailPage() {
             {sonuc.aciklama.riski_artiran.map((f) => (
               <div className="bg-surface-container-low border border-error/20 p-3 rounded-lg hover:border-error/50 transition-colors" key={f.kod}>
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-label-mono text-[10px] text-error">ARTIRAN</span>
+                  <span className="font-label-mono text-[10px] text-error">RİSKİ ARTIRIR</span>
                   <span className="font-label-mono text-label-mono text-on-surface">+{f.etki.toFixed(3)}</span>
                 </div>
                 <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>

@@ -106,4 +106,7 @@ def musteri_detay(request, aks_numarasi: str):
         # bu müşteri onaylanır — persiste edilmiş eşiklerle karşılaştırma,
         # ağır hesaplama yok.
         "risk_istahi": risk_istahi,
+        # Gerekçe kodları (SHAP): kredi kararı veren bir yüzeyde skorun neden
+        # o skor olduğu gösterilmeden karar verilmemeli (overview.md §5 P5).
+        "aciklama": services.aciklama_yeniden_uret(a.ozellikler),
     })

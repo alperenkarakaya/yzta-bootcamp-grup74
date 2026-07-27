@@ -166,7 +166,8 @@ export default function IntelligencePage() {
           <div className="mt-auto pt-4 border-t border-outline-variant/20">
             <p className="font-label-mono text-[9px] text-on-surface-variant leading-relaxed">
               Veri/Skorlama/Danışman deterministik pipeline aşamalarıdır (agent değil). Beş-soru testini geçen
-              tek gerçek agent: AsistanAgent. Bkz. architecture.md §4.
+              üç gerçek agent ayrıdır: AsistanAgent, BelgeAgent ve Claude tool-calling danışmanı. Bkz.
+              architecture.md §4.
             </p>
           </div>
         </div>

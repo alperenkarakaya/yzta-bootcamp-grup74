@@ -12,11 +12,11 @@ sıkılaştırılabilir — yeni OQ olarak execution.md'de).
 """
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from . import telefon as telefon_modul
 from .models import ErisimTalebi, Profil, RizaKaydi, TelefonDogrulama
+from .izinler import ProfilSahibi
 from .throttle import OtpThrottle
 
 
@@ -37,7 +37,7 @@ def _riza_yaz(erisim_talebi, olay, request=None):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def profilim(request):
     profil = request.user.profil
     return Response({
@@ -47,7 +47,7 @@ def profilim(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 @throttle_classes([OtpThrottle])
 def telefon_gonder(request):
     telefon = (request.data.get("telefon") or "").strip()
@@ -77,7 +77,7 @@ def telefon_gonder(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 @throttle_classes([OtpThrottle])
 def telefon_dogrula(request):
     dogrulama_id = request.data.get("dogrulama_id")
@@ -108,7 +108,7 @@ def telefon_dogrula(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def erisim_talepleri(request):
     """Bu müşteriye (kendi profiline) gelen tüm erişim talepleri — bekleyen,
     onaylı, reddedilmiş, iptal edilmiş; hepsi görünür (şeffaflık)."""
@@ -134,7 +134,7 @@ def _kendi_talebi_getir(request, talep_id):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def erisim_talebi_onayla(request, talep_id: int):
     talep = _kendi_talebi_getir(request, talep_id)
     if talep is None:
@@ -152,7 +152,7 @@ def erisim_talebi_onayla(request, talep_id: int):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def erisim_talebi_reddet(request, talep_id: int):
     talep = _kendi_talebi_getir(request, talep_id)
     if talep is None:
@@ -168,7 +168,7 @@ def erisim_talebi_reddet(request, talep_id: int):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def erisim_talebi_iptal(request, talep_id: int):
     """Onaylanmış bir erişimi GERİ ALMA — PO kararı: onay "süreli ve iptal
     edilebilir" olmalı. `durum` değişince `izinler.aktif_riza()` artık bu
@@ -187,7 +187,7 @@ def erisim_talebi_iptal(request, talep_id: int):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def riza_defterim(request):
     """Müşterinin KENDİ rıza defteri — kim, ne zaman, ne için erişti/erişmeye
     çalıştı. Append-only `RizaKaydi`'nin doğrudan okunabilir hâli."""

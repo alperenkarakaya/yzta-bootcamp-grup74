@@ -289,6 +289,26 @@ Gerçekleşen sonuç (`risk_istahi_raporu.json`, n_test=500): ihtiyatlı eşik 8
 
 **Phase 7 exit gate: ✅ PASSED** — 7 alt fazın hepsi (belge hattı, kimlik/rıza/kiracılık, sahiplik savunması, risk iştahı, agent katmanı, frontend, doküman) tamamlandı ve test edildi; sıfır regresyon.
 
+#### 7.8 — Uçtan uca tarayıcı denetimi ve bulunan hatalar (Phase 7 sonrası)
+
+Tüm rotalar Chrome'da elle sürüldü (banka paneli, portal, kurum arayüzü; gerçek PDF yüklemesi, OTP, rıza akışı, iptal). Bulunan **7 hata** düzeltildi:
+
+| # | Hata | Kök neden | Düzeltme |
+|---|---|---|---|
+| 1 | **Danışman, modelin cezalandırdığı davranışı tavsiye ediyordu.** `gelir_kaynagi_sayisi` gerçek bir örnek belgede **1 numaralı risk sürücüsüyken** (+1.676) ürün "gelir kaynaklarını çeşitlendir" diyordu; `gelir_duzenliligi` için de aynı ters yön. | `ONERI_HARITASI` her faktör için "bu özelliği ARTIR" varsayan sabit bir cümle tutuyordu; modelin öğrendiği katsayı işaretiyle hiç karşılaştırılmamıştı (LR: `gelir_kaynagi_sayisi` +1.0995, `gelir_duzenliligi` +0.2361 — ikisi de riski **artırıyor**). | Harita `(yon, metin)` yapısına geçirildi ve modelle uyumlu hale getirildi. Sezgiye aykırı yönde eylem tavsiyesi verilmiyor (`metin=None` → susulur). **`tests/test_danisman_yon.py`** her yönü eğitilmiş modelin katsayı işaretine karşı doğruluyor — model yeniden eğitilir de bir işaret dönerse test kırılır. |
+| 2 | En güçlü ikinci katsayı `toplam_gider_hacmi` (+0.9312) ve `gelir_islem_sayisi` için **hiç tavsiye üretilmiyordu** — kullanıcı en önemli kaldıracını hiç görmüyordu. | Bu iki özellik `ONERI_HARITASI`'nda yoktu. | İkisi de modelle uyumlu yönde eklendi; `test_danisman_yon.py` her özelliğin haritada bulunmasını da zorunlu kılıyor. |
+| 3 | Kayıt formu **"Ad Soyad" istiyordu** ve `User.first_name`'e yazıyordu — ürünün "isim/soyisim tutmuyoruz" iddiasının ve `auth_views.py` docstring'inin doğrudan zıddı. | Phase 6'dan kalan alan; Phase 7'de docstring güncellenmiş ama kod ve arayüz güncellenmemişti. | Alan backend+API+formdan tamamen kaldırıldı; yerine ne toplanmadığını söyleyen bir bilgi kutusu kondu. `"ad"` artık yalnızca e-posta yerel kısmından türetiliyor, saklanmıyor. |
+| 4 | **Kurum personeli portal sayfalarında HTTP 500 alıyordu.** | Müşteri-taraflı 8 uç `request.user.profil`'i doğrudan okuyor; kurum hesaplarının `Profil`'i yok → `RelatedObjectDoesNotExist`. | Yeni `izinler.ProfilSahibi` izni 8 uca da uygulandı (artık 403). `PortalLayout`/`PortalLoginPage` `aks_no` yokluğunda giriş ekranına yönlendiriyor — aksi halde ikisi arasında sonsuz yönlendirme döngüsü oluşuyordu. `kimlik/tests.py::ProfilsizKullaniciTesti` (3 test). |
+| 5 | Kurumun müşteri detayı **gerekçe kodu (SHAP) göstermiyordu** — banka skoru ve kararı görüyor ama "neden"i görmüyordu (P5 yorumlanabilirlik). | `musteri_detay` yanıtında `aciklama` yoktu (`Assessment` SHAP'i saklamıyor, `ozellikler`'i saklıyor). | `services.aciklama_yeniden_uret()` persiste edilmiş özelliklerden SHAP'i yeniden üretiyor (model zaten tekil); kurum detayında "Gerekçe Kodları" paneli olarak render ediliyor. |
+| 6 | Banka sayfalarında SHAP etiketleri çıplak **"AZALTAN"/"ARTIRAN"** yazıyordu; yanındaki danışman özeti aynı faktör için "skorunu yukarı çeken" diyordu → ekranda düz çelişki. | Etikette "RİSKİ" kelimesi yoktu; kullanıcı "skoru azaltan" diye okuyordu. (Backend semantiği doğruydu.) | "RİSKİ AZALTIR"/"RİSKİ ARTIRIR" olarak netleştirildi (portal zaten "OLUMLU/OLUMSUZ" kullanıyordu). |
+| 7 | Eşleşmeyen her URL **bomboş sayfa** render ediyordu; `/customers`'daki sabit etkinlik günlüğü paneli tablonun İŞLEM butonlarının üstüne binip tıklamaları yutuyordu. | `App.tsx`'te catch-all rota yoktu; panel `fixed` + `pointer-events` açıktı. | `BulunamadiPage` (404) eklendi; panel `pointer-events-none` + `bottom-6`. |
+
+Ayrıca yükleme onay metni düzeltildi: "rıza defterim"e işaret ediyordu ama sahiplik beyanı oraya **yazılmıyor** (`RizaKaydi` zorunlu bir `ErisimTalebi` FK'sine bağlı, yalnızca kurum erişimi içindir — beyan `Assessment.sahiplik_beyani`+`yukleme_ip`'te tutulur, bkz. `audit/models.py`). Metin gerçeği söyleyecek şekilde yeniden yazıldı. `IntelligencePage`'deki "beş-soru testini geçen tek gerçek agent: AsistanAgent" ifadesi de Phase 7 sonrası bayattı (artık üç) — architecture.md §4 ile hizalandı.
+
+**Test durumu:** `aks_core` pytest **83 passing** (80 + yön guard'ı 3). Django **44 passing** (41 + profilsiz kullanıcı 3). `tsc --noEmit` + `vite build` temiz. **Model regresyonu yok:** LR AUC **0.8499**, ECE **0.0391→0.0394** — Phase 7 tabanıyla birebir aynı.
+
+**Not (hata değil, kasıtlı):** `/customers/:id` denetim geçmişinde eski kayıtlar (AKS 397) güncel skordan farklı — bunlar LogisticRegression'a geçiş öncesi model sürümüyle üretilmiş, **değiştirilemez** denetim satırlarıdır. Geriye dönük düzeltilmeleri denetim izinin amacına aykırı olurdu.
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |

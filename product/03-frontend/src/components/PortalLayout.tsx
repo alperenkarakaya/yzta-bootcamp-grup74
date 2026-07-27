@@ -39,7 +39,10 @@ export default function PortalLayout() {
     return <p className="p-8 text-center font-body-sm text-body-sm text-on-surface-variant">Yükleniyor…</p>;
   }
 
-  if (!kullanici) {
+  // `aks_no` yoksa kullanıcı bir müşteri hesabı değil (ör. kurum personeli —
+  // `Profil`'i yoktur). Portal içine alınırsa her sayfa 403 alıp ham hata
+  // gösterir; giriş ekranına yönlendirmek doğru davranış.
+  if (!kullanici?.aks_no) {
     return <Navigate to="/portal/giris" replace />;
   }
 

@@ -7,17 +7,20 @@ export default function PortalLoginPage() {
   const [mod, setMod] = useState<"giris" | "kayit">("giris");
   const [email, setEmail] = useState("");
   const [sifre, setSifre] = useState("");
-  const [ad, setAd] = useState("");
   const [hata, setHata] = useState("");
   const [yukleniyor, setYukleniyor] = useState(false);
   const [kontrolEdiliyor, setKontrolEdiliyor] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Zaten oturumu açık bir kullanıcı giriş ekranına gelirse doğrudan portala geç.
+    // Zaten oturumu açık bir MÜŞTERİ giriş ekranına gelirse doğrudan portala
+    // geç. `aks_no` kontrolü şart: kurum personelinin `Profil`'i yoktur, onu
+    // portala göndermek PortalLayout ile sonsuz yönlendirme döngüsü yaratır.
     api
       .ben()
-      .then(() => navigate("/portal", { replace: true }))
+      .then((k) => {
+        if (k.aks_no) navigate("/portal", { replace: true });
+      })
       .catch(() => {})
       .finally(() => setKontrolEdiliyor(false));
   }, [navigate]);
@@ -30,7 +33,7 @@ export default function PortalLoginPage() {
       if (mod === "giris") {
         await api.girisYap(email, sifre);
       } else {
-        await api.kayitOl(email, sifre, ad);
+        await api.kayitOl(email, sifre);
       }
       navigate("/portal");
     } catch (err) {
@@ -78,15 +81,10 @@ export default function PortalLoginPage() {
 
         <form onSubmit={gonder} className="flex flex-col gap-4">
           {mod === "kayit" && (
-            <div>
-              <label className="font-label-mono text-[11px] text-on-surface-variant block mb-1">Ad Soyad</label>
-              <input
-                value={ad}
-                onChange={(e) => setAd(e.target.value)}
-                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary"
-                placeholder="Ayşe Yılmaz"
-              />
-            </div>
+            <p className="font-body-sm text-body-sm text-on-surface-variant bg-surface-container rounded-DEFAULT p-3 border border-outline-variant/30">
+              Ad, soyad ve T.C. kimlik numarası <strong className="text-on-surface">istenmez</strong>. Hesabınız
+              yalnızca e-postanıza ve size özel üretilen AKS numarasına bağlanır.
+            </p>
           )}
           <div>
             <label className="font-label-mono text-[11px] text-on-surface-variant block mb-1">E-posta</label>

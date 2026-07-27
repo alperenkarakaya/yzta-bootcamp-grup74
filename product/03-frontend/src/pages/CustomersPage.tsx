@@ -213,8 +213,10 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Live activity log */}
-      <div className="hidden xl:block fixed right-container-padding bottom-32 w-80 bg-surface-container-high border border-outline-variant/50 rounded-xl shadow-2xl overflow-hidden">
+      {/* Live activity log — dekoratif telemetri. `fixed` olduğu için tablonun
+          AKS SKORU/İŞLEM kolonlarının üstüne biniyordu; `pointer-events-none`
+          tıklamaların altındaki satır butonlarına geçmesini garanti eder. */}
+      <div className="hidden xl:block fixed right-container-padding bottom-6 w-80 bg-surface-container-high/95 backdrop-blur border border-outline-variant/50 rounded-xl shadow-2xl overflow-hidden pointer-events-none">
         <div className="bg-surface-container-highest px-4 py-2 border-b border-outline-variant/30 flex items-center justify-between">
           <span className="font-label-mono text-label-mono text-on-surface">Etkinlik Günlüğü</span>
         </div>

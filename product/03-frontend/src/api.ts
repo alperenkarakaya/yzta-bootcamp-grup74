@@ -412,6 +412,7 @@ export interface KurumMusteriDetay {
   sahiplik_bayraklari?: string[];
   created_at?: string;
   risk_istahi?: Record<"ihtiyatli" | "dengeli" | "atak", MusteriRiskIstahiSonucu> | null;
+  aciklama?: Aciklama | null;
   not?: string;
 }
 
@@ -450,8 +451,7 @@ export const api = {
 
   // §3b Phase 6 — kullanıcı portalı
   ben: () => get<KullaniciBilgisi>("/auth/ben"),
-  kayitOl: (email: string, sifre: string, ad: string) =>
-    post<KullaniciBilgisi>("/auth/kayit", { email, sifre, ad }),
+  kayitOl: (email: string, sifre: string) => post<KullaniciBilgisi>("/auth/kayit", { email, sifre }),
   girisYap: (email: string, sifre: string) => post<KullaniciBilgisi>("/auth/giris", { email, sifre }),
   cikisYap: () => post<{ cikis_yapildi: boolean }>("/auth/cikis", {}),
   // §3b Phase 7/7.3 — `beyan` ZORUNLU: "bu ekstre bana ait" onayı olmadan

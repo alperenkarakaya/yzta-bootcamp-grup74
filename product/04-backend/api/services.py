@@ -107,6 +107,21 @@ def musteri_risk_istahi(aks_skor):
     return risk_istahi_modul.musteri_risk_istahi(aks_skor)
 
 
+def aciklama_yeniden_uret(ozellikler):
+    """Persiste edilmiş özellik sözlüğünden SHAP açıklamasını yeniden üretir.
+
+    `Assessment` SHAP çıktısını saklamaz (özellikler saklanır) — kurumun
+    müşteri detayında gerekçe kodlarını göstermek için burada yeniden
+    hesaplanır. Model ve açıklayıcı zaten `orkestrator` içinde tekil.
+    Özellik seti eskiyse (eski bir kayıt) None döner, patlamaz.
+    """
+    try:
+        vektor = [float(ozellikler[o]) for o in OZELLIK_ADLARI]
+    except (KeyError, TypeError, ValueError):
+        return None
+    return orkestrator.aciklayici.acikla(vektor)
+
+
 def genelleme_saglamlik_var():
     """§4 R8/R10/R11: genelleme_saglamlik.py'nin persist ettiği rapor."""
     import os

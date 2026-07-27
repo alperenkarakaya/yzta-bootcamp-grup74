@@ -9,7 +9,24 @@ burası, bu yüzden `test_kiracilik.py` her iki kontrolü de ayrı ayrı kırmay
 from django.utils import timezone
 from rest_framework.permissions import BasePermission
 
-from .models import ErisimTalebi, KurumUyeligi
+from .models import ErisimTalebi, KurumUyeligi, Profil
+
+
+class ProfilSahibi(BasePermission):
+    """Yalnızca bir `Profil`'i (AKS numarası) olan kullanıcılar geçer.
+
+    Kurum personeli hesaplarının `Profil`'i yoktur (`bootstrap_kurum` yalnızca
+    `KurumUyeligi` açar). Bu izin olmadan müşteri-taraflı uçlar `request.user.
+    profil` üzerinde `RelatedObjectDoesNotExist` fırlatıp 500 dönüyordu — kurum
+    kullanıcısı portal sayfalarına girdiğinde tetiklenen gerçek bir hataydı.
+    """
+    message = "Bu uç yalnızca AKS numarası olan müşteri hesapları için."
+
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and Profil.objects.filter(user=request.user).exists()
+        )
 
 
 class KurumUyesi(BasePermission):

@@ -179,11 +179,13 @@ export default function PortalPage() {
           />
           <span className="font-body-sm text-body-sm text-on-surface-variant">
             Bu ekstrenin <strong className="text-on-surface">bana ait</strong> olduğunu onaylıyorum. AKS isim/kimlik
-            bilgisi tutmaz; sahiplik yalnızca beyan + otomatik tutarlılık kontrolleriyle izlenir — bkz.{" "}
+            bilgisi tutmaz; sahiplik yalnızca bu beyan + otomatik tutarlılık kontrolleriyle izlenir. Beyanınız, saati
+            ve IP adresinizle birlikte bu analizin değiştirilemez denetim kaydına yazılır. (Kurumların verinize
+            erişimi ayrı bir onaya tabidir — bkz.{" "}
             <a href="/portal/riza-defterim" className="text-primary underline">
               rıza defterim
             </a>
-            .
+            .)
           </span>
         </label>
       </section>

@@ -1,32 +1,36 @@
 """
-Danışman LLM Agent — Claude API tool-calling (execution.md §3b Phase 7 / 7.5).
+Danışman LLM Agent — Claude ve Gemini tool-calling (execution.md §3b Phase 7 /
+7.5, §7.10 — çok-sağlayıcılı genişletme).
 
 Mevcut `AsistanAgent`/`DanismanAgent` (`asistan.py`, `danisman_agent.py`)
 deterministik, şablon tabanlıdır; opsiyonel LLM zenginleştirmesi tüm bağlamı
 TEK bir prompt string'ine gömer (model her şeyi "görür" ama hiçbir şeyi
-doğrulanabilir şekilde SORGULAYAMAZ). Bu modül farklı: Claude'a tanımlı
-ARAÇLAR verir (`ARAC_TANIMLARI`) — model YALNIZCA bu araçlarla veri okuyabilir,
-sayı UYDURAMAZ.
+doğrulanabilir şekilde SORGULAYAMAZ). Bu modül farklı: LLM'e tanımlı
+ARAÇLAR verir — model YALNIZCA bu araçlarla veri okuyabilir, sayı UYDURAMAZ.
 
 Bağlayıcı kural (CLAUDE.md, overview.md §6): "LLM'ler asla karar motoru
 olmamalı." Bu modül bunu İKİ katmanda zorlar:
-  1) `aks_skor`/`karar`/`onerilen_limit` HER ZAMAN `SkorlamaAgent`'ten gelir
-     (çağıran taraf — `api/services.py` — bunları zaten `baglam`'a koyar);
+  1) `aks_skor`/`karar`/`onerilen_limit` HER ZAMAN `SkorlamaAgent`'ten
+     gelir (çağıran taraf — `api/services.py` — bunları zaten `baglam`'a koyar);
      LLM çıktısı ayrı bir `yanit` alanıdır, asla karar alanının YERİNE geçmez.
   2) Yanıt-sonrası doğrulama (`_dogrula`): LLM metninde geçen sayılar araç
      çıktılarında hiç geçmiyorsa metin ATILIR, deterministik kural motoruna
      düşülür (`anlati_reddedildi=True`) — "uydurma" riski ürüne sızmaz.
 
-`ANTHROPIC_API_KEY` yoksa (ya da API/SDK hata verirse) doğrudan deterministik
-moda düşer — sıfır regresyon, demo her koşulda çalışır (`asistan.py`'nin de
-uyduğu "demo her koşulda çalışır" ilkesi). TODO (execution.md): anahtar PO
-tarafından eklenince canlı tool-calling'in uçtan uca doğrulanması gerekiyor.
+Sağlayıcı seçimi (§7.10): `ANTHROPIC_API_KEY` varsa Claude tercih edilir;
+yoksa `GEMINI_API_KEY` varsa Gemini kullanılır (aynı 5 araç, aynı `_dogrula`
+guard'ı — iki SDK'nın şema formatı farklı olduğu için araç tanımları iki
+kez, elle yazıldı: `ARAC_TANIMLARI` (Anthropic) ve `_gemini_arac_tanimlari()`
+(Gemini). Yeni bir araç eklenirse İKİSİ de güncellenmeli). Hiçbiri yoksa (ya
+da SDK'lar kurulu değilse/API hata verirse) deterministik moda düşülür —
+sıfır regresyon, demo her koşulda çalışır.
 """
 import json
 import os
 import re
 
 MODEL_ADI = "claude-sonnet-5"
+MODEL_ADI_GEMINI = "gemini-2.5-flash"  # §7.10 — canlı test edildi (function-calling round-trip)
 MAKS_TUR = 4  # tool-calling döngüsü üst sınırı — sonsuz döngü riski yok
 
 ARAC_TANIMLARI = [
@@ -63,10 +67,53 @@ ARAC_TANIMLARI = [
 ]
 
 
+def _gemini_arac_tanimlari():
+    """`ARAC_TANIMLARI`'nin Gemini `FunctionDeclaration` karşılığı — aynı 5 araç,
+    Gemini'nin şema formatına elle çevrilmiş hâli (bkz. modül docstring'i:
+    genel bir JSON-Schema->Gemini-Schema çevirici bu 5 araç için gereksiz
+    karmaşıklık olurdu). Yalnızca çağrıldığında import eder — `google-genai`
+    kurulu değilse modül yine de import edilebilir kalır."""
+    from google.genai import types
+
+    return [
+        types.FunctionDeclaration(
+            name="skor_getir",
+            description="Müşterinin güncel AKS skorunu, risk seviyesini, kararını ve (biliniyorsa) klasik skorunu döner.",
+            parameters=types.Schema(type="OBJECT", properties={}),
+        ),
+        types.FunctionDeclaration(
+            name="faktor_getir",
+            description="Skoru en çok etkileyen SHAP faktörlerini (riski azaltan/artıran) döner.",
+            parameters=types.Schema(type="OBJECT", properties={}),
+        ),
+        types.FunctionDeclaration(
+            name="politika_getir",
+            description="Karar mekanizması politika bantlarını (skor eşiği -> risk seviyesi/karar/limit çarpanı) döner.",
+            parameters=types.Schema(type="OBJECT", properties={}),
+        ),
+        types.FunctionDeclaration(
+            name="senaryo_calistir",
+            description="Belirtilen özellik değişiklikleriyle (what-if) yeniden skorlar; yalnızca bağlamda "
+                        "özellik verisi mevcutsa çalışır.",
+            parameters=types.Schema(
+                type="OBJECT",
+                properties={"degisiklikler": types.Schema(type="OBJECT", description="özellik_adi -> yeni_deger")},
+                required=["degisiklikler"],
+            ),
+        ),
+        types.FunctionDeclaration(
+            name="gecmis_getir",
+            description="Müşterinin geçmiş değerlendirmelerini (varsa) döner.",
+            parameters=types.Schema(type="OBJECT", properties={}),
+        ),
+    ]
+
+
 class AracKutusu:
-    """Claude'un ÇAĞIRABİLECEĞİ araçlar — tek veri kaynağı `baglam` sözlüğü
-    (skor/açıklama/politika/geçmiş) + opsiyonel `simulasyon_fn`. Model bu
-    araçların DIŞINDA hiçbir veriye erişemez."""
+    """Claude'un/Gemini'nin ÇAĞIRABİLECEĞİ araçlar — tek veri kaynağı `baglam`
+    sözlüğü (skor/açıklama/politika/geçmiş) + opsiyonel `simulasyon_fn`. Model
+    bu araçların DIŞINDA hiçbir veriye erişemez. Sağlayıcıdan bağımsız —
+    her iki tool-calling döngüsü de aynı örneği kullanır."""
 
     def __init__(self, baglam, simulasyon_fn=None):
         self.baglam = baglam
@@ -101,6 +148,17 @@ class AracKutusu:
         return self.baglam.get("gecmis", [])
 
 
+def _arac_fonksiyonlari_kur(baglam, simulasyon_fn):
+    kutu = AracKutusu(baglam, simulasyon_fn=simulasyon_fn)
+    return {
+        "skor_getir": lambda **_: kutu.skor_getir(),
+        "faktor_getir": lambda **_: kutu.faktor_getir(),
+        "politika_getir": lambda **_: kutu.politika_getir(),
+        "senaryo_calistir": lambda degisiklikler=None, **_: kutu.senaryo_calistir(degisiklikler),
+        "gecmis_getir": lambda **_: kutu.gecmis_getir(),
+    }
+
+
 def _sayilari_cikar(metin):
     return set(re.findall(r"\d+(?:[.,]\d+)?", metin or ""))
 
@@ -118,7 +176,8 @@ def _dogrula(metin, arac_ciktilari):
     görünmeyen bir sayı söylüyorsa (ör. uydurma bir limit/skor) yanıt reddedilir.
     12'nin altındaki sayılar ("üç öneri", "ilk 2 faktör" gibi doğal dil
     ifadeleri) ve AKS'nin sabit skor ölçeği (300/850) filtreden muaf — aksi
-    halde yanlış pozitif patlar.
+    halde yanlış pozitif patlar. Sağlayıcıdan bağımsız — hem Claude hem
+    Gemini yanıtları aynı guard'dan geçer.
     """
     izinli = set()
     for deger in arac_ciktilari:
@@ -138,34 +197,18 @@ def _dogrula(metin, arac_ciktilari):
 
 def _kural_yanit(soru, baglam):
     # asistan.py'nin niyet-tespitli kural motorunu TEKRAR KULLANIYORUZ,
-    # kopyalamıyoruz — API anahtarı yokken/başarısız olduğunda bu modülün de
-    # tek kaynağı bu (drift riski yok).
+    # kopyalamıyoruz — hiçbir sağlayıcı çalışmadığında/anahtar yokken/API hata
+    # verdiğinde tek kaynak bu (drift riski yok).
     from aks_core.agents.asistan import _kural_yanit as _asistan_kural_yanit
     return _asistan_kural_yanit(soru, baglam)
 
 
-def yanitla(soru, baglam, simulasyon_fn=None):
-    """Döner: {"yanit": str, "mod": "llm-arac"|"kural", "anlati_reddedildi": bool,
-    "arac_cagrilari": [{"arac":..., "girdi":..., "cikti":...}, ...]}."""
-    baglam = baglam or {}
-    if not os.environ.get("ANTHROPIC_API_KEY") or baglam.get("aks_skor") is None:
-        return {"yanit": _kural_yanit(soru, baglam), "mod": "kural", "anlati_reddedildi": False, "arac_cagrilari": []}
+def _yanitla_claude(soru, baglam, arac_fonksiyonlari):
+    """Döner: {"yanit", "mod": "llm-arac"|"kural", "saglayici": "anthropic",
+    "anlati_reddedildi", "arac_cagrilari"}."""
+    import anthropic
 
-    try:
-        import anthropic
-    except ImportError:
-        return {"yanit": _kural_yanit(soru, baglam), "mod": "kural", "anlati_reddedildi": False, "arac_cagrilari": []}
-
-    kutu = AracKutusu(baglam, simulasyon_fn=simulasyon_fn)
-    arac_fonksiyonlari = {
-        "skor_getir": lambda **_: kutu.skor_getir(),
-        "faktor_getir": lambda **_: kutu.faktor_getir(),
-        "politika_getir": lambda **_: kutu.politika_getir(),
-        "senaryo_calistir": lambda degisiklikler=None, **_: kutu.senaryo_calistir(degisiklikler),
-        "gecmis_getir": lambda **_: kutu.gecmis_getir(),
-    }
     arac_ciktilari, arac_cagrilari_kayit = [], []
-
     try:
         istemci = anthropic.Anthropic()
         mesajlar = [{"role": "user", "content": soru}]
@@ -183,11 +226,11 @@ def yanitla(soru, baglam, simulasyon_fn=None):
                 metin = "".join(b.text for b in yanit.content if getattr(b, "type", None) == "text")
                 if not _dogrula(metin, arac_ciktilari):
                     return {
-                        "yanit": _kural_yanit(soru, baglam), "mod": "kural",
+                        "yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "anthropic",
                         "anlati_reddedildi": True, "arac_cagrilari": arac_cagrilari_kayit,
                     }
                 return {
-                    "yanit": metin, "mod": "llm-arac",
+                    "yanit": metin, "mod": "llm-arac", "saglayici": "anthropic",
                     "anlati_reddedildi": False, "arac_cagrilari": arac_cagrilari_kayit,
                 }
 
@@ -208,11 +251,108 @@ def yanitla(soru, baglam, simulasyon_fn=None):
 
         # MAKS_TUR aşıldı (beklenmeyen döngü) — güvenli fallback, sessizce başarısız olma
         return {
-            "yanit": _kural_yanit(soru, baglam), "mod": "kural",
+            "yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "anthropic",
             "anlati_reddedildi": True, "arac_cagrilari": arac_cagrilari_kayit,
         }
     except Exception:
         return {
-            "yanit": _kural_yanit(soru, baglam), "mod": "kural",
+            "yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "anthropic",
             "anlati_reddedildi": False, "arac_cagrilari": arac_cagrilari_kayit,
         }
+
+
+def _yanitla_gemini(soru, baglam, arac_fonksiyonlari):
+    """Döner: {"yanit", "mod": "llm-arac"|"kural", "saglayici": "gemini",
+    "anlati_reddedildi", "arac_cagrilari"} — `_yanitla_claude` ile birebir aynı
+    sözleşme, aynı `_dogrula` guard'ı. Google GenAI SDK (`google-genai`) ile
+    canlı test edildi: tool-call round-trip + serbest-anahtarlı (`degisiklikler`)
+    parametre şeması doğrulandı (execution.md §7.10)."""
+    from google import genai
+    from google.genai import types
+
+    arac_ciktilari, arac_cagrilari_kayit = [], []
+    try:
+        istemci = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        tool = types.Tool(function_declarations=_gemini_arac_tanimlari())
+        sistem = (
+            "Sen AKS (Alternatif Kapasite Skoru) kredi değerlendirme asistanısın. "
+            "SADECE verilen araçlarla elde ettiğin verilere dayanarak yanıt ver — "
+            "hiçbir sayıyı (skor, limit, oran) UYDURMA. Kısa, net, Türkçe yanıt ver."
+        )
+        yapilandirma = types.GenerateContentConfig(tools=[tool], system_instruction=sistem)
+        icerik = [types.Content(role="user", parts=[types.Part(text=soru)])]
+
+        for _ in range(MAKS_TUR):
+            yanit = istemci.models.generate_content(model=MODEL_ADI_GEMINI, contents=icerik, config=yapilandirma)
+            parcalar = yanit.candidates[0].content.parts or []
+            arac_cagrilari_bu_tur = [p for p in parcalar if getattr(p, "function_call", None)]
+
+            if not arac_cagrilari_bu_tur:
+                metin = "".join(p.text for p in parcalar if getattr(p, "text", None))
+                if not _dogrula(metin, arac_ciktilari):
+                    return {
+                        "yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "gemini",
+                        "anlati_reddedildi": True, "arac_cagrilari": arac_cagrilari_kayit,
+                    }
+                return {
+                    "yanit": metin, "mod": "llm-arac", "saglayici": "gemini",
+                    "anlati_reddedildi": False, "arac_cagrilari": arac_cagrilari_kayit,
+                }
+
+            icerik.append(yanit.candidates[0].content)
+            yanit_parcalari = []
+            for blok in arac_cagrilari_bu_tur:
+                ad = blok.function_call.name
+                girdi = dict(blok.function_call.args) if blok.function_call.args else {}
+                fn = arac_fonksiyonlari.get(ad)
+                sonuc = fn(**girdi) if fn else {"hata": "bilinmeyen araç"}
+                arac_ciktilari.append(sonuc)
+                arac_cagrilari_kayit.append({"arac": ad, "girdi": girdi, "cikti": sonuc})
+                yanit_parcalari.append(types.Part.from_function_response(name=ad, response=sonuc))
+            icerik.append(types.Content(role="user", parts=yanit_parcalari))
+
+        return {
+            "yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "gemini",
+            "anlati_reddedildi": True, "arac_cagrilari": arac_cagrilari_kayit,
+        }
+    except Exception:
+        return {
+            "yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "gemini",
+            "anlati_reddedildi": False, "arac_cagrilari": arac_cagrilari_kayit,
+        }
+
+
+def yanitla(soru, baglam, simulasyon_fn=None):
+    """Döner: {"yanit": str, "mod": "llm-arac"|"kural", "saglayici": "anthropic"|"gemini"|"kural",
+    "anlati_reddedildi": bool, "arac_cagrilari": [{"arac":..., "girdi":..., "cikti":...}, ...]}.
+
+    Sağlayıcı önceliği (§7.10): ANTHROPIC_API_KEY varsa Claude, yoksa
+    GEMINI_API_KEY varsa Gemini, ikisi de yoksa (ya da SDK kurulu değilse/API
+    hata verirse) deterministik kural motoru."""
+    baglam = baglam or {}
+    anthropic_var = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    gemini_var = bool(os.environ.get("GEMINI_API_KEY"))
+    if not (anthropic_var or gemini_var) or baglam.get("aks_skor") is None:
+        return {"yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "kural",
+                "anlati_reddedildi": False, "arac_cagrilari": []}
+
+    arac_fonksiyonlari = _arac_fonksiyonlari_kur(baglam, simulasyon_fn)
+
+    if anthropic_var:
+        try:
+            import anthropic  # noqa: F401 — yalnızca kurulu mu diye kontrol
+        except ImportError:
+            pass
+        else:
+            return _yanitla_claude(soru, baglam, arac_fonksiyonlari)
+
+    if gemini_var:
+        try:
+            from google import genai  # noqa: F401
+        except ImportError:
+            pass
+        else:
+            return _yanitla_gemini(soru, baglam, arac_fonksiyonlari)
+
+    return {"yanit": _kural_yanit(soru, baglam), "mod": "kural", "saglayici": "kural",
+            "anlati_reddedildi": False, "arac_cagrilari": []}

@@ -60,23 +60,44 @@ TEMPLATES = [
 ]
 
 # --- Veritabanı: Supabase (DATABASE_URL) yoksa yerel SQLite ---
+# conn_max_age düşük tutulur (SQLite'ta zaten anlamsız, Supabase'te KASITLI):
+# Supabase'in Session pooler'ı zaten kendi tarafında havuzluyor ve ücretsiz
+# katmanda sert bir istemci sınırı var (execution.md §7.10'da bulunan gerçek
+# olay: `FATAL: max clients reached ... pool_size: 15` — çok sayıda kısa ömürlü
+# script/test koşusu, her biri conn_max_age=600 ile 10 dakika bağlantı açık
+# tutunca havuzu doldurdu). Django tarafında UZUN ömürlü bağlantı tutmanın
+# pooler zaten var olduğu için ek faydası yok, yalnızca havuzu daha çabuk
+# doldurma riski var — bu yüzden kısa tutuluyor.
 DATABASES = {
     "default": dj_database_url.parse(
         os.environ.get("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'aks_dev.sqlite3'}",
-        conn_max_age=600,
+        conn_max_age=60,
     )
 }
 
 # --- Cache: Upstash Redis (REDIS_URL) yoksa yerel bellek ---
+# IGNORE_EXCEPTIONS=True: Redis erişilemezse (ağ/TLS/DNS hatası) cache
+# okuma/yazma sessizce no-op olur — İSTİSNA FIRLATMAZ. Bunsuz, Redis'in kendisi
+# hiçbir işlevsel değeri olmayan bir uçta (ör. DRF throttling, /api/portfoy
+# cache'i) tek hata noktası olurdu: Upstash'e erişilemediği an ilgisiz uçlar
+# (OTP gönderme, erişim talebi) 500 dönmeye başlardı — bu, projenin her
+# yerindeki "opsiyonel bileşen çekirdek akışı asla düşürmemeli" ilkesiyle
+# (bkz. AuditLog best-effort yazımı, kalibrasyon/anomali modeli opsiyonelliği)
+# tutarsız olurdu. Bilinçli ödünleşim: bu, Redis çökükken DRF throttle
+# limitlerinin de sessizce devre dışı kalacağı (fail-open, fail-closed değil)
+# anlamına gelir — kabul edilebilir, çünkü kullanılabilirlik > kesintide
+# mükemmel hız sınırlama (django-redis'in resmi önerdiği desen).
 _redis_url = os.environ.get("REDIS_URL")
 if _redis_url:
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": _redis_url,
-            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient", "IGNORE_EXCEPTIONS": True},
         }
     }
+    DJANGO_REDIS_IGNORE_EXCEPTIONS = True
+    DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
 else:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 

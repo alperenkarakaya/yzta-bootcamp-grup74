@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import PortalLayout from "./components/PortalLayout";
 import KurumLayout from "./components/KurumLayout";
+import GirisPage from "./pages/GirisPage";
 import IntelligencePage from "./pages/IntelligencePage";
 import PortfolioPage from "./pages/PortfolioPage";
 import AuditPage from "./pages/AuditPage";
@@ -22,7 +23,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Banka arayüzü (iç kullanım — demo/araştırma) */}
+        {/* Site geneli giriş — banka içi arayüzün önündeki zorunlu kapı */}
+        <Route path="giris" element={<GirisPage />} />
+
+        {/* Banka arayüzü (iç kullanım — demo/araştırma), giriş zorunlu (bkz. Layout.tsx) */}
         <Route element={<Layout />}>
           <Route index element={<IntelligencePage />} />
           <Route path="portfolio" element={<PortfolioPage />} />

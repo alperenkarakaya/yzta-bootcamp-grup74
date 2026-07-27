@@ -1,7 +1,8 @@
-import { useEffect } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { Icon } from "./Icon";
 import { politikaEsikleriniYukle } from "../lib/skor";
+import { api, type KullaniciBilgisi } from "../api";
 
 const NAV_LINKS = [
   { to: "/", label: "Intelligence", end: true },
@@ -19,10 +20,39 @@ const BOTTOM_LINKS = [
   { to: "/portfolio", icon: "smart_toy", label: "Support" },
 ];
 
+// Giriş zorunlu (PO kararı): giriş yapılmamışsa banka içi arayüz yerine
+// `/giris` landing sayfasına yönlendirilir. Portal/kurum girişiyle AYNI
+// oturum sistemini (`/api/auth/*`) kullanır — yeni bir kimlik doğrulama
+// akışı İCAT EDİLMEDİ (bkz. PortalLayout/GirisPage'in aynı deseni).
 export default function Layout() {
+  const [kullanici, setKullanici] = useState<KullaniciBilgisi | null>(null);
+  const [yukleniyor, setYukleniyor] = useState(true);
+  const navigate = useNavigate();
+
   useEffect(() => {
     politikaEsikleriniYukle();
+    api
+      .ben()
+      .then(setKullanici)
+      .catch(() => setKullanici(null))
+      .finally(() => setYukleniyor(false));
   }, []);
+
+  async function cikisYap() {
+    try {
+      await api.cikisYap();
+    } catch {
+      /* oturum zaten düşmüş olabilir */
+    }
+    navigate("/giris");
+  }
+
+  if (yukleniyor) {
+    return <p className="p-8 text-center font-body-sm text-body-sm text-on-surface-variant">Yükleniyor…</p>;
+  }
+  if (!kullanici) {
+    return <Navigate to="/giris" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body-sm text-body-sm antialiased selection:bg-primary-container selection:text-on-primary-container">
@@ -75,6 +105,17 @@ export default function Layout() {
             >
               <Icon name="bolt" />
             </button>
+            <span className="hidden lg:inline font-label-mono text-label-mono text-on-surface-variant/80">
+              {kullanici.email}
+            </span>
+            <button
+              onClick={cikisYap}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT border border-outline-variant/30 font-label-mono text-label-mono hover:bg-surface-container/50 transition-colors"
+              title="Çıkış yap"
+            >
+              <Icon name="logout" className="text-[14px]" />
+              Çıkış
+            </button>
             <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant/30 flex items-center justify-center inner-shadow-subtle text-primary">
               <Icon name="account_circle" />
             </div>
@@ -83,10 +124,13 @@ export default function Layout() {
       </nav>
 
       {/* Mobile fallback header */}
-      <header className="md:hidden fixed top-0 w-full z-50 bg-background/90 backdrop-blur-xl border-b border-outline-variant/30 h-16 flex items-center px-4 justify-center">
+      <header className="md:hidden fixed top-0 w-full z-50 bg-background/90 backdrop-blur-xl border-b border-outline-variant/30 h-16 flex items-center px-4 justify-between">
         <span className="font-display-sm-mobile text-display-sm-mobile font-bold tracking-tighter text-on-background">
           AKS Intelligence
         </span>
+        <button onClick={cikisYap} className="p-2 text-on-surface-variant" title="Çıkış yap">
+          <Icon name="logout" />
+        </button>
       </header>
 
       <main className="pt-24 pb-32 md:pb-16 px-4 md:px-container-padding max-w-[1440px] mx-auto min-h-screen">

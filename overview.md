@@ -88,7 +88,7 @@ The AI/ML core (`aks_core`) is an installable Python package imported identicall
 | AI core | `aks_core` installable package (pipeline + 3 genuine agents) | One clean import for both API and research scripts |
 | ML | scikit-learn (logistic regression — **preferred**), XGBoost / LightGBM (under review, see §14) | Simplest model that wins; complexity must be earned |
 | Explainability | SHAP → adverse-action-style reason codes | Regulatory-adjacent explanation surface |
-| LLM | Claude (tool-calling, preferred — execution.md §3b Phase 7/7.5), Google Gemini (optional fallback), deterministic rule-based fallback | Justified, five-question-tested agents; never the decision engine |
+| LLM | Same tool-calling agent (`danisman_llm`) over Claude or Gemini — Claude preferred if both configured (execution.md §3b Phase 7/7.5, §7.10; Gemini path live-verified), deterministic rule-based fallback if neither | Justified, five-question-tested agents; never the decision engine |
 | Database | Supabase (Postgres) via Django ORM; SQLite fallback | Assessments, per-customer history, immutable audit trail |
 | Cache | Upstash Redis (`django-redis`); LocMem fallback | Cache heavy portfolio/fairness aggregates |
 | Deploy (target) | Docker + Render; Supabase + Upstash hosted | One web service |

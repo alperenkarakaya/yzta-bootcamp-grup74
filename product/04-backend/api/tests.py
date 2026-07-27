@@ -188,17 +188,48 @@ class ApiUclariTesti(TestCase):
         self.assertEqual(esikler, sorted(esikler, reverse=True), "Bantlar eşiğe göre azalan sırada olmalı")
 
     def test_asistan_ucu_anahtarsiz_kural_moduna_duser(self):
-        """§3b Phase 7/7.5: ANTHROPIC_API_KEY tanımlı değilse (test ortamında
-        normal durum) /api/asistan sıfır regresyonla eski kural motoruna düşmeli."""
+        """§3b Phase 7/7.5/7.10: ne ANTHROPIC_API_KEY ne GEMINI_API_KEY varsa
+        /api/asistan sıfır regresyonla eski kural motoruna düşmeli. İkisini de
+        `patch.dict` ile boşaltıyoruz — geliştiricinin gerçek `.env`'inde bir
+        anahtar dolu olsa bile bu test hermetik kalmalı (aksi halde gerçek bir
+        ağ çağrısı yapıp yavaş/kırılgan hale gelir — tam olarak bu yüzden
+        eklendi, bkz. execution.md §3b Phase 7/7.10)."""
         import os
-        self.assertFalse(os.environ.get("ANTHROPIC_API_KEY"), "Bu test anahtarsız ortam varsayar")
-        r = self.client.post("/api/asistan", {
-            "soru": "skorum neden düşük?",
-            "baglam": {"aks_skor": 600, "risk_seviyesi": "orta risk",
-                       "aciklama": {"riski_azaltan": [], "riski_artiran": []}},
-        }, content_type="application/json")
+        from unittest.mock import patch as mock_patch
+        with mock_patch.dict(os.environ, {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": ""}):
+            r = self.client.post("/api/asistan", {
+                "soru": "skorum neden düşük?",
+                "baglam": {"aks_skor": 600, "risk_seviyesi": "orta risk",
+                           "aciklama": {"riski_azaltan": [], "riski_artiran": []}},
+            }, content_type="application/json")
         self.assertEqual(r.status_code, 200)
-        self.assertIn("yanit", r.json())
+        veri = r.json()
+        self.assertIn("yanit", veri)
+        self.assertEqual(veri.get("mod"), "kural")
+
+    def test_asistan_ucu_anahtar_varsa_danisman_llm_e_delege_eder(self):
+        """§3b Phase 7/7.10: bir anahtar (Anthropic ya da Gemini) varsa
+        `services.asistan_yanit` isteği gerçek bir ağ çağrısı yapmadan
+        `danisman_llm.yanitla`'ya delege etmeli — services.py'deki yönlendirme
+        koşulunun regresyon testi (bkz. `asistan_yanit`'in GEMINI_API_KEY'i de
+        kontrol etmesi gerektiği bulgusu)."""
+        import os
+        from unittest.mock import patch as mock_patch
+        with mock_patch.dict(os.environ, {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": "sahte-anahtar"}):
+            with mock_patch("aks_core.agents.danisman_llm.yanitla") as sahte_yanitla:
+                sahte_yanitla.return_value = {
+                    "yanit": "test yanit", "mod": "llm-arac", "saglayici": "gemini",
+                    "anlati_reddedildi": False, "arac_cagrilari": [],
+                }
+                r = self.client.post("/api/asistan", {
+                    "soru": "skorum neden düşük?",
+                    "baglam": {"aks_skor": 600, "risk_seviyesi": "orta risk",
+                               "aciklama": {"riski_azaltan": [], "riski_artiran": []}},
+                }, content_type="application/json")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["mod"], "llm-arac")
+        self.assertEqual(r.json()["saglayici"], "gemini")
+        sahte_yanitla.assert_called_once()
 
     def test_risk_istahi_ucu_uc_profil_donuyor(self):
         """§3b Phase 7/7.4: ihtiyatli/dengeli/atak profilleri, artan onay oranıyla."""

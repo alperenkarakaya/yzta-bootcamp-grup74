@@ -159,9 +159,23 @@ export interface GecmisYanit {
   gecmis: GecmisKayit[];
 }
 
+// §3b Phase 7/7.10 — danisman_llm.py'nin gerçek dönüş sözleşmesi: anahtar
+// yoksa/bağlam eksikse "kural" (deterministik), varsa gerçek tool-calling
+// agent'ı ("llm-arac" — sağlayıcı ANTHROPIC_API_KEY varsa "anthropic", yoksa
+// GEMINI_API_KEY varsa "gemini"). `arac_cagrilari` doluysa "Agent İzi" paneli
+// olarak gösterilebilir (bkz. planning/frontend-pages-full-source.md §7).
+export interface AracCagrisi {
+  arac: string;
+  girdi: Record<string, unknown>;
+  cikti: unknown;
+}
+
 export interface AsistanYanit {
   yanit: string;
-  mod: "llm" | "kural";
+  mod: "llm-arac" | "kural";
+  saglayici?: "anthropic" | "gemini" | "kural";
+  anlati_reddedildi?: boolean;
+  arac_cagrilari?: AracCagrisi[];
 }
 
 // POST /api/csv-skorla (U24) — belge/ekstre yükleme (§3b Phase 7/7.1: artık

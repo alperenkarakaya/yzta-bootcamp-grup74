@@ -395,13 +395,17 @@ def _simulasyon_fn_olustur(baglam):
 
 
 def asistan_yanit(soru, baglam):
-    """§3b Phase 7/7.5: `ANTHROPIC_API_KEY` tanımlıysa tool-calling agent'ı
-    (`danisman_llm`) tercih edilir; tanımlı değilse eski yola (Gemini varsa
-    onu, yoksa deterministik kural motorunu deneyen `AsistanAgent`) hiçbir
-    davranış değişikliği olmadan düşülür — sıfır regresyon."""
+    """§3b Phase 7/7.5, §7.10: `ANTHROPIC_API_KEY` VEYA `GEMINI_API_KEY`
+    tanımlıysa tool-calling agent'ı (`danisman_llm`) tercih edilir — ikisi de
+    aynı 5 aracı ve aynı uydurma-sayı guard'ını (`_dogrula`) kullanır, yalnızca
+    SDK/şema farklıdır (bkz. danisman_llm.py docstring'i). Hiçbiri yoksa eski
+    yola (kendi GEMINI_API_KEY kontrolü olan, tool'suz `AsistanAgent`) düşülür
+    — bu dal artık yalnızca anahtarsız/SDK'sız ortamlarda erişilir, aynı
+    zamanda `danisman_llm` tamamen başarısız olursa (import hatası vb.)
+    davranışın sıfır regresyonla eskisi gibi çalışmasını garanti eder."""
     import os
     baglam = baglam or {}
-    if os.environ.get("ANTHROPIC_API_KEY"):
+    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("GEMINI_API_KEY"):
         from aks_core.agents import danisman_llm
         return danisman_llm.yanitla(soru, baglam, simulasyon_fn=_simulasyon_fn_olustur(baglam))
     return asistan.yanitla(soru, baglam)

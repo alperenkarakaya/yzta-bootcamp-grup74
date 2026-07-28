@@ -226,6 +226,11 @@ export interface KullaniciBilgisi {
   ad: string;
   // §3b Phase 7/7.2 — kayıtta otomatik üretilir, isim/TCKN YERİNE kullanılır.
   aks_no?: string;
+  // Giriş sonrası hangi yüzeye yönlendirileceğini belirler (banka içi araştırma /
+  // kurum paneli / müşteri portalı). Yalnızca YÖNLENDİRME ipucu — gerçek yetki
+  // her uçta sunucuda zorlanır (YoneticiKullanici / KurumUyesi / ProfilSahibi).
+  yonetici?: boolean;
+  kurum_uyesi?: boolean;
 }
 
 export interface PortalGecmisKayit {

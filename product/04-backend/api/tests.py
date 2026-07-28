@@ -132,7 +132,19 @@ class DenetimIziDegistirilemezlikTesti(TestCase):
 
 
 class ApiUclariTesti(TestCase):
-    """Uçlar ayakta mı ve sözleşmeye uyuyor mu."""
+    """Uçlar ayakta mı ve sözleşmeye uyuyor mu.
+
+    `setUp`'ta yönetici olarak giriş yapılır: bu modüldeki uçların tamamı
+    (`bilgi` hariç) `YoneticiKullanici` ile korunuyor — banka içi araştırma
+    yüzeyi. Yetkinin gerçekten zorlandığını `YuzeyIzolasyonuTesti` kanıtlar.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.yonetici = User.objects.create_user(
+            username="yonetici@test.aks", email="yonetici@test.aks", password="GucluSifre123", is_staff=True
+        )
+        self.client.force_login(self.yonetici)
 
     def test_bilgi_ucu_model_adini_donuyor(self):
         r = self.client.get("/api/bilgi")
@@ -454,8 +466,142 @@ class HamIslemSaklamaTesti(TestCase):
         """Bankanın demo/anonim skorlaması (profilsiz) — veri zaten kaynak
         CSV'de duruyor, ikinci kez saklamaya gerek yok (kişisel veri ayak izi
         büyümesin)."""
+        from django.contrib.auth.models import User
+
         from audit.models import Assessment
+        # Demo skorlama artık banka içi (yönetici) yüzeyine ait — bu testin
+        # konusu saklanan veri, yetki değil; yetkiyi YuzeyIzolasyonuTesti ölçer.
+        self.client.force_login(User.objects.create_user(
+            username="yonetici2@test.aks", password="GucluSifre123", is_staff=True
+        ))
         r = self.client.get("/api/skorla/1")
         self.assertEqual(r.status_code, 200)
         kayit = Assessment.objects.filter(kaynak="demo").latest("created_at")
         self.assertEqual(kayit.ham_islemler, [])
+
+
+class YuzeyIzolasyonuTesti(TestCase):
+    """Üç yüzeyin birbirinden gerçekten yalıtıldığını kanıtlar.
+
+    Ürünün sözü: "kullanıcı yalnızca kendi içeriğini, kurum yalnızca rıza
+    verileni, yönetici (banka içi araştırma) herkesi görür." Phase 7'ye kadar
+    `api/views.py`'nin TAMAMI izinsizdi (DRF varsayılanı `AllowAny`) — kayıt
+    olan herhangi bir son kullanıcı, hatta anonim bir istemci, tüm demo
+    popülasyonuna ve `/api/gecmis/-1` üzerinden BÜTÜN portal kullanıcılarının
+    skor geçmişine erişebiliyordu. Bu sınıf o iki deliği de kapalı tutar.
+    """
+
+    #: Banka içi araştırma yüzeyinin temsili uçları — hepsi yönetici ister.
+    ARASTIRMA_UCLARI = [
+        "/api/demo-musteriler",
+        "/api/portfoy",
+        "/api/adalet",
+        "/api/metrikler",
+        "/api/politika",
+        "/api/gecmis/1",
+        "/api/skorla/1",
+    ]
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.sifre = "GucluSifre123"
+        self.musteri = User.objects.create_user(
+            username="musteri@izolasyon.aks", email="musteri@izolasyon.aks", password=self.sifre
+        )
+        self.yonetici = User.objects.create_user(
+            username="yonetici@izolasyon.aks", email="yonetici@izolasyon.aks",
+            password=self.sifre, is_staff=True,
+        )
+
+    def test_anonim_istemci_arastirma_yuzeyini_goremez(self):
+        for yol in self.ARASTIRMA_UCLARI:
+            with self.subTest(yol=yol):
+                self.assertIn(
+                    self.client.get(yol).status_code, (401, 403),
+                    f"{yol} anonim erişime açık — banka içi yüzey sızıyor",
+                )
+
+    def test_sirandan_kullanici_arastirma_yuzeyini_goremez(self):
+        self.client.force_login(self.musteri)
+        for yol in self.ARASTIRMA_UCLARI:
+            with self.subTest(yol=yol):
+                self.assertEqual(
+                    self.client.get(yol).status_code, 403,
+                    f"{yol} sıradan kullanıcıya açık — başkalarının verisi görünüyor",
+                )
+
+    def test_yonetici_arastirma_yuzeyini_gorebilir(self):
+        self.client.force_login(self.yonetici)
+        for yol in self.ARASTIRMA_UCLARI:
+            with self.subTest(yol=yol):
+                self.assertNotIn(
+                    self.client.get(yol).status_code, (401, 403),
+                    f"{yol} yöneticiye kapalı — araştırma yüzeyi kullanılamaz hale geldi",
+                )
+
+    def test_gecmis_servisi_portal_yuklemelerini_sizdirmiyor(self):
+        """Bu uç yalnızca banka içi DEMO popülasyonunu döndürmeli.
+
+        Portal yüklemeleri `musteri_id="-1"` ile yazılıyor (gerçek kimlik
+        `user`/`profil` FK'sinde). `services.gecmis()` yalnızca `musteri_id`'ye
+        göre filtreleseydi, tek bir çağrı birbirinden habersiz TÜM portal
+        kullanıcılarının skor geçmişini döndürürdü. Burada servis KATMANI
+        doğrudan test ediliyor, çünkü URL yolu (`<int:musteri_id>`) negatif
+        değer kabul etmiyor — yani filtre şu an ikinci savunma hattı; ilk hat
+        (URL dönüştürücüsü) tesadüfi ve kırılgan, güvenlik ona bırakılamaz.
+        """
+        from api import services
+        from audit.models import Assessment
+        Assessment.objects.create(
+            musteri_id=services.KIMLIKSIZ_MUSTERI_ID, aks_skor=700, risk_seviyesi="dusuk",
+            karar="onay", kaynak="portal", user=self.musteri,
+        )
+        Assessment.objects.create(
+            musteri_id=services.KIMLIKSIZ_MUSTERI_ID, aks_skor=640, risk_seviyesi="orta",
+            karar="onay", kaynak="portal", user=self.yonetici,
+        )
+        # İkinci sızıntı yolu: orkestratörün süreç-içi hafızası. Portal/CSV
+        # skorlamaları oraya da aynı "-1" anahtarıyla yazılıyor, yani sadece DB
+        # filtresi eklemek yetmiyordu — sorgu boş dönünce fallback devreye girip
+        # sızıntı devam ediyordu. Burada hafızayı kasten kirletip iki yolun da
+        # kapalı olduğunu doğruluyoruz.
+        services.orkestrator.hafiza.setdefault(-1, []).append(
+            {"zaman": "2026-01-01T00:00:00", "aks_skor": 800, "risk_seviyesi": "düşük risk"}
+        )
+        self.addCleanup(services.orkestrator.hafiza.pop, -1, None)
+
+        self.assertEqual(
+            services.gecmis(-1), [],
+            "Portal (müşteri) kayıtları banka demo geçmişinde görünüyor — çapraz yüzey sızıntısı",
+        )
+
+    def test_gecmis_ucu_negatif_id_kabul_etmiyor(self):
+        """URL dönüştürücüsünün ikinci savunma hattı — sessizce gevşetilirse
+        yukarıdaki testin neden önemli olduğu görünmez hale gelir."""
+        self.client.force_login(self.yonetici)
+        self.assertEqual(self.client.get("/api/gecmis/-1").status_code, 404)
+
+    def test_kurum_hesabi_arastirma_yuzeyini_goremez(self):
+        """Kurum personeli yalnızca rıza verilen müşterileri görür; banka içi
+        araştırma yüzeyi (tüm popülasyon) ona da kapalı."""
+        from kimlik.models import Kurum, KurumUyeligi
+        kurum = Kurum.objects.create(ad="İzolasyon Bankası", kod="izolasyon-bankasi")
+        KurumUyeligi.objects.create(user=self.musteri, kurum=kurum, rol="yonetici")
+        self.client.force_login(self.musteri)
+        self.assertEqual(self.client.get("/api/demo-musteriler").status_code, 403)
+
+    def test_kayit_ucu_rol_bayraklarini_donuyor(self):
+        """Frontend giriş sonrası yönlendirmeyi bu bayraklara göre yapıyor."""
+        r = self.client.post("/api/auth/kayit", {"email": "yeni@izolasyon.aks", "sifre": self.sifre})
+        self.assertEqual(r.status_code, 201)
+        veri = r.json()
+        self.assertFalse(veri["yonetici"])
+        self.assertFalse(veri["kurum_uyesi"])
+        self.assertTrue(veri["aks_no"], "Kayıt anında AKS numarası üretilmeli")
+
+    def test_ayni_eposta_ile_ikinci_kayit_500_yerine_400_donuyor(self):
+        self.client.post("/api/auth/kayit", {"email": "cift@izolasyon.aks", "sifre": self.sifre})
+        self.client.post("/api/auth/cikis")
+        r = self.client.post("/api/auth/kayit", {"email": "cift@izolasyon.aks", "sifre": self.sifre})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("hata", r.json())

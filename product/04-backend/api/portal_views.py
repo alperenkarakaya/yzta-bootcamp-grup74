@@ -11,8 +11,9 @@ listesini besler. Sahiplik-çakışma tespiti (parmak izi) §7.3'te eklenecek.
 """
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from kimlik.izinler import ProfilSahibi
 
 from . import services
 
@@ -23,7 +24,7 @@ def _dogru_mu(deger):
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def portal_yukle(request):
     """§3b Phase 7/7.3: `beyan` alanı ZORUNLU — "bu ekstre bana ait" onayı
     olmadan yükleme kabul edilmez (sahiplik savunmasının 3. katmanı; diğer
@@ -55,7 +56,7 @@ def portal_yukle(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def portal_gecmis(request):
     from audit.models import Assessment
     kayitlar = Assessment.objects.filter(user=request.user).order_by("-created_at")[:50]
@@ -76,7 +77,7 @@ def portal_gecmis(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([ProfilSahibi])
 def portal_gecmis_detay(request, kayit_id: int):
     """Geçmişteki tek bir yüklemenin tam detayı — saklanan ham işlemler dahil.
 

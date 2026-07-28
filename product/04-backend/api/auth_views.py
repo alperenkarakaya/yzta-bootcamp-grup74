@@ -32,7 +32,21 @@ from rest_framework.response import Response
 def _kullanici_sozluk(user):
     # "ad" yalnızca arayüzde selamlama için türetilir (e-posta yerel kısmı) —
     # saklanan bir kişisel veri DEĞİLDİR (§3b Phase 7/7.2: isim/soyisim istenmez).
-    sozluk = {"id": user.id, "email": user.email, "ad": user.email.split("@")[0]}
+    #
+    # `yonetici` / `kurum_uyesi`: frontend'in giriş sonrası kullanıcıyı DOĞRU
+    # yüzeye yönlendirebilmesi için (banka içi araştırma / kurum paneli /
+    # müşteri portalı). Bunlar yalnızca YÖNLENDİRME ipucudur — gerçek yetki
+    # kontrolü her zaman sunucuda, ilgili izin sınıfındadır (YoneticiKullanici,
+    # KurumUyesi, ProfilSahibi). Frontend'de bayrağı taklit etmek hiçbir veriye
+    # erişim sağlamaz, yalnızca 403 alınan bir sayfaya gider.
+    from kimlik.models import KurumUyeligi
+    sozluk = {
+        "id": user.id,
+        "email": user.email,
+        "ad": user.email.split("@")[0],
+        "yonetici": user.is_staff,
+        "kurum_uyesi": KurumUyeligi.objects.filter(user=user).exists(),
+    }
     profil = getattr(user, "profil", None)
     if profil is not None:
         sozluk["aks_no"] = profil.aks_no
@@ -77,8 +91,20 @@ def kayit(request):
         validate_password(sifre)
     except DjangoValidationError as e:
         return Response({"hata": " ".join(e.messages)}, status=400)
-    user = User.objects.create_user(username=email, email=email, password=sifre)
-    _profil_olustur(user)
+    # Kullanıcı + profil TEK transaction'da: `create_user` başarılı olup
+    # `_profil_olustur` patlarsa geriye AKS numarası OLMAYAN yetim bir hesap
+    # kalıyordu — o hesap giriş yapabiliyor ama portal uçlarında `ProfilSahibi`
+    # izninden geçemediği için hiçbir şey yapamıyordu (sessiz, kalıcı bozuk
+    # durum). Ayrıca yukarıdaki `exists()` kontrolü ile `create_user` arasında
+    # bir yarış penceresi var (aynı e-postayla iki eşzamanlı kayıt) — bunu
+    # `username` unique kısıtı yakalar, IntegrityError'ı 500 yerine anlamlı bir
+    # 400'e çeviriyoruz.
+    try:
+        with transaction.atomic():
+            user = User.objects.create_user(username=email, email=email, password=sifre)
+            _profil_olustur(user)
+    except IntegrityError:
+        return Response({"hata": "Bu e-posta ile zaten bir hesap var"}, status=400)
     login(request, user)
     return Response(_kullanici_sozluk(user), status=201)
 

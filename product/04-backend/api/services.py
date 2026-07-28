@@ -288,11 +288,43 @@ def _denetim_yaz(musteri_id, klasik, sonuc, kaynak, user=None, belge_meta=None,
         pass
 
 
+#: Gerçek bir müşteriye ait OLMAYAN skorlamaların (portal yüklemesi, anonim
+#: belge yüklemesi) `musteri_id`'si. Portal'da gerçek kimlik `Assessment.user`/
+#: `.profil` FK'sindedir; bu değer yalnızca "kimliksiz" demektir — dolayısıyla
+#: TÜM portal kullanıcıları bu tek anahtarı paylaşır.
+KIMLIKSIZ_MUSTERI_ID = "-1"
+
+
 def gecmis(musteri_id):
-    """DB'den (kalıcı) geçmiş; yoksa orkestratör hafızasına düş."""
+    """DB'den (kalıcı) DEMO/araştırma geçmişi; yoksa orkestratör hafızasına düş.
+
+    Buradaki iki filtre GÜVENLİK kısıtıdır, kozmetik değil. Portal yüklemeleri
+    `musteri_id="-1"` ile yazılıyor (gerçek kimlik `user`/`profil` FK'sinde),
+    yani birbirinden habersiz tüm portal kullanıcıları bu tek anahtarı
+    paylaşıyor. Filtre olmadan tek bir çağrı hepsinin skor geçmişini tek
+    listede döndürüyordu — üstelik İKİ ayrı yoldan:
+
+    1. **DB yolu** — `exclude(kaynak="portal")` ile kapatıldı.
+    2. **Orkestratör hafızası (fallback)** — `Orkestrator.hafiza`, süreç-içi bir
+       `{musteri_id: [...]}` sözlüğü ve portal/CSV skorlamaları da oraya aynı
+       `-1` anahtarıyla yazılıyor. Yalnızca DB filtresi eklenince sorgu boş
+       dönüp **fallback devreye giriyor** ve sızıntı ikinci yoldan devam
+       ediyordu (bunu `YuzeyIzolasyonuTesti` yakaladı). Bu yüzden kimliksiz
+       skorlamalar için fonksiyon en baştan boş döner.
+
+    Müşterinin kendi geçmişi yalnızca `/api/portal/gecmis` (user filtresi),
+    kurumun gördüğü kayıt yalnızca `kimlik/kurum_views.musteri_detay` (aktif
+    rıza) üzerinden erişilir — bu uç sadece banka içi DEMO popülasyonu içindir.
+    """
+    if str(musteri_id) == KIMLIKSIZ_MUSTERI_ID:
+        return []
     try:
         from audit.models import Assessment
-        qs = Assessment.objects.filter(musteri_id=str(musteri_id)).order_by("created_at")
+        qs = (
+            Assessment.objects.filter(musteri_id=str(musteri_id))
+            .exclude(kaynak="portal")
+            .order_by("created_at")
+        )
         if qs.exists():
             return [{"zaman": a.created_at.isoformat(timespec="seconds"),
                      "aks_skor": a.aks_skor, "risk_seviyesi": a.risk_seviyesi} for a in qs]

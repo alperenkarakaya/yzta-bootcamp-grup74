@@ -29,6 +29,29 @@ class ProfilSahibi(BasePermission):
         )
 
 
+class YoneticiKullanici(BasePermission):
+    """Banka içi demo/araştırma yüzeyi (`api/views.py`) — yalnızca `is_staff`.
+
+    Bu yüzey TÜM demo popülasyonunu, portföy/adalet toplu istatistiklerini ve
+    değerlendirme geçmişini gösterir; yani doğası gereği "herkesi görebilen"
+    tek yüzeydir. Phase 7'ye kadar hiçbir izin kontrolü yoktu (DRF varsayılanı
+    `AllowAny`) — sonuç: kayıt olan HERHANGİ bir son kullanıcı, hatta anonim
+    bir istemci, `/api/demo-musteriler`, `/api/portfoy`, `/api/gecmis/<id>`
+    uçlarına doğrudan erişebiliyordu. Ürünün "kullanıcı yalnızca kendi
+    içeriğini, kurum yalnızca rıza verileni görür" sözünü ihlal eden yer
+    burasıydı (portal ve kurum katmanları zaten `ProfilSahibi` / `KurumUyesi`
+    ile doğru kapsamlanmıştı).
+
+    `is_staff` kasıtlı: yeni bir rol modeli/tablo eklemek yerine Django'nun
+    kendi yönetici bayrağı kullanılıyor — bu yüzey zaten "banka içi araç"
+    olduğundan admin paneline erişimle aynı güven seviyesini gerektirir.
+    """
+    message = "Bu uç yalnızca yönetici (banka içi araştırma) hesapları için."
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_staff
+
+
 class KurumUyesi(BasePermission):
     """Yalnızca en az bir kuruma üye olan kullanıcılar geçer — banka
     personeli girişi, tüketici portalinden (`portal/*`) tamamen ayrı."""

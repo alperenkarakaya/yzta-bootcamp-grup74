@@ -24,6 +24,14 @@ const BOTTOM_LINKS = [
 // `/giris` landing sayfasına yönlendirilir. Portal/kurum girişiyle AYNI
 // oturum sistemini (`/api/auth/*`) kullanır — yeni bir kimlik doğrulama
 // akışı İCAT EDİLMEDİ (bkz. PortalLayout/GirisPage'in aynı deseni).
+//
+// YETKİ (Phase 7 güvenlik düzeltmesi): bu yüzey TÜM demo popülasyonunu,
+// portföy/adalet istatistiklerini ve değerlendirme geçmişini gösterir —
+// yani "herkesi gören" tek yüzey. Bu yüzden yalnızca YÖNETİCİ (`is_staff`)
+// hesaplara açıktır. Sıradan kullanıcı kendi portalına, kurum personeli kendi
+// paneline yönlendirilir. Bu yalnızca arayüz katmanı; uçların kendisi de
+// `YoneticiKullanici` izniyle korunur (bayrağı tarayıcıda taklit etmek
+// hiçbir veri getirmez, sadece 403 alınır).
 export default function Layout() {
   const [kullanici, setKullanici] = useState<KullaniciBilgisi | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
@@ -52,6 +60,11 @@ export default function Layout() {
   }
   if (!kullanici) {
     return <Navigate to="/giris" replace />;
+  }
+  if (!kullanici.yonetici) {
+    // Giriş yapmış ama yönetici değil — kendi yüzeyine gönder (banka içi
+    // araştırma sayfaları başka kullanıcıların verisini içerir).
+    return <Navigate to={kullanici.kurum_uyesi ? "/kurum/musteriler" : "/portal"} replace />;
   }
 
   return (

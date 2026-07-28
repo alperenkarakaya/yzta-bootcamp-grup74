@@ -1,9 +1,22 @@
-"""DRF görünümleri — eski FastAPI uç noktalarının bire bir karşılığı."""
-from rest_framework.decorators import api_view, parser_classes
+"""DRF görünümleri — eski FastAPI uç noktalarının bire bir karşılığı.
+
+YETKİ (Phase 7 güvenlik düzeltmesi): bu modüldeki uçların TAMAMI banka içi
+demo/araştırma yüzeyidir — tüm demo popülasyonunu, portföy/adalet toplu
+istatistiklerini ve değerlendirme geçmişini gösterir. Bu yüzden hepsi
+`YoneticiKullanici` (is_staff) ile korunur. Son kullanıcı kendi verisini
+`api/portal_views.py` (yalnızca `request.user`), kurum ise
+`kimlik/kurum_views.py` (yalnızca aktif rızalı müşteriler) üzerinden görür —
+üç yüzey birbirinden tamamen ayrıdır ve hiçbiri diğerinin verisine erişemez.
+
+Tek istisna `bilgi`: kişisel/portföy verisi içermeyen servis meta bilgisi ve
+kök URL'de "docs" olarak duyurulan giriş noktası — açık bırakıldı.
+"""
+from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
 from aks_core.ozellik.cikarim import OZELLIK_ADLARI
+from kimlik.izinler import YoneticiKullanici
 from . import services
 
 
@@ -27,6 +40,7 @@ def bilgi(request):
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def metrikler(request):
     """§3b/U15: degerlendirme.py'nin (U6) persist ettiği CV+CI+kalibrasyon+alt-grup raporu."""
     if not services.metrikler_var():
@@ -35,12 +49,14 @@ def metrikler(request):
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def politika(request):
     """§3b/U16: karar mekanizması politikası (skor bantları + limit çarpanları)."""
     return Response(services.politika())
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def segmentasyon(request):
     """§3b/U26: segmentasyon.py'nin (denetimsiz K-Means keşif) persist ettiği rapor."""
     if not services.segmentasyon_var():
@@ -49,6 +65,7 @@ def segmentasyon(request):
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def genelleme_saglamlik(request):
     """§4 R8/R10/R11: persona-dışı genelleme, ince dosya stres testi, oyunlanabilirlik duyarlılığı."""
     if not services.genelleme_saglamlik_var():
@@ -57,6 +74,7 @@ def genelleme_saglamlik(request):
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def risk_istahi(request):
     """§3b Phase 7/7.4: risk_istahi.py'nin persist ettiği 3 profil (ihtiyatli/
     dengeli/atak) raporu — hedef kötü oranına göre seçilmiş eşikler + CI."""
@@ -66,11 +84,13 @@ def risk_istahi(request):
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def demo_musteriler(request):
     return Response(services.demo_personalar(_int(request.query_params, "adet_per_persona", 3)))
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def skorla_demo(request, musteri_id: int):
     islemler = services.demo_islemler(musteri_id)
     if islemler is None:
@@ -92,6 +112,7 @@ def skorla_demo(request, musteri_id: int):
 
 
 @api_view(["POST"])
+@permission_classes([YoneticiKullanici])
 def skorla(request):
     islemler = request.data.get("islemler") or []
     if not islemler:
@@ -107,6 +128,7 @@ def skorla(request):
 
 
 @api_view(["POST"])
+@permission_classes([YoneticiKullanici])
 def aciklama(request):
     islemler = request.data.get("islemler") or []
     if not islemler:
@@ -119,6 +141,7 @@ def aciklama(request):
 
 
 @api_view(["POST"])
+@permission_classes([YoneticiKullanici])
 def simulasyon(request):
     mid = request.data.get("musteri_id")
     islemler = request.data.get("islemler")
@@ -144,6 +167,7 @@ def simulasyon(request):
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def portfoy(request):
     if not services.demo_var():
         return Response({"hata": "Demo verisi yüklü değil"}, status=503)
@@ -157,6 +181,7 @@ def portfoy(request):
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def adalet(request):
     if not services.demo_var():
         return Response({"hata": "Demo verisi yüklü değil"}, status=503)
@@ -167,6 +192,7 @@ def adalet(request):
 
 
 @api_view(["POST"])
+@permission_classes([YoneticiKullanici])
 @parser_classes([MultiPartParser])
 def csv_skorla(request):
     """§3b Phase 7 / 7.1: adı tarihsel nedenlerle "csv_skorla" (URL/frontend geriye
@@ -192,11 +218,13 @@ def csv_skorla(request):
 
 
 @api_view(["POST"])
+@permission_classes([YoneticiKullanici])
 def asistan(request):
     return Response(services.asistan_yanit(request.data.get("soru", ""), request.data.get("baglam")))
 
 
 @api_view(["GET"])
+@permission_classes([YoneticiKullanici])
 def gecmis(request, musteri_id: int):
     kayitlar = services.gecmis(musteri_id)
     return Response({"musteri_id": musteri_id, "degerlendirme_sayisi": len(kayitlar), "gecmis": kayitlar})

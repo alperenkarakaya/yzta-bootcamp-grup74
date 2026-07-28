@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api";
+import { api, type KullaniciBilgisi } from "../api";
 import { Icon } from "../components/Icon";
+
+// Giriş sonrası doğru yüzey: yönetici → banka içi araştırma arayüzü (TÜM demo
+// popülasyonunu görür), kurum personeli → kurum paneli (yalnızca rıza verilen
+// müşteriler), sıradan kullanıcı → kendi portalı (yalnızca kendi yüklemeleri).
+function varisYolu(k: KullaniciBilgisi): string {
+  if (k.yonetici) return "/";
+  if (k.kurum_uyesi) return "/kurum/musteriler";
+  return "/portal";
+}
 
 // Site geneli giriş — küçük bir landing page: üstte kısa bir tanıtım, altında
 // iki kutucuk (Kullanıcı / Kurum) — giren kişi giriş şeklini KENDİSİ seçer.
@@ -30,18 +39,11 @@ export default function GirisPage() {
   useEffect(() => {
     (async () => {
       try {
-        await api.kurumBen();
-        navigate("/kurum/musteriler", { replace: true });
+        const k = await api.ben();
+        navigate(varisYolu(k), { replace: true });
         return;
       } catch {
-        /* kurum oturumu yok — sıradaki kontrole geç */
-      }
-      try {
-        await api.ben();
-        navigate("/", { replace: true });
-        return;
-      } catch {
-        /* hiç oturum yok — landing page gösterilecek */
+        /* oturum yok — landing page gösterilecek */
       }
       setKontrolEdiliyor(false);
     })();
@@ -52,12 +54,8 @@ export default function GirisPage() {
     setKHata("");
     setKYukleniyor(true);
     try {
-      if (kMod === "giris") {
-        await api.girisYap(kEmail, kSifre);
-      } else {
-        await api.kayitOl(kEmail, kSifre);
-      }
-      navigate("/");
+      const k = kMod === "giris" ? await api.girisYap(kEmail, kSifre) : await api.kayitOl(kEmail, kSifre);
+      navigate(varisYolu(k));
     } catch (err) {
       setKHata(String(err instanceof Error ? err.message : err));
     } finally {
@@ -107,7 +105,7 @@ export default function GirisPage() {
             <Icon name="account_circle" className="text-3xl text-primary" />
             <h2 className="font-headline-md text-headline-md text-on-background mt-1">Kullanıcı</h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-              Genel erişim ve gösterge paneli için giriş yapın ya da hesap oluşturun.
+              Kendi ekstrenizi yükleyip kapasite analizinizi görün. Yalnızca kendi verinize erişirsiniz.
             </p>
           </div>
 
@@ -171,6 +169,15 @@ export default function GirisPage() {
               {kYukleniyor ? "…" : kMod === "giris" ? "Giriş Yap" : "Hesap Oluştur"}
             </button>
           </form>
+
+          <p className="font-label-mono text-[11px] text-on-surface-variant/70 mt-3 text-center leading-relaxed">
+            Örnek kullanıcı: <span className="text-on-surface-variant">ornek@aks.com</span> /{" "}
+            <span className="text-on-surface-variant">OrnekSifre123</span>
+            <br />
+            Yönetici (araştırma paneli):{" "}
+            <span className="text-on-surface-variant">admin@aks.com</span> /{" "}
+            <span className="text-on-surface-variant">AdminSifre123</span>
+          </p>
         </div>
 
         {/* Kurum kutucuğu */}
@@ -221,15 +228,17 @@ export default function GirisPage() {
               {uYukleniyor ? "…" : "Giriş Yap"}
             </button>
           </form>
+
+          <p className="font-label-mono text-[11px] text-on-surface-variant/70 mt-3 text-center">
+            Örnek kurum: <span className="text-on-surface-variant">kurum@demo.aks</span> /{" "}
+            <span className="text-on-surface-variant">DemoKurum123!</span>
+          </p>
         </div>
       </div>
 
-      {/* Kendi ekstresini yükleyen son kullanıcı portalı ayrı bir akış — bkz. PortalLoginPage */}
-      <p className="font-label-mono text-[11px] text-on-surface-variant mt-8 text-center">
-        Kendi hesap ekstrenizi yükleyip kapasite analizinizi görmek mi istiyorsunuz?{" "}
-        <a href="/portal/giris" className="text-primary underline">
-          Kullanıcı Portalı
-        </a>
+      <p className="font-label-mono text-[11px] text-on-surface-variant/70 mt-8 text-center max-w-lg">
+        Her hesap yalnızca kendi verisini görür. Kurumlar bir müşterinin verisine ancak o müşteri
+        portalinden erişim talebini onayladıktan sonra, onayın süresi dolana kadar erişebilir.
       </p>
     </div>
   );

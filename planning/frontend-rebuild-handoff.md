@@ -28,8 +28,11 @@ yalnızca tamamlar. Bu her API yanıtında ve her ekranda görünür olmalı
 **Üç ayrı kullanıcı yüzeyi var — üçü de farklı oturum/nav'a sahip:**
 
 1. **Banka içi araştırma/demo arayüzü** (`/`, `/portfolio`, `/audit`,
-   `/customers`, `/upload`) — girişsiz, jüriye/analiste model kanıtı
-   gösterir. Gerçek müşteri verisi YOK, sentetik demo popülasyonu var.
+   `/customers`, `/upload`) — **YALNIZCA YÖNETİCİ** (`is_staff`) hesaplara
+   açık; jüriye/analiste model kanıtı gösterir. Gerçek müşteri verisi YOK,
+   sentetik demo popülasyonu var — ama tüm demo popülasyonunu ve toplu
+   istatistikleri gösterdiği için "herkesi gören" tek yüzeydir, bu yüzden
+   yetkilendirilmiştir (execution.md §3b Phase 7/7.11).
 2. **Müşteri portalı** (`/portal/*`) — e-posta/şifre ile giriş yapan gerçek
    son kullanıcı kendi ekstresini yükler, kendi geçmişini görür, kurumların
    erişim taleplerini onaylar/reddeder.
@@ -153,11 +156,17 @@ Aşağıdaki TypeScript tipleri **gerçek** backend yanıt şekilleridir (mevcut
 `src/api.ts`'ten, ekstra alan yok, uydurma yok) — yeni frontend bu tipleri
 aynen (ya da eşdeğerini) kullanmalı.
 
-### 4.1 Banka içi demo/araştırma uçları (girişsiz)
+### 4.1 Banka içi demo/araştırma uçları (**yönetici — `is_staff` zorunlu**)
+
+`/api/bilgi` dışındaki TÜM uçlar `YoneticiKullanici` izniyle korunur: giriş
+yoksa 403, giriş var ama `is_staff` değilse yine 403. Yeniden yazılan
+frontend bu sayfaları yalnızca `GET /api/auth/ben` yanıtında
+`yonetici: true` görürse göstermeli; aksi halde kullanıcıyı kendi yüzeyine
+(`kurum_uyesi` ise `/kurum/musteriler`, değilse `/portal`) yönlendirmeli.
 
 | Method | Yol | Açıklama |
 |---|---|---|
-| GET | `/api/bilgi` | Servis bilgisi, model adı, özellik listesi |
+| GET | `/api/bilgi` | Servis bilgisi, model adı, özellik listesi — **tek girişsiz uç** |
 | GET | `/api/metrikler` | CV+CI+kalibrasyon raporu (offline, `degerlendirme_raporu.json`) |
 | GET | `/api/politika` | Karar bantları (300-850 → risk/karar/limit çarpanı) |
 | GET | `/api/segmentasyon` | K-Means kümeleme raporu (denetimsiz, yalnızca araştırma) |
@@ -169,9 +178,9 @@ aynen (ya da eşdeğerini) kullanmalı.
 | POST | `/api/simulasyon` | What-if senaryo simülatörü |
 | GET | `/api/portfoy` | Toplu portföy istatistikleri (⚠ döngüsel veri, `uyari` alanına bak) |
 | GET | `/api/adalet` | Alt-grup adalet metrikleri (⚠ döngüsel veri) |
-| POST | `/api/csv-skorla` | Anonim belge yükleme (CSV/XLSX/PDF) — giriş gerektirmez |
+| POST | `/api/csv-skorla` | Belge yükleme (CSV/XLSX/PDF) — **artık yönetici gerektirir**; son kullanıcının karşılığı `/api/portal/yukle` |
 | POST | `/api/asistan` | LLM/kural tabanlı danışman yanıtı |
-| GET | `/api/gecmis/<musteri_id>` | Demo müşterinin (bellek-içi) skor geçmişi |
+| GET | `/api/gecmis/<musteri_id>` | **Demo** müşterinin skor geçmişi — portal (gerçek müşteri) kayıtlarını asla döndürmez |
 
 **`SkorSonuc` (`GET /api/skorla/<id>`):**
 ```ts
@@ -240,6 +249,11 @@ kapsamalı: `"kural" | "llm" | "llm-arac"`.
 
 ### 4.2 Kullanıcı portalı — auth (girişsiz uçlar)
 
+`KullaniciBilgisi` yanıtı `yonetici` ve `kurum_uyesi` bayraklarını da içerir;
+giriş/kayıt sonrası yönlendirme bunlara göre yapılır (yönetici → `/`,
+kurum üyesi → `/kurum/musteriler`, diğer → `/portal`). Bu bayraklar yalnızca
+yönlendirme içindir — yetki her uçta sunucuda zorlanır.
+
 | Method | Yol | Gövde | Yanıt |
 |---|---|---|---|
 | GET | `/api/auth/ben` | — | 200 `KullaniciBilgisi` / 401 `{giris_yapmamis:true}` — **her sayfa yüklemesinde çağrılmalı** (CSRF çerezini set eder) |
@@ -255,7 +269,7 @@ standart Django parola kuralları (çok yaygın/tamamen sayısal parolalar
 reddedilir) — hata mesajı `{"hata": "..."}` içinde Türkçe döner, frontend
 doğrudan gösterebilir.
 
-### 4.3 Kullanıcı portalı — belge yükleme + geçmiş (`IsAuthenticated`)
+### 4.3 Kullanıcı portalı — belge yükleme + geçmiş (`ProfilSahibi`)
 
 | Method | Yol | Gövde | Not |
 |---|---|---|---|
@@ -384,12 +398,14 @@ sunulamaz. Aynı desen `risk_istahi` (`RiskIstahiRaporu.uyari`) ve
 ### Rota haritası (`App.tsx`)
 
 ```
-/                          Layout → IntelligencePage      (banka içi, demo/araştırma)
+/giris                     GirisPage                      (site geneli landing: Kullanıcı / Kurum kutucukları,
+                                                           her birinin altında kendi giriş alanları + demo bilgileri)
+/                          Layout → IntelligencePage      (banka içi, demo/araştırma — YALNIZCA yönetici)
 /portfolio                 Layout → PortfolioPage
 /audit                     Layout → AuditPage
 /customers                 Layout → CustomersPage
 /customers/:id             Layout → CustomerDetailPage
-/upload                    Layout → CsvUploadPage         (anonim, /api/csv-skorla)
+/upload                    Layout → CsvUploadPage         (yönetici, /api/csv-skorla)
 
 /portal/giris               PortalLoginPage                (giriş/kayıt formu, iki sekme)
 /portal                    PortalLayout → PortalPage       (belge yükle + Geçmişim, açılır-kapanır işlem tablosu)
@@ -406,9 +422,11 @@ sunulamaz. Aynı desen `risk_istahi` (`RiskIstahiRaporu.uyari`) ve
 
 ### Üç `Layout` bileşeninin kapı mantığı
 
-- **`Layout.tsx`** (banka içi): oturum kontrolü YOK, herkese açık. Üstte
-  nav'da "Kullanıcı Portalı" ve "Kurum Girişi" linkleri var (çapraz-yüzey
-  geçiş).
+- **`Layout.tsx`** (banka içi): `api.ben()` çağırır. Giriş yoksa `/giris`'e,
+  giriş var ama `yonetici` değilse kullanıcının kendi yüzeyine
+  (`kurum_uyesi` ? `/kurum/musteriler` : `/portal`) `<Navigate replace>`
+  eder. Yalnızca yönetici içeri girer. Üstte nav'da e-posta + "Çıkış" ve
+  çapraz-yüzey linkleri ("Kullanıcı Portalı", "Kurum Girişi") var.
 - **`PortalLayout.tsx`**: `api.ben()` çağırır; `kullanici?.aks_no` yoksa
   (giriş yok VEYA giriş var ama bu bir kurum kullanıcısı) `/portal/giris`'e
   `<Navigate replace>` eder. `<Outlet context={kullanici}>` ile alt

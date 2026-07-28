@@ -76,18 +76,32 @@ komuta cevap vermeli (CI/deploy bunlara bakıyor olabilir).
 
 ## 3. Kimlik doğrulama ve oturum modeli (kritik — yanlış yapılırsa hiçbir şey çalışmaz)
 
-Backend **iki ayrı** Django session tabanlı oturum sistemi kullanıyor (aynı
-`django.contrib.auth.User`, ama farklı "kim bu kullanıcı" anlamı):
+Backend **tek bir** Django session tabanlı oturum sistemi kullanıyor (aynı
+`django.contrib.auth.User`, `sessionid` çerezi) — ama bu oturum **üç farklı
+"kim bu kullanıcı" anlamına** gelebilir. Login endpoint'i HER ZAMAN aynı,
+`POST /api/auth/giris`; ayrım kullanıcının hangi yan-tablolara sahip
+olduğunda:
 
-- **Müşteri (portal) oturumu**: `django.contrib.auth` session cookie
-  (`sessionid`). `POST /api/auth/kayit` veya `/api/auth/giris` ile açılır.
-  Her yeni kayıtta otomatik bir `kimlik.Profil` (rastgele AKS numarası)
-  oluşturulur.
-- **Kurum oturumu**: AYNI Django auth sistemi, ama kullanıcı bir
-  `kimlik.KurumUyeligi` satırına sahip olmalı (nasıl oluşturulduğu:
-  `python manage.py bootstrap_kurum` — management command, `kimlik/management/`).
-  Login endpoint'i **aynı** `/api/auth/giris` — ayrım, kullanıcının
-  `KurumUyeligi`'nin olup olmamasında.
+- **Sıradan müşteri (portal) oturumu**: her yeni kayıtta (`POST /api/auth/kayit`)
+  otomatik bir `kimlik.Profil` (rastgele AKS numarası) oluşturulur. Bu
+  hesabın `is_staff=False` ve `KurumUyeligi` yoktur.
+- **Kurum oturumu**: kullanıcı bir `kimlik.KurumUyeligi` satırına sahip
+  olmalı (nasıl oluşturulduğu: `python manage.py bootstrap_kurum` —
+  management command, `kimlik/management/`).
+- **Yönetici (banka içi araştırma) oturumu** — execution.md §3b Phase 7/7.11
+  ile eklendi: `User.is_staff=True`. Bu, `api/views.py` altındaki TÜM demo/
+  araştırma uçlarını (`/api/demo-musteriler`, `/api/portfoy`, `/api/gecmis/…`,
+  …) açan tek bayrak; `python manage.py bootstrap_demo_hesaplar` ile kurulan
+  demo hesabı `admin@aks.com` bu tiptedir. `is_staff` kasıtlı seçildi — ayrı
+  bir rol tablosu yerine Django'nun kendi yönetici bayrağı kullanıldı, çünkü
+  bu yüzey admin paneliyle aynı güven seviyesini gerektiriyor.
+
+**`GET /api/auth/ben` yanıtına eklenen `yonetici`/`kurum_uyesi` bayrakları**
+(bkz. §4.2) frontend'in bu üç oturumu ayırt etmesinin kanonik yoludur —
+`aks_no` alanının varlığına bakmak yerine bu ikisi kullanılmalı. **Bunlar
+yalnızca YÖNLENDİRME ipucudur**, gerçek yetki her API ucunda sunucuda
+zorlanır (`YoneticiKullanici` / `KurumUyesi` / `ProfilSahibi`) — tarayıcıda
+bu bayrağı taklit etmek hiçbir veriye erişim sağlamaz, yalnızca 403 alınır.
 
 **CSRF akışı (frontend'in doğru yapması gereken en kırılgan kısım):**
 
@@ -136,13 +150,21 @@ tarayıcı boundary'yi kendisi ekler; elle yazmak isteği backend'de
 parse edilemez hale getirir (bu, geçmişte gerçek bir hata kaynağıydı).
 
 **Oturum tipi ayrımı frontend'de nasıl anlaşılır:**
-- `GET /api/auth/ben` → 401 ise: giriş yok.
-- 200 dönerse ama gövdede `aks_no` YOKSA: bu bir kurum kullanıcısı (Profil'i
-  yok) — portal'a değil kurum'a yönlendirilmeli.
-- `GET /api/kimlik/kurum/ben` → 403 ise: bu kullanıcı hiçbir kuruma üye değil.
+- `GET /api/auth/ben` → 401 ise: giriş yok → `/giris`'e (`Layout`) veya
+  ilgili yüzeyin kendi giriş sayfasına (`PortalLayout` → `/portal/giris`,
+  `KurumLayout` → `/kurum/giris`) yönlendirilir.
+- 200 dönerse gövdedeki `yonetici`/`kurum_uyesi` bayraklarına bakılır
+  (yukarıdaki üçlü ayrım). `aks_no` alanı hâlâ vardır ama artık AYRIM için
+  KULLANILMAMALI — bir yönetici hesabının da `Profil`'i (dolayısıyla
+  `aks_no`'su) olabilir, tersi de mümkündür; bayraklar bunun için var.
+- `GET /api/kimlik/kurum/ben` → 403 ise: bu kullanıcı hiçbir kuruma üye
+  değil (kurum-taraflı sayfalarda ikinci bir doğrulama katmanı).
 
-`PortalLayout`/`KurumLayout` mevcut implementasyonu tam olarak bunu yapıyor
-(§6'da tam kod var) — yeni frontend aynı kapı mantığını tekrar etmeli.
+Dört `Layout`'un (`Layout`, `PortalLayout`, `KurumLayout` — `AnaSayfaPage`/
+`GirisPage` layout kullanmaz) her biri kendi kapı mantığını uyguluyor (§6'da
+tam kod var) — yeni frontend aynı deseni tekrar etmeli. `Layout` en katı
+olanı: giriş yoksa `/giris`'e, giriş var ama `yonetici` değilse kendi
+yüzeyine (`kurum_uyesi` ? kurum panel : portal) geri gönderir.
 
 ---
 
@@ -262,7 +284,11 @@ yönlendirme içindir — yetki her uçta sunucuda zorlanır.
 | POST | `/api/auth/cikis` | — | `{cikis_yapildi:true}` |
 
 ```ts
-interface KullaniciBilgisi { id: number; email: string; ad: string; aks_no?: string; }
+interface KullaniciBilgisi {
+  id: number; email: string; ad: string; aks_no?: string;
+  yonetici?: boolean;     // is_staff — banka içi araştırma yüzeyine erişebilir
+  kurum_uyesi?: boolean;  // KurumUyeligi var — kurum paneline erişebilir
+}
 ```
 `sifre` doğrulaması Django `MinimumLengthValidator` (min 8 karakter) +
 standart Django parola kuralları (çok yaygın/tamamen sayısal parolalar
@@ -304,7 +330,7 @@ Taban: `/api/kimlik`
 | Method | Yol | Gövde | Not |
 |---|---|---|---|
 | GET | `/profilim` | — | `{aks_no, telefon_dogrulandi_mi}` |
-| POST | `/telefon/gonder` | `{telefon}` (E.164, ör. `+905551112233`) | Throttle: 5/dk. `DEBUG=true` iken yanıtta `debug_kod` döner (gerçek SMS sağlayıcısı yok — OQ) |
+| POST | `/telefon/gonder` | `{telefon}` (E.164, ör. `+905551112233`) | Throttle: 5/dk. `DJANGO_DEBUG=true` VEYA `AKS_OTP_DEMO_KOD=true` iken yanıtta `demo_kod` döner (gerçek SMS sağlayıcısı yok — OQ; `debug_kod` eski ad, geriye dönük uyumluluk için hâlâ da döner) |
 | POST | `/telefon/dogrula` | `{dogrulama_id, kod}` | 5 deneme hakkı, 5 dk geçerlilik |
 | GET | `/erisim-talepleri` | — | Bu müşteriye gelen TÜM talepler (durum: bekliyor/onaylandi/reddedildi/iptal_edildi) |
 | POST | `/erisim-talebi/<id>/onayla` | `{gecerlilik_gun?: number}` (varsayılan 30, 1-365 arası) | |
@@ -524,7 +550,8 @@ aşağıdakiler **PO'nun aktif olarak beklediği** eklemeler:
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | boş | Şu an KOD TARAFINDA hiçbir yerde okunmuyor (yalnızca `.env.example`'da belgelenmiş bir gelecek-kullanım notu) — asıl DB bağlantısı `DATABASE_URL` üzerinden | Yalnızca Supabase'in kendi client SDK'sı kullanılacaksa gerekir; bugünkü Django ORM yolu için gereksiz |
 | `REDIS_URL` | boş → in-memory cache | Upstash Redis | Prod'da birden fazla worker/process arasında cache paylaşımı gerekiyorsa |
 | `DJANGO_SECRET_KEY` | dev placeholder | Django imzalama anahtarı | **Prod'a çıkmadan önce mutlaka** rastgele, gizli bir değerle değiştirilmeli |
-| `DJANGO_DEBUG` | `true` | `true` iken OTP kodu API yanıtında görünür (`debug_kod`) — SMS sağlayıcısı yok | **Prod'da `false` olmalı** — aksi halde OTP kodları herkese açık döner |
+| `DJANGO_DEBUG` | `true` | Hata sayfalarında tam traceback | **Prod'da `false` olmalı** |
+| `AKS_OTP_DEMO_KOD` | `false` | `true` iken OTP kodu API yanıtında görünür (`demo_kod`) — SMS sağlayıcısı yok, `DEBUG`'tan KASITLI OLARAK ayrı (bu ortamda `DJANGO_DEBUG=false` ama OTP akışının yine de test edilebilmesi gerekiyordu) | **Prod'da `false` olmalı** — aksi halde OTP kodları herkese açık döner |
 | `DJANGO_ALLOWED_HOSTS` | localhost/127.0.0.1 | Django `ALLOWED_HOSTS` | Prod domain(ler)i eklenmeli |
 | `CORS_ALLOWED_ORIGINS` | Vite dev portları (5173/5174) | CORS + `CSRF_TRUSTED_ORIGINS` (aynı liste) | Yeni frontend başka bir origin'den (ör. ayrı bir prod domain) servis edilecekse bu listeye eklenmeli — **yeni frontend'in kendi origin'i buraya girmezse CSRF/CORS sessizce başarısız olur** |
 | `AKS_DATA_DIR` / `AKS_MODEL` | boş → paket-içi varsayılan | `aks_core` veri/model yolu override'ı | Yalnızca model dosyaları paket dışına taşınırsa gerekir |
@@ -554,8 +581,8 @@ Backend'e dokunulmuyorsa bile, yeni frontend'in beklediği sözleşmeyi
 doğrulamak için:
 
 ```bash
-cd product/02-ai-agents && python -m pytest tests/ -q     # aks_core (83 test)
-cd product/04-backend && python manage.py test -v 2       # Django (48 test)
+cd product/02-ai-agents && python -m pytest tests/ -q     # aks_core (89 test)
+cd product/04-backend && python manage.py test -v 2       # Django (66 test)
 ```
 
 Bu testler API yanıt şekillerini (ör. `HamIslemSaklamaTesti`,
@@ -573,7 +600,7 @@ kalmalı.
 doğrudan ilgilendirenler özetlendi:
 
 - **OQ-47 (SMS sağlayıcısı yok):** telefon doğrulama bugün yalnızca
-  `DEBUG=true` iken `debug_kod` ile çalışıyor. Prod'da gerçek bir SMS
+  `AKS_OTP_DEMO_KOD=true` iken `demo_kod` ile çalışıyor. Prod'da gerçek bir SMS
   sağlayıcısı bağlanana kadar telefon doğrulama akışı canlıda kullanılamaz
   — yeni frontend bunu bir "demo modu" rozeti ile açıkça işaretlemeli.
 - **OQ-48 (canlı `ANTHROPIC_API_KEY` testi):** §7/§8'de detaylı.
@@ -592,9 +619,14 @@ doğrudan ilgilendirenler özetlendi:
 Bu bir görev listesi değil, "aşağıdakilerin hepsini hâlâ karşılıyor mu"
 kontrolü için:
 
-- [ ] 3 ayrı yüzey (banka içi / portal / kurum), 3 ayrı oturum kapısı
+- [ ] Herkese açık ana sayfa (`/`) + 3 girişli yüzey (banka içi/**yönetici**,
+      portal/müşteri, kurum/personel), her birinin kendi oturum kapısı
+- [ ] Banka içi yüzey `yonetici` bayrağı olmayan hesaba (giriş yapmış olsa
+      bile) hiçbir veri göstermiyor — kendi yüzeyine geri yönlendiriyor
 - [ ] `auth/ben` → CSRF çerezi → sonraki her POST'ta `X-CSRFToken`
 - [ ] Multipart upload'ta `Content-Type` elle set edilmiyor
+- [ ] Yükleme boyutu sınırı (10 MB, backend zaten uyguluyor) aşıldığında
+      backend'in döndürdüğü mesaj olduğu gibi gösteriliyor
 - [ ] `klasik_skor` her zaman gösteriliyor, hiçbir yerde gizlenmiyor/ezilmiyor
 - [ ] `veri_kaynagi: "dongusel"` + `uyari` alanları her göründükleri yerde
       render ediliyor (portföy, adalet, risk iştahı, segmentasyon, genelleme)

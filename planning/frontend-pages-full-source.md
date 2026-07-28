@@ -11,6 +11,17 @@
 > "şu görünsün" derken kod bloklarındaki değişkenlerin/koşulların aynı
 > kalması gerektiğini unutmayın.
 
+> **Güncellik (Phase 7.11/7.12 sonrası).** Bu tur üç yapısal değişiklik
+> getirdi, Stitch'e verilecek brief'lerde bunlar KORUNMALI:
+> **(1)** Site kökü `/` artık herkese açık **ana sayfa** (`AnaSayfaPage`);
+> banka panelinin ana ekranı `/panel`e taşındı — diğer panel yolları
+> (`/portfolio`, `/customers`, …) yerinde kaldı.
+> **(2)** Banka içi araştırma yüzeyi artık **oturumsuz değil**: yalnızca
+> yönetici (`is_staff`) hesaplara açık, hem arayüzde (`Layout`) hem her API
+> ucunda (`YoneticiKullanici`) zorlanıyor.
+> **(3)** Site geneli giriş kapısı `/giris` (`GirisPage`) — Kullanıcı/Kurum
+> kutucukları, giriş sonrası role göre yönlendirme.
+
 Ortak alt yapı (her sayfa bunları kullanır, tekrar yazılmıyor):
 `src/api.ts` (tam API istemcisi — bkz. `frontend-rebuild-handoff.md` §4),
 `src/lib/skor.ts`, `src/components/Icon.tsx`, üç `Layout` bileşeni, tasarım
@@ -193,10 +204,16 @@ reddetmiş ama AKS onaylamış — ürünün ana pazarlama iddiası), "Onayland�
 "Reddedildi". Eşikler `/api/politika`'dan çekilir, hardcode değildir.
 
 ### Üç `Layout` bileşeni — tam kaynak `frontend-rebuild-handoff.md` §6'da
-(kısaca: `Layout.tsx` = banka içi demo, oturumsuz, top+bottom nav;
-`PortalLayout.tsx` = müşteri portalı, `api.ben()` ile kapı kontrolü;
-`KurumLayout.tsx` = kurum paneli, `api.kurumBen()` ile kapı kontrolü —
-üçü de aynı koyu/glass tasarım dilini paylaşır ama ayrı marka/nav taşır).
+
+| Bileşen | Yüzey | Kapı mantığı |
+|---|---|---|
+| `Layout.tsx` | Banka içi araştırma | `api.ben()` → oturum yoksa `/giris`; oturum var ama `yonetici` değilse kendi yüzeyine (`kurum_uyesi` ? `/kurum/musteriler` : `/portal`). Top + bottom nav, üstte e-posta + Çıkış. |
+| `PortalLayout.tsx` | Müşteri portalı | `api.ben()` → `aks_no` yoksa `/portal/giris` |
+| `KurumLayout.tsx` | Kurum paneli | `api.kurumBen()` → hata (401/403) alırsa `/kurum/giris` |
+
+Üçü de aynı koyu/glass tasarım dilini paylaşır ama ayrı marka/nav taşır.
+`AnaSayfaPage` ve `GirisPage` **hiçbir layout kullanmaz** — kendi tam-sayfa
+düzenlerini kurarlar (§0.1 ve §0.2).
 
 ### `src/App.tsx` — tam rota tanımı
 ```tsx
@@ -204,6 +221,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import PortalLayout from "./components/PortalLayout";
 import KurumLayout from "./components/KurumLayout";
+import AnaSayfaPage from "./pages/AnaSayfaPage";
+import GirisPage from "./pages/GirisPage";
 import IntelligencePage from "./pages/IntelligencePage";
 import PortfolioPage from "./pages/PortfolioPage";
 import AuditPage from "./pages/AuditPage";
@@ -224,9 +243,18 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Banka arayüzü (iç kullanım — demo/araştırma) */}
+        {/* Herkese açık ana sayfa — site kökü. Veri gösteren hiçbir şey yok,
+            yalnızca ürünü anlatır ve doğru kapıya yönlendirir. */}
+        <Route index element={<AnaSayfaPage />} />
+
+        {/* Site geneli giriş — banka içi arayüzün önündeki zorunlu kapı */}
+        <Route path="giris" element={<GirisPage />} />
+
+        {/* Banka arayüzü (iç kullanım — demo/araştırma), YALNIZCA yönetici (bkz. Layout.tsx).
+            Panel ana ekranı `/` iken `/panel`e taşındı (kök artık ana sayfa); diğer
+            panel yolları geriye dönük uyumluluk için yerinde bırakıldı. */}
         <Route element={<Layout />}>
-          <Route index element={<IntelligencePage />} />
+          <Route path="panel" element={<IntelligencePage />} />
           <Route path="portfolio" element={<PortfolioPage />} />
           <Route path="audit" element={<AuditPage />} />
           <Route path="customers" element={<CustomersPage />} />
@@ -234,7 +262,7 @@ export default function App() {
           <Route path="upload" element={<CsvUploadPage />} />
         </Route>
 
-        {/* Kullanıcı portalı — ayrı giriş + nav */}
+        {/* Kullanıcı portalı (§3b Phase 6/7) — ayrı giriş + nav */}
         <Route path="portal/giris" element={<PortalLoginPage />} />
         <Route element={<PortalLayout />}>
           <Route path="portal" element={<PortalPage />} />
@@ -243,13 +271,14 @@ export default function App() {
           <Route path="portal/riza-defterim" element={<PortalRizaPage />} />
         </Route>
 
-        {/* Kurum (banka) arayüzü — rıza-tabanlı gerçek müşteri erişimi */}
+        {/* Kurum (banka) arayüzü (§3b Phase 7/7.2/7.4) — rıza-tabanlı gerçek müşteri erişimi */}
         <Route path="kurum/giris" element={<KurumLoginPage />} />
         <Route element={<KurumLayout />}>
           <Route path="kurum/musteriler" element={<KurumMusterilerPage />} />
           <Route path="kurum/musteri/:aksNo" element={<KurumMusteriDetayPage />} />
         </Route>
 
+        {/* Eşleşmeyen her yol: aksi halde bomboş bir sayfa render ediliyordu. */}
         <Route path="*" element={<BulunamadiPage />} />
       </Routes>
     </BrowserRouter>
@@ -259,9 +288,455 @@ export default function App() {
 
 ---
 
-## Kısım A — Banka içi demo/araştırma arayüzü (`Layout`, oturumsuz)
+## Kısım G — Giriş kapıları (layout'suz, tam sayfa)
 
-### A1. `IntelligencePage.tsx` — rota `/`
+Bu iki sayfa hiçbir `Layout` kullanmaz; kendi tam-sayfa düzenlerini kurar.
+İkisi de sitenin "önü" — Stitch'te en çok görsel özgürlük burada, çünkü
+veri sözleşmesi neredeyse yok.
+
+### G1. `AnaSayfaPage.tsx` — rota `/` (herkese açık ana sayfa)
+
+**Stitch brief:** Klasik bir ürün landing page'i. Üstte ince bir header
+(solda "AKS" kelime markası, sağda tek bir birincil buton). Ortada geniş
+nefes alanlı bir hero: büyük başlık "Alternatif Kapasite Skoru", altında
+ürünün ne yaptığını anlatan 3–4 satırlık bir paragraf, altında iki buton
+("Başla" birincil, "Projeyi incele" ikincil/çerçeveli). Hero'nun altında
+2×2 kart ızgarası (mobilde tek sütun): her kartta bir ikon, kısa başlık ve
+2–3 satır açıklama. En altta ince bir footer: yasal/dürüstlük şerhi.
+
+Ton: sakin, teknik-güven veren, koyu tema. Bu sayfa **veri göstermez** —
+grafik, sayı, tablo YOK. Tek dinamik şey sağ üstteki buton.
+
+**Durum/etkileşim envanteri:**
+
+| Durum | Nereden | Etkisi |
+|---|---|---|
+| `kullanici` | `api.ben()` (sessiz; 401 normaldir, hata gösterilmez) | `null` → buton "Giriş / Kayıt" → `/giris`. Dolu → buton "Panelime git" → role göre `/panel` \| `/kurum/musteriler` \| `/portal` |
+
+**Kritik davranış:** Bu sayfa **zorunlu yönlendirme yapmaz.** Giriş yapmış
+kullanıcı da ana sayfayı görebilmeli — zorunlu kapı `/giris`'in ve üç
+`Layout`'un işi. Stitch'te "girişliyse otomatik panele at" gibi bir davranış
+EKLENMEMELİ.
+
+```tsx
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { api, type KullaniciBilgisi } from "../api";
+import { Icon } from "../components/Icon";
+
+// Site kökü (`/`) — herkese açık ana sayfa. Bilinçli olarak İNCE tutuldu:
+// ürünün ne olduğunu bir ekranda anlatır ve doğru kapıya yönlendirir, başka
+// hiçbir iş yapmaz. Veri gösteren her yüzey (banka paneli, portal, kurum)
+// kendi oturum kapısının ARKASINDA — bkz. execution.md §3b Phase 7/7.11.
+//
+// Buradan yönlendirme YAPILMAZ (giriş yapmış kullanıcı da ana sayfayı
+// görebilmeli); yalnızca oturum varsa üstteki buton "Panelime git"e dönüşür.
+// Zorunlu yönlendirme `/giris`'in işi.
+
+const OZELLIKLER = [
+  {
+    ikon: "receipt_long",
+    baslik: "Ekstre → kapasite skoru",
+    metin: "PDF, Excel veya CSV hesap ekstresi yüklenir; 9 davranışsal özellik çıkarılıp 300–850 aralığında bir AKS skoru üretilir.",
+  },
+  {
+    ikon: "compare_arrows",
+    baslik: "Bankanın skorunu ezmez",
+    metin: "AKS tamamlayıcıdır. Klasik skor her değerlendirmede olduğu gibi, değiştirilmeden değiştirilemez denetim izine yazılır.",
+  },
+  {
+    ikon: "verified_user",
+    baslik: "Erişim müşterinin onayıyla",
+    metin: "Kurum, AKS numarasıyla erişim talebi açar; müşteri portalinden onaylar. Onay sürelidir, her an iptal edilebilir.",
+  },
+  {
+    ikon: "insights",
+    baslik: "Neden bu skor",
+    metin: "Her sonuç SHAP gerekçe kodlarıyla gelir — hangi faktör skoru ne yönde etkiledi, açıkça gösterilir.",
+  },
+];
+
+export default function AnaSayfaPage() {
+  const [kullanici, setKullanici] = useState<KullaniciBilgisi | null>(null);
+
+  useEffect(() => {
+    // Sessizce dener — oturum yoksa 401 normaldir, hata gösterilmez.
+    api.ben().then(setKullanici).catch(() => setKullanici(null));
+  }, []);
+
+  const panelYolu = kullanici?.yonetici
+    ? "/panel"
+    : kullanici?.kurum_uyesi
+      ? "/kurum/musteriler"
+      : "/portal";
+
+  return (
+    <div className="min-h-screen bg-background text-on-background">
+      <header className="border-b border-outline-variant/30">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+          <span className="font-display-sm text-display-sm font-bold tracking-tighter">AKS</span>
+          {kullanici ? (
+            <Link
+              to={panelYolu}
+              className="px-4 py-2 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors"
+            >
+              Panelime git
+            </Link>
+          ) : (
+            <Link
+              to="/giris"
+              className="px-4 py-2 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors"
+            >
+              Giriş / Kayıt
+            </Link>
+          )}
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4">
+        <section className="py-20 text-center">
+          <h1 className="font-display-lg text-display-lg tracking-tighter max-w-2xl mx-auto">
+            Alternatif Kapasite Skoru
+          </h1>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-4 max-w-xl mx-auto leading-relaxed">
+            Klasik kredi skoru ince dosyalı kişileri görmez: düzenli geliri ve sağlam ödeme
+            davranışı olan biri, yalnızca kredi geçmişi kısa diye reddedilebilir. AKS, hesap
+            hareketlerinden okunan davranışsal kapasiteyi bankanın kendi skorunun{" "}
+            <em>yanına</em> koyar — yerine değil.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center mt-8">
+            <Link
+              to="/giris"
+              className="px-5 py-2.5 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors"
+            >
+              Başla
+            </Link>
+            <a
+              href="https://github.com/alperenkarakaya/yzta-bootcamp-grup74"
+              target="_blank"
+              rel="noreferrer"
+              className="px-5 py-2.5 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-label-mono hover:bg-surface-container transition-colors"
+            >
+              Projeyi incele
+            </a>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
+          {OZELLIKLER.map((o) => (
+            <div key={o.baslik} className="bg-surface-container-low hairline-border rounded-xl p-6">
+              <Icon name={o.ikon} className="text-2xl text-primary" />
+              <h2 className="font-headline-md text-headline-md mt-2">{o.baslik}</h2>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">{o.metin}</p>
+            </div>
+          ))}
+        </section>
+      </main>
+
+      <footer className="border-t border-outline-variant/30">
+        <div className="max-w-5xl mx-auto px-4 py-8 font-label-mono text-[11px] text-on-surface-variant/70 text-center leading-relaxed">
+          AKS bir araştırma/bootcamp projesidir; gerçek bir kredi kararı vermez ve yatırım ya da
+          finansal tavsiye içermez. Model sentetik veri üzerinde eğitilmiştir.
+        </div>
+      </footer>
+    </div>
+  );
+}
+```
+
+---
+
+### G2. `GirisPage.tsx` — rota `/giris` (site geneli giriş kapısı)
+
+**Stitch brief:** Ortalanmış, iki sütunlu bir "giriş türünü seç" ekranı.
+Üstte küçük bir hero (ikon + "AKS — Alternatif Kapasite Skoru" + tek satır
+açıklama). Altında yan yana iki eşit kart (mobilde alt alta):
+
+- **Kullanıcı kartı:** ikon, başlık, açıklama, sonra Giriş/Kayıt arasında
+  geçiş yapan iki sekmeli bir segment kontrol, altında e-posta + şifre
+  alanları ve tek bir birincil buton. Kartın altında küçük gri yazıyla
+  demo hesap bilgileri (örnek kullanıcı + yönetici).
+- **Kurum kartı:** ikon, başlık, açıklama, sonra doğrudan e-posta + şifre
+  ve birincil buton. **Kayıt sekmesi YOK** — kurum üyeliği kasıtlı olarak
+  provizyonlanır, öz-kayıt yoktur. Kartın altında demo kurum bilgisi.
+
+En altta tek satır gri yazı: erişim/rıza modelini özetleyen şerh.
+
+**Durum/etkileşim envanteri:**
+
+| Durum | Tip | Not |
+|---|---|---|
+| `kontrolEdiliyor` | `boolean` | Açılışta `api.ben()` denenir; oturum varsa `varisYolu()` ile hemen yönlendirilir, form hiç görünmez |
+| `kMod` | `"giris" \| "kayit"` | Kullanıcı kartındaki segment kontrol |
+| `kEmail`/`kSifre`/`kHata`/`kYukleniyor` | Kullanıcı kartı formu | Şifre `minLength={8}` (backend `MinimumLengthValidator` ile aynı) |
+| `uEmail`/`uSifre`/`uHata`/`uYukleniyor` | Kurum kartı formu | — |
+
+**Kritik davranış — kurum girişi iki adımlıdır:** `api.girisYap()` başarılı
+olsa bile hesap bir kuruma üye olmayabilir. Bu yüzden hemen ardından
+`api.kurumBen()` çağrılır; başarısızsa hata gösterilir **ve
+`api.cikisYap()` ile oturum geri alınır** — aksi halde kullanıcı "giriş
+yaptım ama hiçbir yere giremiyorum" durumunda kalırdı. Bu mantık
+`KurumLoginPage.tsx` ile birebir aynıdır.
+
+**Kritik davranış — rol bazlı yönlendirme:** `varisYolu()` giriş/kayıt
+sonrası varışı belirler (yönetici → `/panel`, kurum üyesi →
+`/kurum/musteriler`, diğer → `/portal`). Bu bayraklar yalnızca YÖNLENDİRME
+içindir; gerçek yetki her uçta sunucuda zorlanır.
+
+```tsx
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api, type KullaniciBilgisi } from "../api";
+import { Icon } from "../components/Icon";
+
+// Giriş sonrası doğru yüzey: yönetici → banka içi araştırma arayüzü (TÜM demo
+// popülasyonunu görür), kurum personeli → kurum paneli (yalnızca rıza verilen
+// müşteriler), sıradan kullanıcı → kendi portalı (yalnızca kendi yüklemeleri).
+function varisYolu(k: KullaniciBilgisi): string {
+  if (k.yonetici) return "/panel";
+  if (k.kurum_uyesi) return "/kurum/musteriler";
+  return "/portal";
+}
+
+// Site geneli giriş — küçük bir landing page: üstte kısa bir tanıtım, altında
+// iki kutucuk (Kullanıcı / Kurum) — giren kişi giriş şeklini KENDİSİ seçer.
+// Her kutucuğun altında doğrudan giriş alanları var (ayrı bir sayfaya
+// geçmeye gerek yok). İkisi de AYNI oturum sistemini (`/api/auth/*`)
+// kullanır — Kurum tarafı `kurumBen()` ile üyeliğini doğrular (KurumLoginPage
+// ile birebir aynı mantık). Giriş sonrası varış `varisYolu()` ile role göre
+// belirlenir. Herkese açık ana sayfa ayrı bir sayfadır (`/`, AnaSayfaPage).
+export default function GirisPage() {
+  const navigate = useNavigate();
+  const [kontrolEdiliyor, setKontrolEdiliyor] = useState(true);
+
+  // Kullanıcı kutucuğu
+  const [kMod, setKMod] = useState<"giris" | "kayit">("giris");
+  const [kEmail, setKEmail] = useState("");
+  const [kSifre, setKSifre] = useState("");
+  const [kHata, setKHata] = useState("");
+  const [kYukleniyor, setKYukleniyor] = useState(false);
+
+  // Kurum kutucuğu — öz-kayıt yok (kurum üyeliği kasıtlı provizyonlanır,
+  // bkz. KurumLoginPage.tsx), yalnızca giriş.
+  const [uEmail, setUEmail] = useState("");
+  const [uSifre, setUSifre] = useState("");
+  const [uHata, setUHata] = useState("");
+  const [uYukleniyor, setUYukleniyor] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const k = await api.ben();
+        navigate(varisYolu(k), { replace: true });
+        return;
+      } catch {
+        /* oturum yok — landing page gösterilecek */
+      }
+      setKontrolEdiliyor(false);
+    })();
+  }, [navigate]);
+
+  async function kullaniciGonder(e: React.FormEvent) {
+    e.preventDefault();
+    setKHata("");
+    setKYukleniyor(true);
+    try {
+      const k = kMod === "giris" ? await api.girisYap(kEmail, kSifre) : await api.kayitOl(kEmail, kSifre);
+      navigate(varisYolu(k));
+    } catch (err) {
+      setKHata(String(err instanceof Error ? err.message : err));
+    } finally {
+      setKYukleniyor(false);
+    }
+  }
+
+  async function kurumGonder(e: React.FormEvent) {
+    e.preventDefault();
+    setUHata("");
+    setUYukleniyor(true);
+    try {
+      await api.girisYap(uEmail, uSifre);
+      await api.kurumBen(); // bu hesap gerçekten bir kuruma üye mi?
+      navigate("/kurum/musteriler");
+    } catch (err) {
+      setUHata(
+        String(err instanceof Error ? err.message : err) +
+          " (bu hesabın bir kuruma üyeliği yoksa kurum girişi kullanılamaz)"
+      );
+      await api.cikisYap().catch(() => {});
+    } finally {
+      setUYukleniyor(false);
+    }
+  }
+
+  if (kontrolEdiliyor) {
+    return <p className="p-8 text-center font-body-sm text-body-sm text-on-surface-variant">Yükleniyor…</p>;
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center px-4 py-16">
+      {/* Hero */}
+      <div className="text-center max-w-lg mb-10">
+        <Icon name="insights" className="text-5xl text-primary" />
+        <h1 className="font-display-sm text-display-sm text-on-background mt-3">AKS — Alternatif Kapasite Skoru</h1>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">
+          Banka skorunu tamamlayan davranışsal kredi kapasitesi platformu. Devam etmek için giriş türünüzü seçin.
+        </p>
+      </div>
+
+      {/* İki kutucuk: Kullanıcı / Kurum */}
+      <div className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Kullanıcı kutucuğu */}
+        <div className="bg-surface-container-low hairline-border rounded-xl p-6 flex flex-col">
+          <div className="text-center mb-4">
+            <Icon name="account_circle" className="text-3xl text-primary" />
+            <h2 className="font-headline-md text-headline-md text-on-background mt-1">Kullanıcı</h2>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Kendi ekstrenizi yükleyip kapasite analizinizi görün. Yalnızca kendi verinize erişirsiniz.
+            </p>
+          </div>
+
+          <div className="flex mb-4 rounded-DEFAULT border border-outline-variant/30 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setKMod("giris")}
+              className={`flex-1 py-1.5 font-label-mono text-label-mono transition-colors ${
+                kMod === "giris" ? "bg-primary-container text-white" : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              Giriş Yap
+            </button>
+            <button
+              type="button"
+              onClick={() => setKMod("kayit")}
+              className={`flex-1 py-1.5 font-label-mono text-label-mono transition-colors ${
+                kMod === "kayit" ? "bg-primary-container text-white" : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              Kayıt Ol
+            </button>
+          </div>
+
+          <form onSubmit={kullaniciGonder} className="flex flex-col gap-3">
+            <div>
+              <label className="font-label-mono text-[11px] text-on-surface-variant block mb-1">E-posta</label>
+              <input
+                type="email"
+                required
+                value={kEmail}
+                onChange={(e) => setKEmail(e.target.value)}
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary"
+                placeholder="ornek@eposta.com"
+              />
+            </div>
+            <div>
+              <label className="font-label-mono text-[11px] text-on-surface-variant block mb-1">Şifre</label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={kSifre}
+                onChange={(e) => setKSifre(e.target.value)}
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary"
+                placeholder="En az 8 karakter"
+              />
+            </div>
+
+            {kHata && (
+              <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-2.5 font-body-sm text-body-sm">
+                {kHata}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={kYukleniyor}
+              className="w-full py-2.5 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors disabled:opacity-50 mt-1"
+            >
+              {kYukleniyor ? "…" : kMod === "giris" ? "Giriş Yap" : "Hesap Oluştur"}
+            </button>
+          </form>
+
+          <p className="font-label-mono text-[11px] text-on-surface-variant/70 mt-3 text-center leading-relaxed">
+            Örnek kullanıcı: <span className="text-on-surface-variant">ornek@aks.com</span> /{" "}
+            <span className="text-on-surface-variant">OrnekSifre123</span>
+            <br />
+            Yönetici (araştırma paneli):{" "}
+            <span className="text-on-surface-variant">admin@aks.com</span> /{" "}
+            <span className="text-on-surface-variant">AdminSifre123</span>
+          </p>
+        </div>
+
+        {/* Kurum kutucuğu */}
+        <div className="bg-surface-container-low hairline-border rounded-xl p-6 flex flex-col">
+          <div className="text-center mb-4">
+            <Icon name="account_balance" className="text-3xl text-primary" />
+            <h2 className="font-headline-md text-headline-md text-on-background mt-1">Kurum</h2>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Banka/kurum personeli oturumu — müşteri verisine yalnızca rızalı erişimle ulaşılır.
+            </p>
+          </div>
+
+          <form onSubmit={kurumGonder} className="flex flex-col gap-3 mt-auto">
+            <div>
+              <label className="font-label-mono text-[11px] text-on-surface-variant block mb-1">E-posta</label>
+              <input
+                type="email"
+                required
+                value={uEmail}
+                onChange={(e) => setUEmail(e.target.value)}
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary"
+                placeholder="kurum@demo.aks"
+              />
+            </div>
+            <div>
+              <label className="font-label-mono text-[11px] text-on-surface-variant block mb-1">Şifre</label>
+              <input
+                type="password"
+                required
+                value={uSifre}
+                onChange={(e) => setUSifre(e.target.value)}
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {uHata && (
+              <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-2.5 font-body-sm text-body-sm">
+                {uHata}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={uYukleniyor}
+              className="w-full py-2.5 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors disabled:opacity-50 mt-1"
+            >
+              {uYukleniyor ? "…" : "Giriş Yap"}
+            </button>
+          </form>
+
+          <p className="font-label-mono text-[11px] text-on-surface-variant/70 mt-3 text-center">
+            Örnek kurum: <span className="text-on-surface-variant">kurum@demo.aks</span> /{" "}
+            <span className="text-on-surface-variant">DemoKurum123!</span>
+          </p>
+        </div>
+      </div>
+
+      <p className="font-label-mono text-[11px] text-on-surface-variant/70 mt-8 text-center max-w-lg">
+        Her hesap yalnızca kendi verisini görür. Kurumlar bir müşterinin verisine ancak o müşteri
+        portalinden erişim talebini onayladıktan sonra, onayın süresi dolana kadar erişebilir.
+      </p>
+    </div>
+  );
+}
+```
+
+---
+
+## Kısım A — Banka içi demo/araştırma arayüzü (`Layout`, YALNIZCA yönetici)
+
+### A1. `IntelligencePage.tsx` — rota `/panel`
 
 **Stitch brief:** Bir "komuta merkezi" ana sayfası. Üstte durum başlığı
 (sistem online/offline, model adı, versiyon) ve bir "SYNC DATA" butonu.
@@ -2053,18 +2528,22 @@ export default function CustomerDetailPage() {
 
 ### A6. `CsvUploadPage.tsx` — rota `/upload`
 
-**Stitch brief:** Anonim (girişsiz) belge yükleme sayfası. Üstte başlık +
-açıklama. Bir "beklenen kolonlar" bilgi kartı (kolon rozetleri + "örnek CSV
-indir" butonu). Ortada büyük bir **sürükle-bırak yükleme alanı** (dosya
-seçiliyken ad+boyut gösterir, sürüklenirken kenarlık mora döner). Altta
-sonuç geldiğinde: kalite/OOD uyarı banner'ları, 3 özet kutu (AKS skoru
-büyük rakam, önerilen limit, "Formülasyon B hesaplanmadı" notu), SHAP
-ızgarası + danışman özeti, ve açılır bir "Belge Agent İzi" detay paneli
-(`<details>`).
+**Stitch brief:** Belge yükleme sayfası — `Layout` altında olduğu için artık
+**yalnızca yönetici** görür (bkz. §7.11: `api/csv-skorla` `YoneticiKullanici`
+ile korunuyor; son kullanıcının karşılığı ayrı bir uç, `/api/portal/yukle`,
+`PortalPage`'de). Üstte başlık + açıklama. Bir "beklenen kolonlar" bilgi
+kartı (kolon rozetleri + "örnek CSV indir" butonu). Ortada büyük bir
+**sürükle-bırak yükleme alanı** (dosya seçiliyken ad+boyut gösterir,
+sürüklenirken kenarlık mora döner; 10 MB üstü dosya backend'den anlamlı bir
+hata mesajıyla reddedilir). Altta sonuç geldiğinde: kalite/OOD uyarı
+banner'ları, 3 özet kutu (AKS skoru büyük rakam, önerilen limit,
+"Formülasyon B hesaplanmadı" notu), SHAP ızgarası + danışman özeti, ve
+açılır bir "Belge Agent İzi" detay paneli (`<details>`).
 
 **Veri/durum:** dosya state'i sürükle-bırak veya dosya seçici ile
-doldurulur; "Skorla" butonu `api.csvSkorla(dosya)` çağırır (kimlik/rıza
-katmanı yok — bu anonim yol).
+doldurulur; "Skorla" butonu `api.csvSkorla(dosya)` çağırır. Kimlik/rıza
+katmanı yine yok (bu uç kimlik doğrulaması gerektirmez, ama sayfaya erişim
+`Layout`'un yönetici kapısından geçer).
 
 ```tsx
 import { useRef, useState } from "react";
@@ -2351,9 +2830,10 @@ export default function CsvUploadPage() {
 ### A7. `BulunamadiPage.tsx` — rota `*` (404)
 
 **Stitch brief:** Basit, ortalanmış 404 ekranı — büyük "404" rakamı, kısa
-başlık/açıklama, ve üç yüzeyin hepsine dönüş linki (Banka Paneli / Kullanıcı
-Portalı / Kurum Girişi) — sitenin 3 ayrı giriş kapısı olduğu için burada da
-üçü birden sunulur.
+başlık/açıklama, ve dört dönüş linki: **Ana Sayfa** (birincil) + üç yüzeyin
+girişleri (Banka Paneli `/panel`, Kullanıcı Portalı, Kurum Girişi). Sitenin
+ayrı giriş kapıları olduğu için hepsi burada sunulur; ana sayfa birincil
+buton, diğer üçü çerçeveli ikincil.
 
 ```tsx
 import { Link } from "react-router-dom";
@@ -2371,6 +2851,12 @@ export default function BulunamadiPage() {
           <Link
             to="/"
             className="px-4 py-2 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors"
+          >
+            Ana Sayfa
+          </Link>
+          <Link
+            to="/panel"
+            className="px-4 py-2 rounded-DEFAULT border border-outline-variant/50 text-on-surface font-label-mono text-label-mono hover:bg-surface-container transition-colors"
           >
             Banka Paneli
           </Link>
@@ -2395,7 +2881,7 @@ export default function BulunamadiPage() {
 
 ---
 
-## Kısım B — Müşteri portalı (`PortalLayout`, `IsAuthenticated`)
+## Kısım B — Müşteri portalı (`PortalLayout`, `ProfilSahibi`)
 
 ### B1. `PortalLoginPage.tsx` — rota `/portal/giris`
 
@@ -2990,7 +3476,7 @@ export default function PortalProfilPage() {
     try {
       const r = await api.telefonGonder(telefon);
       setDogrulamaId(r.dogrulama_id);
-      setDebugKod(r.debug_kod ?? null);
+      setDebugKod(r.demo_kod ?? r.debug_kod ?? null);
       setMesaj(`Doğrulama kodu gönderildi (${r.gecerlilik_dakika} dakika geçerli).`);
     } catch (e) {
       setHata(String(e instanceof Error ? e.message : e));
@@ -3724,26 +4210,37 @@ export default function KurumMusteriDetayPage() {
 
 | # | Sayfa | Rota | Yüzey | Oturum |
 |---|---|---|---|---|
-| A1 | IntelligencePage | `/` | Banka içi | Yok |
-| A2 | PortfolioPage | `/portfolio` | Banka içi | Yok |
-| A3 | AuditPage | `/audit` | Banka içi | Yok |
-| A4 | CustomersPage | `/customers` | Banka içi | Yok |
-| A5 | CustomerDetailPage | `/customers/:id` | Banka içi | Yok |
-| A6 | CsvUploadPage | `/upload` | Banka içi | Yok |
+| G1 | AnaSayfaPage | `/` | Herkese açık | Yok (isteğe bağlı — buton değişir) |
+| G2 | GirisPage | `/giris` | Herkese açık | Yok (giriş öncesi) |
+| A1 | IntelligencePage | `/panel` | Banka içi | **Yönetici** (`is_staff`) |
+| A2 | PortfolioPage | `/portfolio` | Banka içi | **Yönetici** |
+| A3 | AuditPage | `/audit` | Banka içi | **Yönetici** |
+| A4 | CustomersPage | `/customers` | Banka içi | **Yönetici** |
+| A5 | CustomerDetailPage | `/customers/:id` | Banka içi | **Yönetici** |
+| A6 | CsvUploadPage | `/upload` | Banka içi | **Yönetici** |
 | A7 | BulunamadiPage | `*` | Ortak | Yok |
 | B1 | PortalLoginPage | `/portal/giris` | Portal | Yok (giriş öncesi) |
-| B2 | PortalPage | `/portal` | Portal | Müşteri |
+| B2 | PortalPage | `/portal` | Portal | Müşteri (`ProfilSahibi`) |
 | B3 | PortalProfilPage | `/portal/profilim` | Portal | Müşteri |
 | B4 | PortalTaleplerPage | `/portal/erisim-talepleri` | Portal | Müşteri |
 | B5 | PortalRizaPage | `/portal/riza-defterim` | Portal | Müşteri |
 | C1 | KurumLoginPage | `/kurum/giris` | Kurum | Yok (giriş öncesi) |
-| C2 | KurumMusterilerPage | `/kurum/musteriler` | Kurum | Kurum personeli |
+| C2 | KurumMusterilerPage | `/kurum/musteriler` | Kurum | Kurum personeli (`KurumUyesi`) |
 | C3 | KurumMusteriDetayPage | `/kurum/musteri/:aksNo` | Kurum | Kurum personeli |
 
-Toplam **15 sayfa + 3 layout + 1 ikon bileşeni + 1 API istemcisi + 1 skor
+Toplam **17 sayfa + 3 layout + 1 ikon bileşeni + 1 API istemcisi + 1 skor
 yardımcı modülü** — bu dosyadaki her kod bloğu birebir mevcut
-`product/03-frontend/src/` içeriğidir (commit `a0652d8` durumu). Stitch'te
-yeniden tasarlarken **class isimleri/görsel stil değişebilir, ama her
-`useState`/`useEffect`/`api.xxx()` çağrısı ve koşullu render (`sonuc &&`,
-`hata &&`, `yukleniyor ?`) aynı davranışı üretmeli** — aksi halde sayfa
-görsel olarak güzel ama işlevsel olarak bozuk çıkar.
+`product/03-frontend/src/` içeriğidir (commit `30ba931` durumu, execution.md
+§3b Phase 7/7.11–7.12). Stitch'te yeniden tasarlarken **class isimleri/görsel
+stil değişebilir, ama her `useState`/`useEffect`/`api.xxx()` çağrısı ve
+koşullu render (`sonuc &&`, `hata &&`, `yukleniyor ?`) aynı davranışı
+üretmeli** — aksi halde sayfa görsel olarak güzel ama işlevsel olarak
+bozuk çıkar.
+
+**"Oturum" sütunu ikinci bir katmandır, ilki değil.** `KullaniciBilgisi`
+üzerindeki `yonetici`/`kurum_uyesi` bayrakları yalnızca hangi sayfanın
+gösterileceğini belirler (yönlendirme); gerçek yetki HER ZAMAN sunucuda,
+ilgili DRF izin sınıfında zorlanır. Stitch'te yeni bir sayfa/ekran eklenirse
+"bu veriye kim erişebilir" sorusunun cevabı frontend'te değil backend'de
+yazılmalı — aksi halde execution.md §3b Phase 7/7.11'de bulunanla aynı sınıf
+bir güvenlik açığı tekrarlanır.

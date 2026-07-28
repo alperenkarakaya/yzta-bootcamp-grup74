@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AKS Portal - Giriş</title>
+<!-- Google Fonts: Geist & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#c3c0ff",
+                        "secondary-fixed-dim": "#45dfa4",
+                        "on-tertiary-fixed-variant": "#881d24",
+                        "secondary-container": "#00bd85",
+                        "on-error-container": "#ffdad6",
+                        "outline": "#928f9a",
+                        "surface-container-highest": "#353438",
+                        "surface": "#131317",
+                        "surface-bright": "#3a393d",
+                        "on-primary": "#2c2a5e",
+                        "error": "#ffb4ab",
+                        "on-primary-fixed-variant": "#434176",
+                        "primary-fixed": "#e3dfff",
+                        "inverse-surface": "#e5e1e7",
+                        "tertiary": "#ffdad8",
+                        "surface-container-lowest": "#0e0e11",
+                        "primary-container": "#c3c0ff",
+                        "secondary": "#45dfa4",
+                        "inverse-on-surface": "#313034",
+                        "on-surface": "#e5e1e7",
+                        "on-tertiary-fixed": "#410006",
+                        "on-secondary-container": "#00452e",
+                        "tertiary-fixed": "#ffdad8",
+                        "outline-variant": "#47464f",
+                        "on-tertiary": "#670211",
+                        "secondary-fixed": "#68fcbf",
+                        "background": "#131317",
+                        "inverse-primary": "#5a5890",
+                        "on-surface-variant": "#c8c5d0",
+                        "on-primary-container": "#4e4c83",
+                        "surface-container-high": "#2a292d",
+                        "on-background": "#e5e1e7",
+                        "on-secondary-fixed": "#002114",
+                        "on-secondary": "#003825",
+                        "surface-container": "#201f23",
+                        "on-tertiary-container": "#982a2f",
+                        "surface-container-low": "#1c1b1f",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "surface-dim": "#131317",
+                        "primary": "#e2dfff",
+                        "tertiary-container": "#ffb3b0",
+                        "surface-variant": "#353438",
+                        "tertiary-fixed-dim": "#ffb3b0",
+                        "on-primary-fixed": "#161349",
+                        "primary-fixed-dim": "#c3c0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "stack-default": "12px",
+                        "stack-compact": "4px",
+                        "container-padding": "16px",
+                        "grid-margin": "24px"
+                    },
+                    "fontFamily": {
+                        "mono-label-sm": ["JetBrains Mono"],
+                        "body-md": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "mono-score-lg": ["JetBrains Mono"],
+                        "headline-lg": ["Geist"],
+                        "mono-data-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "mono-label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "mono-score-lg": ["40px", { "lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "mono-data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex items-center justify-center p-gutter selection:bg-primary-container selection:text-on-primary-container">
+<!-- Login Container -->
+<main class="w-full max-w-[420px] bg-surface-container-high rounded-lg border border-outline-variant p-grid-margin flex flex-col gap-stack-default relative overflow-hidden">
+<!-- Abstract Top Border Accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary opacity-80"></div>
+<!-- Brand Header -->
+<div class="flex flex-col items-center mb-4 mt-2">
+<span class="material-symbols-outlined text-primary text-[48px] mb-2" data-weight="fill" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tighter">AKS Portal</h1>
+<p class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mt-1">Sistem Erişimi Doğrulaması</p>
+</div>
+<!-- Tab Switch -->
+<div class="flex border-b border-outline-variant mb-4">
+<button class="flex-1 pb-2 border-b-2 border-primary text-primary font-mono-label-sm text-mono-label-sm transition-colors uppercase">
+                Giriş Yap
+            </button>
+<button class="flex-1 pb-2 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-mono-label-sm text-mono-label-sm transition-colors uppercase">
+                Kayıt Ol
+            </button>
+</div>
+<!-- Form -->
+<form class="flex flex-col gap-stack-default" onsubmit="event.preventDefault();">
+<!-- Email Field -->
+<div class="flex flex-col gap-stack-compact">
+<label class="font-mono-label-sm text-mono-label-sm text-on-surface-variant" for="email">E-Posta Adresi</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">mail</span>
+<input class="w-full bg-surface text-on-surface font-mono-data-md text-mono-data-md border border-outline-variant rounded-DEFAULT pl-10 pr-4 py-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-outline-variant" id="email" placeholder="kullanici@kurum.com.tr" required="" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-stack-compact">
+<div class="flex justify-between items-center">
+<label class="font-mono-label-sm text-mono-label-sm text-on-surface-variant" for="password">Şifre</label>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">key</span>
+<input class="w-full bg-surface text-on-surface font-mono-data-md text-mono-data-md border border-outline-variant rounded-DEFAULT pl-10 pr-10 py-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-outline-variant" id="password" placeholder="••••••••" required="" type="password"/>
+<button aria-label="Şifreyi göster" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors focus:outline-none" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+<!-- Options -->
+<div class="flex justify-between items-center mt-2 mb-2">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="form-checkbox bg-surface border-outline-variant rounded-sm text-primary focus:ring-primary focus:ring-offset-background h-4 w-4 transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-on-surface transition-colors">Beni Hatırla</span>
+</label>
+<a class="font-body-md text-body-md text-primary hover:text-primary-fixed transition-colors" href="#">Şifremi unuttum</a>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-primary-container text-surface-container-lowest font-mono-label-sm text-mono-label-sm py-3 rounded-DEFAULT hover:bg-primary-fixed transition-colors flex items-center justify-center gap-2 uppercase tracking-wide group mt-2" type="submit">
+                Giriş Yap
+                <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</form>
+<!-- Secure Footer Context -->
+<div class="mt-4 pt-4 border-t border-outline-variant flex items-center justify-center gap-2 text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span class="font-mono-label-sm text-mono-label-sm text-[10px]">Uçtan Uca Şifreli Bağlantı</span>
+</div>
+</main>
+</body></html>

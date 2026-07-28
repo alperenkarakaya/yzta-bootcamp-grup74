@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AKS Intelligence - Belge Yükle</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#353438",
+                        "surface-dim": "#131317",
+                        "secondary": "#45dfa4",
+                        "primary-fixed": "#e3dfff",
+                        "outline": "#928f9a",
+                        "on-primary-container": "#4e4c83",
+                        "inverse-on-surface": "#313034",
+                        "on-secondary-fixed": "#002114",
+                        "on-secondary-container": "#00452e",
+                        "outline-variant": "#47464f",
+                        "on-error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#45dfa4",
+                        "background": "#131317",
+                        "inverse-surface": "#e5e1e7",
+                        "surface": "#131317",
+                        "surface-variant": "#353438",
+                        "primary-container": "#c3c0ff",
+                        "error-container": "#93000a",
+                        "on-tertiary-container": "#982a2f",
+                        "on-background": "#e5e1e7",
+                        "surface-container-low": "#1c1b1f",
+                        "tertiary-fixed": "#ffdad8",
+                        "on-primary-fixed-variant": "#434176",
+                        "tertiary-container": "#ffb3b0",
+                        "on-tertiary-fixed": "#410006",
+                        "on-surface-variant": "#c8c5d0",
+                        "on-error": "#690005",
+                        "tertiary-fixed-dim": "#ffb3b0",
+                        "tertiary": "#ffdad8",
+                        "on-secondary": "#003825",
+                        "inverse-primary": "#5a5890",
+                        "on-surface": "#e5e1e7",
+                        "surface-bright": "#3a393d",
+                        "on-primary-fixed": "#161349",
+                        "surface-container-lowest": "#0e0e11",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-primary": "#2c2a5e",
+                        "on-tertiary": "#670211",
+                        "on-secondary-fixed-variant": "#005137",
+                        "surface-container": "#201f23",
+                        "secondary-container": "#00bd85",
+                        "surface-container-high": "#2a292d",
+                        "primary": "#e2dfff",
+                        "on-tertiary-fixed-variant": "#881d24",
+                        "secondary-fixed": "#68fcbf",
+                        "error": "#ffb4ab",
+                        "surface-tint": "#c3c0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-default": "12px",
+                        "grid-margin": "24px",
+                        "gutter": "16px",
+                        "stack-compact": "4px",
+                        "container-padding": "16px"
+                    },
+                    "fontFamily": {
+                        "mono-data-md": [
+                            "JetBrains Mono"
+                        ],
+                        "mono-label-sm": [
+                            "JetBrains Mono"
+                        ],
+                        "headline-lg": [
+                            "Geist"
+                        ],
+                        "headline-md": [
+                            "Geist"
+                        ],
+                        "mono-score-lg": [
+                            "JetBrains Mono"
+                        ],
+                        "body-md": [
+                            "Geist"
+                        ]
+                    },
+                    "fontSize": {
+                        "mono-data-md": [
+                            "14px",
+                            {
+                                "lineHeight": "18px",
+                                "fontWeight": "500"
+                            }
+                        ],
+                        "mono-label-sm": [
+                            "12px",
+                            {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.02em",
+                                "fontWeight": "500"
+                            }
+                        ],
+                        "headline-lg": [
+                            "32px",
+                            {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "headline-md": [
+                            "24px",
+                            {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "mono-score-lg": [
+                            "40px",
+                            {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "body-md": [
+                            "14px",
+                            {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #020617; /* Level 0 Base */
+            color: #e5e1e7; /* on-surface */
+        }
+        
+        .border-hairline {
+            border: 1px solid #47464f; /* outline-variant */
+        }
+        
+        .panel-l1 {
+            background-color: #0f172a; /* Level 1 */
+        }
+        
+        .panel-l2 {
+            background-color: #1e293b; /* Level 2 */
+        }
+
+        /* Hide scrollbar for cleaner look in specific containers */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col pt-16 pb-24 md:pb-0">
+<!-- TopNavBar -->
+<nav class="hidden md:flex fixed top-0 left-0 w-full z-50 justify-between items-center px-grid-margin h-16 bg-surface-dim border-b border-outline-variant">
+<div class="flex items-center gap-8 h-full">
+<span class="text-headline-md font-headline-md font-bold text-primary tracking-tighter cursor-pointer">AKS Intelligence</span>
+<div class="flex h-full items-center gap-6 text-mono-label-sm font-mono-label-sm text-on-surface-variant">
+<a class="h-full flex items-center hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Intelligence</a>
+<a class="h-full flex items-center hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Portföy</a>
+<a class="h-full flex items-center hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Denetim Defteri</a>
+<a class="h-full flex items-center hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Müşteriler</a>
+<a class="h-full flex flex-col justify-center hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80 text-primary border-b-2 border-primary pb-1" href="#">Belge Yükle</a>
+</div>
+</div>
+<div class="flex items-center gap-4 text-mono-label-sm font-mono-label-sm text-on-surface-variant">
+<span>user@aks.ai</span>
+<button class="px-3 py-1.5 rounded border border-outline-variant hover:border-primary hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80 text-body-md font-body-md">Çıkış</button>
+</div>
+</nav>
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-around items-center px-4 py-2 mx-auto max-w-md bg-surface-container-high/90 border border-outline-variant backdrop-blur-md shadow-2xl rounded-full">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">terminal</span>
+<span class="text-mono-label-sm font-mono-label-sm mt-1">Komut</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">sensors</span>
+<span class="text-mono-label-sm font-mono-label-sm mt-1">Sinyal</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-full p-2 hover:bg-surface-variant cursor-pointer scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">upload_file</span>
+<span class="text-mono-label-sm font-mono-label-sm mt-1">Yükle</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_balance_wallet</span>
+<span class="text-mono-label-sm font-mono-label-sm mt-1">Kasa</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">support_agent</span>
+<span class="text-mono-label-sm font-mono-label-sm mt-1">Destek</span>
+</a>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-[1440px] mx-auto px-grid-margin py-8 flex flex-col gap-8">
+<header class="flex flex-col gap-2">
+<h1 class="text-headline-lg font-headline-lg text-on-surface">Veri Enjeksiyonu</h1>
+<p class="text-body-md font-body-md text-on-surface-variant">Müşteri ekstresi ve işlem verilerini analiz motoruna besleyin.</p>
+</header>
+<!-- Upload & Schema Section -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Drag & Drop Zone -->
+<div class="lg:col-span-2 panel-l1 border-hairline rounded flex flex-col items-center justify-center p-12 border-dashed border-2 border-outline hover:border-primary-container transition-colors duration-300 cursor-pointer group relative overflow-hidden">
+<div class="absolute inset-0 bg-primary-container/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<span class="material-symbols-outlined text-4xl text-outline-variant mb-4 group-hover:text-primary-container transition-colors duration-300">cloud_upload</span>
+<p class="text-body-md font-body-md text-on-surface text-center mb-2">Ekstrenizi buraya sürükleyin veya <span class="text-primary-container underline">göz atın</span></p>
+<p class="text-mono-label-sm font-mono-label-sm text-outline">(CSV, XLSX, PDF) - Max 10MB</p>
+</div>
+<!-- Expected Schema -->
+<div class="panel-l1 border-hairline rounded p-6 flex flex-col gap-6">
+<div>
+<h3 class="text-mono-label-sm font-mono-label-sm text-outline uppercase tracking-wider mb-4 border-b border-outline-variant pb-2">Beklenen Kolon Şeması</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-dim border border-outline-variant rounded text-mono-label-sm font-mono-label-sm text-on-surface">tarih</span>
+<span class="px-2 py-1 bg-surface-dim border border-outline-variant rounded text-mono-label-sm font-mono-label-sm text-on-surface">tutar</span>
+<span class="px-2 py-1 bg-surface-dim border border-outline-variant rounded text-mono-label-sm font-mono-label-sm text-on-surface">kategori</span>
+<span class="px-2 py-1 bg-surface-dim border border-outline-variant rounded text-mono-label-sm font-mono-label-sm text-on-surface">islem_tipi</span>
+<span class="px-2 py-1 bg-surface-dim border border-outline-variant rounded text-mono-label-sm font-mono-label-sm text-on-surface">aciklama</span>
+<span class="px-2 py-1 bg-surface-dim border border-outline-variant rounded text-mono-label-sm font-mono-label-sm text-outline-variant border-dashed">referans_no</span>
+</div>
+</div>
+<div class="mt-auto">
+<button class="w-full py-2 bg-surface-dim border border-outline-variant rounded text-mono-label-sm font-mono-label-sm text-on-surface hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 16px;">download</span>
+                        Örnek CSV İndir
+                    </button>
+</div>
+</div>
+</section>
+<!-- Post-Upload Status (Simulated) -->
+<section class="flex flex-col gap-6 mt-4">
+<!-- Caveat Banner -->
+<div class="border border-[#fbbf24] bg-[#fbbf24]/10 rounded p-4 flex gap-4 items-start">
+<span class="material-symbols-outlined text-[#fbbf24]">warning</span>
+<div>
+<h4 class="text-mono-data-md font-mono-data-md text-[#fbbf24] mb-1">Pencere Uyumsuzluğu Tespit Edildi</h4>
+<p class="text-body-md font-body-md text-on-surface-variant">Yüklenen verideki tarih aralığı (01.01.2023 - 15.03.2023) mevcut aktif risk modelinin kalibrasyon penceresi ile tam örtüşmemektedir. SHAP değerlerinde varyans bekleniyor.</p>
+</div>
+</div>
+<!-- Analysis Preview Templates -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+<!-- Twin Score -->
+<div class="panel-l1 border-hairline rounded p-6 flex flex-col">
+<h3 class="text-mono-label-sm font-mono-label-sm text-outline uppercase tracking-wider mb-6">Risk Skorları (Önizleme)</h3>
+<div class="flex gap-4 flex-grow">
+<div class="flex-1 flex flex-col justify-center">
+<span class="text-mono-label-sm font-mono-label-sm text-on-surface-variant mb-2">Klasik Skor</span>
+<span class="text-mono-score-lg font-mono-score-lg text-on-surface">640</span>
+</div>
+<div class="w-px bg-outline-variant"></div>
+<div class="flex-1 flex flex-col justify-center border-l-2 border-primary-container pl-4">
+<span class="text-mono-label-sm font-mono-label-sm text-primary-container mb-2">AKS Skoru</span>
+<span class="text-mono-score-lg font-mono-score-lg text-primary-container">712</span>
+</div>
+</div>
+</div>
+<!-- SHAP Factors -->
+<div class="panel-l1 border-hairline rounded p-6 flex flex-col col-span-2">
+<h3 class="text-mono-label-sm font-mono-label-sm text-outline uppercase tracking-wider mb-6">Etki Faktörleri (SHAP)</h3>
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-4">
+<span class="text-mono-label-sm font-mono-label-sm w-32 truncate text-right text-on-surface-variant">Düzenli Gelir</span>
+<div class="flex-1 h-2 bg-surface-dim rounded overflow-hidden flex">
+<div class="w-1/2"></div>
+<div class="w-[30%] h-full bg-[#34d399]"></div>
+</div>
+<span class="text-mono-label-sm font-mono-label-sm w-12 text-[#34d399]">+3.2</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-mono-label-sm font-mono-label-sm w-32 truncate text-right text-on-surface-variant">Yüksek Harcama</span>
+<div class="flex-1 h-2 bg-surface-dim rounded overflow-hidden flex">
+<div class="w-[40%] h-full bg-[#f87171] ml-auto"></div>
+<div class="w-1/2"></div>
+</div>
+<span class="text-mono-label-sm font-mono-label-sm w-12 text-[#f87171]">-1.8</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

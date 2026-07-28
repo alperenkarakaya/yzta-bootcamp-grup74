@@ -19,6 +19,13 @@ const SENARYO_OZELLIKLERI: { kod: string; etiket: string; min: number; max: numb
   { kod: "hesap_hareket_yogunlugu", etiket: "Hesap hareket yoğunluğu", min: 0, max: 1.5, adim: 0.01 },
 ];
 
+// Tasarım: planning/stitch_aks_finansal_kapasite_platformu/aks_m_teri_detay_2
+// ("AKS Terminal" — dairesel twin-score kartları, karar/limit şeridi, diverging
+// SHAP çubukları, açılır-kapanır "Agent İzi" paneli). Stitch mockup'ının Agent
+// İzi içeriği UYDURMAYDI (sahte tensor/ModelRunner log satırları, sahte
+// imza) — o kısım burada GERÇEK pipeline iziyle (VeriAgent/SkorlamaAgent/
+// DanismanAgent, gerçek risk_seviyesi/karar/danisman.ozet) dolduruldu, yalnızca
+// görsel kabuk (açılır terminal-stili log paneli) korunuyor.
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const musteriId = Number(id);
@@ -27,6 +34,7 @@ export default function CustomerDetailPage() {
   const [gecmis, setGecmis] = useState<GecmisKayit[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [hata, setHata] = useState("");
+  const [izAcik, setIzAcik] = useState(false);
 
   const [soru, setSoru] = useState("");
   const [yanit, setYanit] = useState<string | null>(null);
@@ -100,12 +108,12 @@ export default function CustomerDetailPage() {
   }
 
   if (yukleniyor) {
-    return <p className="font-body-sm text-body-sm text-on-surface-variant p-8">Yükleniyor…</p>;
+    return <p className="font-body-md text-body-md text-on-surface-variant p-8">Yükleniyor…</p>;
   }
 
   if (hata || !sonuc) {
     return (
-      <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-6 font-label-mono text-label-mono">
+      <div className="border border-error/40 bg-error-container/20 text-error p-6 font-mono-label-sm text-mono-label-sm">
         Müşteri #{musteriId} bulunamadı ya da backend'e ulaşılamadı: {hata}
         <div className="mt-4">
           <Link to="/customers" className="text-primary hover:underline">
@@ -118,285 +126,302 @@ export default function CustomerDetailPage() {
 
   const durum = durumBelirle(sonuc.klasik_skor, sonuc.aks_skor);
   const delta = sonuc.klasik_skor != null ? sonuc.aks_skor - sonuc.klasik_skor : null;
+  const maxEtki = Math.max(
+    0.01,
+    ...sonuc.aciklama.riski_azaltan.map((f) => Math.abs(f.etki)),
+    ...sonuc.aciklama.riski_artiran.map((f) => Math.abs(f.etki))
+  );
 
   return (
-    <div className="flex flex-col gap-stack-lg pb-8">
+    <div className="flex flex-col gap-stack-default pb-8">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-stack-md hairline-border bg-surface-container-low p-6 rounded-xl">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/50 relative">
-            <Icon name="person" className="text-4xl text-secondary" />
-          </div>
-          <div>
-            <h1 className="font-headline-md text-headline-md md:font-display-sm md:text-display-sm text-on-background">
-              Müşteri #{musteriId}
-            </h1>
-            <div className="flex gap-4 mt-2 flex-wrap">
-              <span className="font-label-mono text-label-mono text-secondary px-2 py-1 bg-secondary/10 rounded-DEFAULT border border-secondary/20">
-                {PERSONA_ETIKET[sonuc.persona] ?? sonuc.persona}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-headline-lg font-headline-lg text-on-surface flex items-center gap-3">
+            <Icon name="person" className="text-secondary" />
+            Müşteri #{musteriId}
+          </h1>
+          <div className="flex gap-2 mt-2 flex-wrap items-center">
+            <span className="text-mono-label-sm font-mono-label-sm text-secondary px-2 py-1 bg-secondary/10 border border-secondary/20">
+              {PERSONA_ETIKET[sonuc.persona] ?? sonuc.persona}
+            </span>
+            {durum === "kurtarildi" && (
+              <span className="text-mono-label-sm font-mono-label-sm text-secondary px-2 py-1 bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+                <Icon name="verified" className="text-[12px]" filled /> {DURUM_ETIKET[durum]}
               </span>
-              {durum === "kurtarildi" && (
-                <span className="font-label-mono text-label-mono text-emerald-400 px-2 py-1 bg-emerald-400/10 rounded-DEFAULT border border-emerald-400/20 flex items-center gap-1">
-                  <Icon name="verified" className="text-[12px]" /> {DURUM_ETIKET[durum]}
-                </span>
-              )}
-              {sonuc.anomali_bayrak && (
-                <span
-                  className="font-label-mono text-label-mono text-amber-400 px-2 py-1 bg-amber-400/10 rounded-DEFAULT border border-amber-400/20 flex items-center gap-1"
-                  title={`Tipiklik skoru: ${sonuc.anomali_skoru} — negatife yaklaştıkça daha aykırı`}
-                >
-                  <Icon name="warning" className="text-[12px]" /> Atipik Profil (OOD)
-                </span>
-              )}
-            </div>
-            {sonuc.anomali_bayrak && (
-              <p className="font-body-sm text-body-sm text-amber-400/90 mt-2 max-w-md">
-                Bu profil, eğitim dağılımının tipik aralığının dışında — skoru DEĞİŞTİRMEZ, yalnızca modele diğer
-                profillere göre biraz daha az güvenilmesi gerektiğini işaret eder.
-              </p>
             )}
           </div>
         </div>
-        <Link
-          to="/customers"
-          className="px-4 py-2 bg-transparent border border-outline-variant/50 rounded-DEFAULT font-label-mono text-label-mono text-on-surface hover:bg-surface-container transition-colors"
-        >
-          ← Kuyruğa Dön
-        </Link>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-stack-md">
-        {/* Calibration Map */}
-        <div className="col-span-1 md:col-span-8 bg-surface-container hairline-border rounded-xl p-6 relative overflow-hidden ai-glow flex flex-col justify-between">
-          <div className="glass-header absolute top-0 left-0 w-full p-4 flex justify-between items-center z-10">
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">Kalibrasyon Haritası</h2>
-            <Icon name="radar" className="text-primary-fixed-dim" />
-          </div>
-          <div className="mt-12 flex-1 flex flex-col items-center justify-center relative">
-            <div className="flex items-center justify-center gap-stack-lg w-full relative z-20">
-              <div className="text-center">
-                <span className="font-label-mono text-label-mono text-on-surface-variant block mb-2">Klasik Skor</span>
-                <span className="font-display-lg text-display-lg text-error">{sonuc.klasik_skor ?? "—"}</span>
-              </div>
-              <div className="h-[2px] w-32 bg-gradient-to-r from-error/50 via-outline-variant/50 to-primary/50 relative">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container px-2">
-                  <Icon name="arrow_forward" className="text-outline" />
-                </div>
-              </div>
-              <div className="text-center">
-                <span className="font-label-mono text-label-mono text-on-surface-variant block mb-2">AKS Skoru</span>
-                <span className="font-display-lg text-display-lg text-primary drop-shadow-[0_0_10px_rgba(195,192,255,0.5)]">
-                  {sonuc.aks_skor}
-                </span>
-                <span className="font-body-sm text-body-sm text-primary/80 block mt-1">
-                  {delta != null ? `${delta >= 0 ? "+" : ""}${delta} pts` : ""}
-                </span>
-              </div>
-            </div>
-          </div>
-          {sonuc.pd_fark != null && (
-            <div className="mt-6 pt-4 border-t border-outline-variant/20 flex items-center justify-center gap-stack-lg relative z-20">
-              <div className="text-center">
-                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Geleneksel Bant PD</span>
-                <span className="font-body-lg text-body-lg text-on-surface">{(sonuc.pd_geleneksel_bant! * 100).toFixed(1)}%</span>
-              </div>
-              <div className="text-center">
-                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">PD-Gap</span>
-                <span className={`font-headline-md text-headline-md ${sonuc.pd_fark >= 0 ? "text-emerald-400" : "text-error"}`}>
-                  {sonuc.pd_fark >= 0 ? "+" : ""}
-                  {(sonuc.pd_fark * 100).toFixed(1)}pp
-                </span>
-              </div>
-              <div className="text-center">
-                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Kapasite Sinyali</span>
-                <span className="font-body-lg text-body-lg text-primary">{sonuc.kapasite_sinyali}/100</span>
-              </div>
+        <div className="flex items-center gap-3">
+          {sonuc.anomali_bayrak && (
+            <div
+              className="border border-error-container bg-error-container/10 px-4 py-2 flex items-center gap-2"
+              title={`Tipiklik skoru: ${sonuc.anomali_skoru} — negatife yaklaştıkça daha aykırı`}
+            >
+              <Icon name="warning" className="text-error" filled />
+              <span className="text-mono-label-sm font-mono-label-sm font-bold text-error">ATİPİK PROFİL</span>
             </div>
           )}
-          <p className="font-label-mono text-[10px] text-on-surface-variant mt-3 relative z-20 text-center">
+          <Link
+            to="/customers"
+            className="px-4 py-2 border border-outline-variant font-mono-label-sm text-mono-label-sm text-on-surface hover:bg-surface-container transition-colors"
+          >
+            ← Kuyruğa Dön
+          </Link>
+        </div>
+      </header>
+
+      {sonuc.anomali_bayrak && (
+        <p className="font-body-md text-body-md text-caveat max-w-2xl">
+          Bu profil, eğitim dağılımının tipik aralığının dışında — skoru DEĞİŞTİRMEZ, yalnızca modele diğer
+          profillere göre biraz daha az güvenilmesi gerektiğini işaret eder.
+        </p>
+      )}
+
+      {/* Twin-Score Cards */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+        <div className="bg-surface-container-low border border-outline-variant p-8 flex flex-col items-center justify-center relative">
+          <div className="absolute top-4 left-4 text-mono-label-sm font-mono-label-sm text-on-surface-variant uppercase">
+            Klasik Skor
+          </div>
+          <div className="w-40 h-40 rounded-full border-4 border-error/50 flex items-center justify-center mb-4">
+            <span className="text-mono-score-lg font-mono-score-lg text-error">{sonuc.klasik_skor ?? "—"}</span>
+          </div>
+          <div className="text-mono-data-md font-mono-data-md text-on-surface-variant">
+            {delta != null ? `AKS ile fark: ${delta >= 0 ? "+" : ""}${delta} pts` : "Klasik bant bilinmiyor"}
+          </div>
+        </div>
+        <div className="bg-surface-container-low border border-outline-variant border-l-4 border-l-primary p-8 flex flex-col items-center justify-center relative">
+          <div className="absolute top-4 left-4 text-mono-label-sm font-mono-label-sm text-primary uppercase">AKS Skoru</div>
+          <div className="w-40 h-40 rounded-full border-4 border-primary flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(195,192,255,0.2)]">
+            <span className="text-mono-score-lg font-mono-score-lg text-primary">{sonuc.aks_skor}</span>
+          </div>
+          <div className="text-mono-data-md font-mono-data-md text-primary-container">{sonuc.risk_seviyesi}</div>
+        </div>
+      </section>
+
+      {/* Karar & Limit */}
+      <section className="bg-surface-container-low border border-secondary/50 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Icon name="check_circle" className="text-secondary text-4xl" filled />
+          <div>
+            <div className="text-mono-label-sm font-mono-label-sm text-on-surface-variant uppercase">Karar Modülü Çıktısı</div>
+            <div className="text-headline-md font-headline-md text-secondary">{sonuc.karar}</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-mono-label-sm font-mono-label-sm text-on-surface-variant uppercase">Önerilen Limit</div>
+          <div className="text-headline-lg font-headline-lg text-on-surface">{paraFormat(sonuc.onerilen_limit)}</div>
+        </div>
+      </section>
+
+      {/* Formülasyon B (PD-gap) */}
+      {sonuc.pd_fark != null && (
+        <section className="bg-surface-container-low border border-outline-variant p-6 flex items-center justify-center gap-stack-default flex-wrap">
+          <div className="text-center">
+            <span className="text-[10px] font-mono-label-sm text-on-surface-variant uppercase block mb-1">Geleneksel Bant PD</span>
+            <span className="font-body-md text-body-md text-on-surface">{(sonuc.pd_geleneksel_bant! * 100).toFixed(1)}%</span>
+          </div>
+          <div className="text-center">
+            <span className="text-[10px] font-mono-label-sm text-on-surface-variant uppercase block mb-1">PD-Gap</span>
+            <span className={`font-headline-md text-headline-md ${sonuc.pd_fark >= 0 ? "text-secondary" : "text-error"}`}>
+              {sonuc.pd_fark >= 0 ? "+" : ""}
+              {(sonuc.pd_fark * 100).toFixed(1)}pp
+            </span>
+          </div>
+          <div className="text-center">
+            <span className="text-[10px] font-mono-label-sm text-on-surface-variant uppercase block mb-1">Kapasite Sinyali</span>
+            <span className="font-body-md text-body-md text-primary">{sonuc.kapasite_sinyali}/100</span>
+          </div>
+          <p className="text-[10px] font-mono-label-sm text-on-surface-variant w-full text-center mt-1">
             Pozitif PD-Gap: davranışsal kanıt, geleneksel bandın ima ettiğinden daha fazla kapasite gösteriyor.
             Bankanın skorunu değiştirmez, yalnızca tamamlar.
           </p>
-        </div>
+        </section>
+      )}
 
-        {/* Suggested Limit */}
-        <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-4 border-b border-outline-variant/20 pb-2">
-              Önerilen Limit
-            </h2>
-            <div className="mt-8 text-center">
-              <span className="font-label-mono text-label-mono text-secondary mb-2 block">{sonuc.karar}</span>
-              <div className="font-display-sm text-display-sm text-on-background">{paraFormat(sonuc.onerilen_limit)}</div>
-            </div>
-          </div>
-          <p className="mt-8 text-center font-label-mono text-[10px] text-on-surface-variant">
-            Bu değerlendirme, değiştirilemez denetim iziyle otomatik olarak kaydedildi.
-          </p>
-        </div>
-
-        {/* Pipeline Trace */}
-        <div className="col-span-1 md:col-span-4 bg-surface-container hairline-border rounded-xl p-6">
-          <div className="glass-header w-full pb-4 mb-4 flex justify-between items-center">
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">Pipeline İzi</h2>
-            <Icon name="account_tree" className="text-on-surface-variant text-sm" />
-          </div>
-          <div className="relative pl-6 border-l border-outline-variant/30 space-y-6">
-            <div className="relative">
-              <div className="absolute -left-[31px] top-1 w-3 h-3 bg-secondary rounded-full" />
-              <div className="font-label-mono text-label-mono text-secondary">VeriAgent (pipeline aşaması)</div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                9 davranışsal özellik ham işlemlerden çıkarıldı.
-              </p>
-            </div>
-            <div className="relative">
-              <div className="absolute -left-[31px] top-1 w-3 h-3 bg-primary-container rounded-full" />
-              <div className="font-label-mono text-label-mono text-primary">SkorlamaAgent (pipeline aşaması)</div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                Risk seviyesi: {sonuc.risk_seviyesi}. Karar: {sonuc.karar}.
-              </p>
-            </div>
-            <div className="relative">
-              <div className="absolute -left-[31px] top-1 w-3 h-3 bg-emerald-400 rounded-full" />
-              <div className="font-label-mono text-label-mono text-emerald-400">DanismanAgent (şablonlu)</div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{sonuc.danisman.ozet}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* SHAP */}
-        <div className="col-span-1 md:col-span-8 bg-surface-container hairline-border rounded-xl p-6">
-          <div className="glass-header w-full pb-4 mb-6 flex justify-between items-center">
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">Davranışsal Faktörler (SHAP)</h2>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {sonuc.aciklama.riski_azaltan.map((f) => (
-              <div className="bg-surface-container-low border border-emerald-400/20 p-3 rounded-lg hover:border-emerald-400/50 transition-colors" key={f.kod}>
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-label-mono text-[10px] text-emerald-400">RİSKİ AZALTIR</span>
-                  <span className="font-label-mono text-label-mono text-on-surface">{f.etki.toFixed(3)}</span>
-                </div>
-                <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>
+      {/* SHAP Factor Bars */}
+      <section className="bg-surface-container-low border border-outline-variant p-6">
+        <h2 className="text-mono-data-md font-mono-data-md text-on-surface-variant mb-6 uppercase border-b border-outline-variant pb-2">
+          Davranışsal Faktörler (SHAP Analizi)
+        </h2>
+        {/* Diverging çubuklar: konteyner ortadan ikiye bölünür, ortadaki
+            dikey çizgi sıfır noktasıdır. Riski AZALTAN faktörler (negatif
+            SHAP) soldan sıfıra doğru, riski ARTIRAN (pozitif) sıfırdan sağa
+            uzar. `f.etki` zaten işaretli gelir (bkz. aciklama.py) — elle
+            "+"/"-" eklemek "+-0.722" gibi çift işaret üretiyordu.
+            Stitch mockup'ı burada `absolute right-full` kullanıyordu; o,
+            çubuğu konteynerin TAMAMEN dışına (ekranın soluna) taşırıyordu —
+            canlı denetimde görüldü, ikiye-bölme desenine geçildi (kurum
+            müşteri detayındaki mockup'ın kendi çözümü). */}
+        <div className="space-y-4">
+          {sonuc.aciklama.riski_azaltan.map((f) => (
+            <div className="flex items-center gap-4" key={f.kod}>
+              <div className="w-1/3 text-mono-label-sm font-mono-label-sm text-on-surface text-right truncate" title={f.faktor}>
+                {f.faktor}
               </div>
-            ))}
-            {sonuc.aciklama.riski_artiran.map((f) => (
-              <div className="bg-surface-container-low border border-error/20 p-3 rounded-lg hover:border-error/50 transition-colors" key={f.kod}>
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-label-mono text-[10px] text-error">RİSKİ ARTIRIR</span>
-                  <span className="font-label-mono text-label-mono text-on-surface">+{f.etki.toFixed(3)}</span>
-                </div>
-                <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>
-              </div>
-            ))}
-          </div>
-          {sonuc.danisman.oneriler.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-outline-variant/20">
-              <h3 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-3">Öneriler</h3>
-              <ul className="space-y-2">
-                {sonuc.danisman.oneriler.map((o, i) => (
-                  <li key={i} className="font-body-sm text-body-sm text-on-surface-variant flex gap-2">
-                    <Icon name="arrow_right" className="text-primary text-sm shrink-0" />
-                    {o}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* What-If Simulator (§3b/U23) */}
-        <div className="col-span-1 md:col-span-12 bg-surface-container hairline-border rounded-xl p-6">
-          <div className="glass-header w-full pb-4 mb-6 flex justify-between items-center flex-wrap gap-2">
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">
-              Senaryo Simülatörü (What-If)
-            </h2>
-            <button
-              onClick={() => sonuc && setSenaryoDegerler(sonuc.ozellikler)}
-              className="px-3 py-1.5 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-[10px] text-on-surface hover:bg-surface-container-high transition-colors"
-            >
-              Sıfırla
-            </button>
-          </div>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
-            Davranışsal özellikleri elle değiştirip skorun nasıl tepki verdiğini gözlemleyin —{" "}
-            <code className="font-label-mono text-[11px] bg-surface-container-high px-1 rounded">POST /api/simulasyon</code>{" "}
-            ile canlı model üzerinden hesaplanır (yeniden eğitim değil, aynı modelin farklı bir girdiyle tahmini).
-            Bu, gerçek işlemleri değiştirmez; yalnızca "ne olurdu" sorusuna cevap verir.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 mb-6">
-            {senaryoDegerler &&
-              SENARYO_OZELLIKLERI.map(({ kod, etiket, min, max, adim }) => (
-                <div key={kod}>
-                  <div className="flex justify-between items-baseline mb-1">
-                    <label className="font-label-mono text-[11px] text-on-surface-variant">{etiket}</label>
-                    <span className="font-label-mono text-[11px] text-primary">
-                      {senaryoDegerler[kod]?.toLocaleString("tr-TR")}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    step={adim}
-                    value={senaryoDegerler[kod] ?? 0}
-                    onChange={(e) =>
-                      setSenaryoDegerler((prev) => ({ ...(prev ?? {}), [kod]: Number(e.target.value) }))
-                    }
-                    className="w-full accent-primary"
+              <div className="flex-1 flex items-center">
+                <div className="w-1/2 flex items-center justify-end border-r border-outline-variant h-6">
+                  <span className="mr-2 text-mono-label-sm font-mono-label-sm text-shap-positive">{f.etki.toFixed(3)}</span>
+                  <div
+                    className="h-4 bg-shap-positive"
+                    style={{ width: `${Math.min(90, (Math.abs(f.etki) / maxEtki) * 100)}%` }}
                   />
                 </div>
-              ))}
-          </div>
-
-          {simHata && (
-            <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-body-sm text-body-sm mb-4">
-              {simHata}
-            </div>
-          )}
-
-          <div className="flex items-center justify-center gap-stack-lg bg-surface-container-low rounded-lg p-6 border border-outline-variant/20">
-            <div className="text-center">
-              <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Mevcut Skor</span>
-              <span className="font-display-sm text-display-sm text-on-surface">
-                {simSonuc?.mevcut_skor ?? sonuc.aks_skor}
-              </span>
-            </div>
-            <Icon name="arrow_forward" className="text-outline" />
-            <div className="text-center">
-              <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Senaryo Skoru</span>
-              <span className="font-display-sm text-display-sm text-primary">
-                {simYukleniyor ? "…" : (simSonuc?.senaryo_skor ?? sonuc.aks_skor)}
-              </span>
-            </div>
-            {simSonuc && (
-              <div className="text-center">
-                <span className="font-label-mono text-[10px] text-on-surface-variant uppercase block mb-1">Değişim</span>
-                <span
-                  className={`font-headline-md text-headline-md ${
-                    simSonuc.skor_degisimi >= 0 ? "text-emerald-400" : "text-error"
-                  }`}
-                >
-                  {simSonuc.skor_degisimi >= 0 ? "+" : ""}
-                  {simSonuc.skor_degisimi}
-                </span>
-                <span className="font-label-mono text-[10px] text-on-surface-variant block mt-1">
-                  {simSonuc.senaryo_karar}
-                </span>
+                <div className="w-1/2" />
               </div>
-            )}
+            </div>
+          ))}
+          {sonuc.aciklama.riski_artiran.map((f) => (
+            <div className="flex items-center gap-4" key={f.kod}>
+              <div className="w-1/3 text-mono-label-sm font-mono-label-sm text-on-surface text-right truncate" title={f.faktor}>
+                {f.faktor}
+              </div>
+              <div className="flex-1 flex items-center">
+                <div className="w-1/2 border-r border-outline-variant h-6" />
+                <div className="w-1/2 flex items-center">
+                  <div
+                    className="h-4 bg-shap-negative"
+                    style={{ width: `${Math.min(90, (Math.abs(f.etki) / maxEtki) * 100)}%` }}
+                  />
+                  <span className="ml-2 text-mono-label-sm font-mono-label-sm text-shap-negative">+{f.etki.toFixed(3)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {sonuc.danisman.oneriler.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-outline-variant">
+            <h3 className="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase tracking-wider mb-3">Öneriler</h3>
+            <ul className="space-y-2">
+              {sonuc.danisman.oneriler.map((o, i) => (
+                <li key={i} className="font-body-md text-body-md text-on-surface-variant flex gap-2">
+                  <Icon name="arrow_right" className="text-primary text-sm shrink-0" />
+                  {o}
+                </li>
+              ))}
+            </ul>
           </div>
+        )}
+      </section>
+
+      {/* Agent İzi Panel — GERÇEK pipeline izi (VeriAgent/SkorlamaAgent/DanismanAgent) */}
+      <section className="bg-surface-container border border-outline-variant flex flex-col">
+        <button
+          onClick={() => setIzAcik((v) => !v)}
+          className="w-full p-4 flex justify-between items-center bg-surface-dim hover:bg-surface-container-low transition-colors border-b border-outline-variant"
+        >
+          <div className="flex items-center gap-2 text-mono-label-sm font-mono-label-sm text-primary">
+            <Icon name="terminal" className="text-sm" />
+            <span>AGENT İZİ (PIPELINE LOGU)</span>
+          </div>
+          <Icon
+            name="expand_more"
+            className={`text-on-surface-variant transition-transform duration-200 ${izAcik ? "rotate-180" : ""}`}
+          />
+        </button>
+        <div className={`agent-log ${izAcik ? "open" : ""} p-4 bg-surface-dim font-mono-data-md text-xs text-on-surface-variant`}>
+          <div className="mb-2">
+            <span className="text-secondary/80">VeriAgent</span> (pipeline aşaması) → 9 davranışsal özellik ham
+            işlemlerden çıkarıldı.
+          </div>
+          <div className="mb-2">
+            <span className="text-primary/80">SkorlamaAgent</span> (pipeline aşaması) → risk_seviyesi=
+            {sonuc.risk_seviyesi}, karar={sonuc.karar}
+          </div>
+          <div className="mb-2">
+            <span className="text-secondary/80">DanismanAgent</span> (şablonlu NLG) → {sonuc.danisman.ozet}
+          </div>
+          <div className="text-primary">&gt;&gt; Bu, değiştirilemez denetim iziyle otomatik olarak kaydedildi.</div>
+        </div>
+      </section>
+
+      {/* What-If Simulator (§3b/U23) */}
+      <section className="bg-surface-container-low border border-outline-variant p-6">
+        <div className="w-full pb-4 mb-6 flex justify-between items-center flex-wrap gap-2 border-b border-outline-variant">
+          <h2 className="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase tracking-wider">
+            Senaryo Simülatörü (What-If)
+          </h2>
+          <button
+            onClick={() => sonuc && setSenaryoDegerler(sonuc.ozellikler)}
+            className="px-3 py-1.5 border border-outline-variant font-mono-label-sm text-[10px] text-on-surface hover:bg-surface-container-high transition-colors"
+          >
+            Sıfırla
+          </button>
+        </div>
+        <p className="font-body-md text-body-md text-on-surface-variant mb-6">
+          Davranışsal özellikleri elle değiştirip skorun nasıl tepki verdiğini gözlemleyin —{" "}
+          <code className="font-mono-data-md text-[11px] bg-surface-container-high px-1">POST /api/simulasyon</code>{" "}
+          ile canlı model üzerinden hesaplanır (yeniden eğitim değil, aynı modelin farklı bir girdiyle tahmini). Bu,
+          gerçek işlemleri değiştirmez; yalnızca "ne olurdu" sorusuna cevap verir.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 mb-6">
+          {senaryoDegerler &&
+            SENARYO_OZELLIKLERI.map(({ kod, etiket, min, max, adim }) => (
+              <div key={kod}>
+                <div className="flex justify-between items-baseline mb-1">
+                  <label className="font-mono-label-sm text-[11px] text-on-surface-variant">{etiket}</label>
+                  <span className="font-mono-label-sm text-[11px] text-primary">
+                    {senaryoDegerler[kod]?.toLocaleString("tr-TR")}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={adim}
+                  value={senaryoDegerler[kod] ?? 0}
+                  onChange={(e) => setSenaryoDegerler((prev) => ({ ...(prev ?? {}), [kod]: Number(e.target.value) }))}
+                  className="w-full accent-primary-container"
+                />
+              </div>
+            ))}
         </div>
 
+        {simHata && (
+          <div className="border border-error/40 bg-error-container/20 text-error p-3 font-body-md text-body-md mb-4">
+            {simHata}
+          </div>
+        )}
+
+        <div className="flex items-center justify-center gap-stack-default bg-surface-container p-6 border border-outline-variant flex-wrap">
+          <div className="text-center">
+            <span className="text-[10px] font-mono-label-sm text-on-surface-variant uppercase block mb-1">Mevcut Skor</span>
+            <span className="font-headline-lg text-headline-lg text-on-surface">{simSonuc?.mevcut_skor ?? sonuc.aks_skor}</span>
+          </div>
+          <Icon name="arrow_forward" className="text-outline" />
+          <div className="text-center">
+            <span className="text-[10px] font-mono-label-sm text-on-surface-variant uppercase block mb-1">Senaryo Skoru</span>
+            <span className="font-headline-lg text-headline-lg text-primary">
+              {simYukleniyor ? "…" : (simSonuc?.senaryo_skor ?? sonuc.aks_skor)}
+            </span>
+          </div>
+          {simSonuc && (
+            <div className="text-center">
+              <span className="text-[10px] font-mono-label-sm text-on-surface-variant uppercase block mb-1">Değişim</span>
+              <span className={`font-headline-md text-headline-md ${simSonuc.skor_degisimi >= 0 ? "text-secondary" : "text-error"}`}>
+                {simSonuc.skor_degisimi >= 0 ? "+" : ""}
+                {simSonuc.skor_degisimi}
+              </span>
+              <span className="text-[10px] font-mono-label-sm text-on-surface-variant block mt-1">{simSonuc.senaryo_karar}</span>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
         {/* History */}
-        <div className="col-span-1 md:col-span-6 bg-surface-container hairline-border rounded-xl p-6">
-          <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-4">Değerlendirme Geçmişi</h2>
+        <section className="bg-surface-container-low border border-outline-variant p-6">
+          <h2 className="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase tracking-wider mb-4">
+            Değerlendirme Geçmişi
+          </h2>
           {gecmis.length === 0 ? (
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Henüz kayıtlı geçmiş yok (ilk değerlendirme).</p>
+            <p className="font-body-md text-body-md text-on-surface-variant">Henüz kayıtlı geçmiş yok (ilk değerlendirme).</p>
           ) : (
-            <ul className="space-y-2 font-label-mono text-label-mono">
+            <ul className="space-y-2 font-mono-label-sm text-mono-label-sm">
               {gecmis.map((g, i) => (
-                <li key={i} className="flex justify-between border-b border-outline-variant/10 pb-2">
+                <li key={i} className="flex justify-between border-b border-outline-variant/30 pb-2">
                   <span className="text-on-surface-variant">{g.zaman}</span>
                   <span className="text-primary">AKS {g.aks_skor}</span>
                   <span className="text-on-surface-variant">{g.risk_seviyesi}</span>
@@ -404,11 +429,11 @@ export default function CustomerDetailPage() {
               ))}
             </ul>
           )}
-        </div>
+        </section>
 
         {/* AKS Assistant */}
-        <div className="col-span-1 md:col-span-6 bg-surface-container hairline-border rounded-xl p-6">
-          <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-4 flex items-center gap-2">
+        <section className="bg-surface-container-low border border-outline-variant p-6">
+          <h2 className="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase tracking-wider mb-4 flex items-center gap-2">
             <Icon name="smart_toy" className="text-sm" /> AKS Asistanı
           </h2>
           <div className="flex items-center gap-2 mb-4">
@@ -417,18 +442,18 @@ export default function CustomerDetailPage() {
               onChange={(e) => setSoru(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sorSor()}
               placeholder="Skoru nasıl yükseltirim?"
-              className="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary"
+              className="flex-1 bg-surface border border-outline-variant rounded-DEFAULT px-3 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary"
             />
             <button
               onClick={sorSor}
               disabled={soruYukleniyor}
-              className="px-4 py-2 rounded bg-primary-container text-on-primary-container font-label-mono text-label-mono hover:brightness-110 transition-all disabled:opacity-50"
+              className="px-4 py-2 rounded-DEFAULT bg-primary-container text-on-primary-container font-mono-label-sm text-mono-label-sm font-bold hover:bg-primary-fixed transition-colors disabled:opacity-50"
             >
               {soruYukleniyor ? "…" : "Sor"}
             </button>
           </div>
-          {yanit && <p className="font-body-sm text-body-sm text-on-surface-variant whitespace-pre-line">{yanit}</p>}
-        </div>
+          {yanit && <p className="font-body-md text-body-md text-on-surface-variant whitespace-pre-line">{yanit}</p>}
+        </section>
       </div>
     </div>
   );

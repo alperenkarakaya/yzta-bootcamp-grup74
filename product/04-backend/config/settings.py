@@ -60,18 +60,28 @@ TEMPLATES = [
 ]
 
 # --- Veritabanı: Supabase (DATABASE_URL) yoksa yerel SQLite ---
-# conn_max_age düşük tutulur (SQLite'ta zaten anlamsız, Supabase'te KASITLI):
-# Supabase'in Session pooler'ı zaten kendi tarafında havuzluyor ve ücretsiz
-# katmanda sert bir istemci sınırı var (execution.md §7.10'da bulunan gerçek
-# olay: `FATAL: max clients reached ... pool_size: 15` — çok sayıda kısa ömürlü
-# script/test koşusu, her biri conn_max_age=600 ile 10 dakika bağlantı açık
-# tutunca havuzu doldurdu). Django tarafında UZUN ömürlü bağlantı tutmanın
-# pooler zaten var olduğu için ek faydası yok, yalnızca havuzu daha çabuk
-# doldurma riski var — bu yüzden kısa tutuluyor.
+# `conn_max_age=0` (istek bitince bağlantıyı kapat) KASITLI bir karardır,
+# ihmal değil — bir connection pooler'ın ARKASINDA kalıcı bağlantı tutmak
+# anti-pattern'dir: havuzlama zaten pooler'ın işi, uygulama tarafında ikinci
+# bir havuz tutmak yalnızca sınırlı istemci kotasını tüketir.
+#
+# İki gerçek olayla öğrenildi (execution.md §7.10 ve §7.13):
+#   1. `conn_max_age=600` ile çok sayıda kısa ömürlü script/test koşusu, her
+#      biri 10 dakika bağlantı açık tutunca havuz doldu → 600'den 60'a çekildi.
+#   2. 60 saniye de yetmedi: §7.11'de uçlar yetkilendirildiğinden beri HER
+#      korumalı istek, oturum doğrulaması (`request.user`) için DB'ye gidiyor —
+#      yani artık "DB'ye dokunmayan uç" yok. Tarayıcı bir sayfada 5 paralel
+#      istek atınca dev sunucusu 5 ayrı thread'de 5 ayrı bağlantı açıp 60 saniye
+#      tutuyordu; Supabase ücretsiz katmanın 15 istemci sınırı birkaç sayfa
+#      gezinmesinde doluyor ve `FATAL: (EMAXCONNSESSION) max clients reached`
+#      ile TÜM panel 500 dönmeye başlıyordu (canlı tarayıcı denetiminde
+#      yakalandı).
+# Pooler tarafında bağlantı zaten hazır beklediği için 0'a çekmenin gecikme
+# maliyeti ihmal edilebilir; kazanç, havuzun tükenmemesi.
 DATABASES = {
     "default": dj_database_url.parse(
         os.environ.get("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'aks_dev.sqlite3'}",
-        conn_max_age=60,
+        conn_max_age=0,
     )
 }
 

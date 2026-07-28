@@ -12,48 +12,110 @@
 
 body {
   margin: 0;
-  background-color: #020617;
-  color: #e5e1e4;
+  background-color: #131317; /* background token */
+  color: #e5e1e7; /* on-background token */
 }
 
-/* Shared utility classes, ported verbatim from the Stitch design system
-   (product/03-frontend/stitch-output/*\/code.html) so every page looks identical
-   to the approved mockups. */
-.ai-glow {
-  box-shadow: 0 0 15px -5px rgba(79, 70, 229, 0.4);
+/* Shared utility classes, consolidated from planning/stitch_aks_finansal_kapasite_platformu
+   ("AKS Terminal"). Each of the 15 exported screens reinvented near-identical
+   helpers under different names (panel-l1 / tonal-level-1 / bg-level-1 /
+   card-layer all meant "elevated card surface"; some screens even hardcoded
+   a different near-black (#020617) than the shared token's #131317) — this
+   file is the single canonical version every page draws from, named after
+   what each class means rather than which screen first used it. */
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
+/* Opt-in filled variant — Icon's `filled` prop toggles this. Used sparingly
+   (brand marks, active/selected icons), never as the blanket default. */
+.fill-icon {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
 .hairline-border {
-  border: 1px solid rgba(70, 69, 85, 0.3);
+  border: 1px solid #47464f; /* outline-variant */
 }
-.glass-header {
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+/* SHAP factor bars (Customer Detail / Institution Customer Detail): positive
+   factors extend right in emerald, negative extend left in red. */
+.shap-positive {
+  background-color: #34d399;
 }
-.glass-panel {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(12px);
-  border: 0.5px solid rgba(145, 143, 161, 0.2);
+.shap-negative {
+  background-color: #f87171;
 }
-.card-surface {
-  background-color: #0f172a;
-  border: 1px solid rgba(70, 69, 85, 0.3);
+
+/* Permanent, non-dismissible regulatory/data-quality warning banners
+   (circular-data notices, low category-confidence, window mismatch, etc). */
+.caveat-banner {
+  border-color: #fbbf24;
+  background-color: rgba(251, 191, 36, 0.1);
 }
-.inner-shadow-subtle {
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05);
+.caveat-text {
+  color: #fbbf24;
 }
-.command-table-row:hover {
-  background-color: rgba(79, 70, 229, 0.05);
-  box-shadow: inset 2px 0 0 #4f46e5;
+
+/* Data-dense tables: very low-opacity zebra striping. */
+.zebra-row:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
 }
-.ai-pulse {
-  animation: pulse-indigo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+/* Collapsible "Agent İzi" / "Belge Agent İzi" trace panel. */
+.agent-log {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
 }
-@keyframes pulse-indigo {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.agent-log.open {
+  max-height: 600px;
 }
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
+
+/* Drag-and-drop statement upload highlight. */
+.file-drag-over {
+  border-color: #c3c0ff !important;
+  background-color: rgba(195, 192, 255, 0.05);
+}
+
+/* Status-indicator pulse (e.g. "ONLINE" dot on the admin overview). */
+.pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide number-input spin arrows (phone/OTP digit inputs). */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 ::-webkit-scrollbar {
@@ -64,9 +126,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #353437;
+  background: #47464f; /* outline-variant */
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4f46e5;
+  background: #c3c0ff; /* primary-container */
 }

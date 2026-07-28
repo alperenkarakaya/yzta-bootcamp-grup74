@@ -1,239 +1,114 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, PERSONA_ETIKET, HEDEF_PERSONALAR, type Bilgi, type Portfoy, type Adalet, type SkorSonuc } from "../api";
+import { api, type Bilgi, type MetriklerRaporu } from "../api";
 import { Icon } from "../components/Icon";
-import { durumBelirle, DURUM_ETIKET, kapasiteYuzdesi } from "../lib/skor";
 
-interface FeedOge extends SkorSonuc {
-  id: number;
-}
+// Tasarım: planning/stitch_aks_finansal_kapasite_platformu/aks_intelligence_panel
+// ("AKS Terminal" — komuta merkezi: 3 durum kartı + hızlı erişim ızgarası).
+// Nav'ın kendisi Layout.tsx'te; bu sayfa yalnızca <main> içeriği. Stitch
+// mockup'ı sabit sayılar (0.862, 2,000, ONLINE) gösteriyordu — burada gerçek
+// API verisiyle besleniyor (bilgi/metrikler, ikisi de opsiyonel/503 olabilir,
+// demo çevrimdışıyken sayfa kırılmasın diye .catch(() => null) ile).
+const HIZLI_ERISIM = [
+  { ikon: "pie_chart", baslik: "Portföy Analizi", aciklama: "Risk dağılımı ve segmentasyon", to: "/portfolio" },
+  { ikon: "history_edu", baslik: "Denetim Defteri", aciklama: "Sistem logları ve karar izleri", to: "/audit" },
+  { ikon: "recent_actors", baslik: "Müşteri Listesi", aciklama: "Bireysel skorlama detayları", to: "/customers" },
+  { ikon: "upload_file", baslik: "Yeni Ekstre Yükle", aciklama: "Toplu veri işleme kuyruğu", to: "/upload" },
+];
 
 export default function IntelligencePage() {
   const [bilgi, setBilgi] = useState<Bilgi | null>(null);
-  const [portfoy, setPortfoy] = useState<Portfoy | null>(null);
-  const [adalet, setAdalet] = useState<Adalet | null>(null);
-  const [feed, setFeed] = useState<FeedOge[]>([]);
-  const [syncing, setSyncing] = useState(false);
-  const [hata, setHata] = useState("");
-
-  const sync = useCallback(async () => {
-    setSyncing(true);
-    setHata("");
-    try {
-      const [b, p, a, demo] = await Promise.all([
-        api.bilgi(),
-        api.portfoy().catch(() => null),
-        api.adalet().catch(() => null),
-        api.demoMusteriler(1),
-      ]);
-      setBilgi(b);
-      setPortfoy(p);
-      setAdalet(a);
-
-      const ids = Object.values(demo).flat().slice(0, 4);
-      const skorlar = await Promise.all(ids.map((id) => api.skorlaDemo(id)));
-      setFeed(skorlar.map((s, i) => ({ ...s, id: ids[i] })));
-    } catch (e) {
-      setHata(String(e));
-    } finally {
-      setSyncing(false);
-    }
-  }, []);
+  const [metrikler, setMetrikler] = useState<MetriklerRaporu | null>(null);
+  const [gecikmeMs, setGecikmeMs] = useState<number | null>(null);
+  const [cevrimici, setCevrimici] = useState<boolean | null>(null);
 
   useEffect(() => {
-    sync();
-  }, [sync]);
+    const baslangic = performance.now();
+    api
+      .bilgi()
+      .then((b) => {
+        setBilgi(b);
+        setGecikmeMs(Math.round(performance.now() - baslangic));
+        setCevrimici(true);
+      })
+      .catch(() => setCevrimici(false));
+    api.metrikler().then(setMetrikler).catch(() => setMetrikler(null));
+  }, []);
 
-  const maxKirilim = portfoy ? Math.max(1, ...Object.values(portfoy.persona_kirilimi)) : 1;
+  const model = metrikler?.modeller[0];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
-      {/* Header */}
-      <div className="col-span-1 md:col-span-12 mb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h1 className="font-headline-md text-headline-md text-on-background">Terminal Overview</h1>
-          <p className="font-label-mono text-label-mono text-on-surface-variant mt-1">
-            SYS.STATUS: {hata ? "OFFLINE" : "ONLINE"} | MODEL: {bilgi?.model ?? "—"} | SÜRÜM: {bilgi?.surum ?? "—"}
-          </p>
+    <>
+      {/* Header Metrics */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+        <div className="bg-surface-container-low border border-outline-variant p-4 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-on-surface-variant text-mono-label-sm font-mono-label-sm">MODEL_ACCURACY</span>
+            <Icon name="query_stats" className="text-outline text-sm" />
+          </div>
+          <div>
+            <div className="text-mono-score-lg font-mono-score-lg text-primary">
+              {model ? model.roc_auc.ortalama.toFixed(3) : "—"}
+            </div>
+            <div className="text-mono-label-sm font-mono-label-sm text-secondary mt-1">
+              {model ? `AUC | %95 GA [${model.roc_auc.ci95[0].toFixed(2)}, ${model.roc_auc.ci95[1].toFixed(2)}]` : "Henüz üretilmedi"}
+            </div>
+          </div>
         </div>
-        <button
-          onClick={sync}
-          disabled={syncing}
-          className="bg-primary-container text-white font-label-mono text-label-mono px-4 py-2 rounded-DEFAULT inner-shadow-subtle hover:bg-inverse-primary transition-colors flex items-center gap-2 disabled:opacity-50"
-        >
-          <Icon name="refresh" className={`text-[16px] ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "SENKRONİZE EDİLİYOR" : "SYNC DATA"}
-        </button>
-      </div>
 
-      {hata && (
-        <div className="col-span-1 md:col-span-12 bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono">
-          Sunucuya bağlanılamadı: {hata}
+        <div className="bg-surface-container-low border border-outline-variant p-4 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-on-surface-variant text-mono-label-sm font-mono-label-sm">POPULATION</span>
+            <Icon name="group" className="text-outline text-sm" />
+          </div>
+          <div>
+            <div className="text-mono-score-lg font-mono-score-lg text-on-surface">
+              {bilgi ? bilgi.demo_musteri_sayisi.toLocaleString("tr-TR") : "—"}
+            </div>
+            <div className="text-mono-label-sm font-mono-label-sm text-on-surface-variant mt-1">Demo Müşteri</div>
+          </div>
         </div>
-      )}
 
-      {/* Live Engine Feed */}
-      <section className="col-span-1 md:col-span-8 card-surface rounded-lg flex flex-col overflow-hidden min-h-[400px]">
-        <div className="glass-header px-4 py-3 flex justify-between items-center">
-          <h2 className="font-label-mono text-label-mono text-on-surface-variant flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-secondary-container animate-pulse" />
-            LIVE ENGINE FEED
-          </h2>
-          <span className="font-label-mono text-[10px] text-on-surface-variant">
-            {bilgi ? `${bilgi.demo_musteri_sayisi} DEMO MÜŞTERİ` : "—"}
-          </span>
-        </div>
-        <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-2">
-          {feed.length === 0 && !syncing && (
-            <p className="text-on-surface-variant font-body-sm text-body-sm p-4">Henüz veri yok.</p>
-          )}
-          {feed.map((m) => {
-            const durum = durumBelirle(m.klasik_skor, m.aks_skor);
-            const renk =
-              durum === "kurtarildi" ? "text-primary" : durum === "onaylandi" ? "text-secondary-container" : "text-error";
-            return (
-              <Link
-                key={m.id}
-                to={`/customers/${m.id}`}
-                className="bg-surface-container rounded-DEFAULT p-3 border border-outline-variant/30 flex justify-between items-center relative overflow-hidden group hover:border-primary/40 transition-colors"
-              >
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-10 h-10 rounded-full bg-[#1E293B] flex items-center justify-center border border-outline-variant/30">
-                    <Icon
-                      name={durum === "kurtarildi" ? "psychology" : durum === "onaylandi" ? "person" : "warning"}
-                      className={renk}
-                    />
-                  </div>
-                  <div>
-                    <div className="font-body-sm text-body-sm font-semibold text-on-surface flex items-center gap-2">
-                      ID: #{m.id}
-                      {durum === "kurtarildi" && (
-                        <span className="text-[10px] bg-primary-container/20 text-primary px-2 py-0.5 rounded-full border border-primary/30">
-                          RESCUED
-                        </span>
-                      )}
-                    </div>
-                    <div className="font-label-mono text-[10px] text-on-surface-variant mt-0.5">
-                      Persona: {PERSONA_ETIKET[m.persona] ?? m.persona}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right relative z-10">
-                  <div className={`font-body-sm text-body-sm font-semibold ${renk}`}>{DURUM_ETIKET[durum]}</div>
-                  <div className="font-label-mono text-[10px] text-on-surface-variant">
-                    Klasik {m.klasik_skor ?? "—"} → AKS {m.aks_skor}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Agent HUD */}
-      <section className="col-span-1 md:col-span-4 card-surface rounded-lg flex flex-col min-h-[400px]">
-        <div className="glass-header px-4 py-3 border-b border-outline-variant/30">
-          <h2 className="font-label-mono text-label-mono text-on-surface-variant">PIPELINE HUD</h2>
-        </div>
-        <div className="p-4 flex-1 flex flex-col gap-4">
-          {[
-            { ad: "VeriAgent", aciklama: "özellik çıkarımı" },
-            { ad: "SkorlamaAgent", aciklama: "model skorlama" },
-            { ad: "DanismanAgent", aciklama: "öneri üretimi" },
-          ].map((a) => (
-            <div className="flex items-center gap-3" key={a.ad}>
-              <div className={`w-2 h-2 rounded-full ${syncing ? "bg-primary-container animate-pulse ai-glow" : "bg-secondary-container"}`} />
-              <div className="flex-1">
-                <div className="flex justify-between items-end mb-1">
-                  <span className="font-label-mono text-label-mono text-on-surface">{a.ad}</span>
-                  <span className={`font-label-mono text-[10px] ${syncing ? "text-primary" : "text-secondary-container"}`}>
-                    {syncing ? "ACTIVE" : "IDLE"}
-                  </span>
-                </div>
-                <div className="w-full bg-[#1E293B] h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full relative overflow-hidden ${syncing ? "bg-primary-container w-full" : "bg-secondary-container w-full"}`}
-                  >
-                    {syncing && (
-                      <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
-                    )}
-                  </div>
-                </div>
-                <div className="font-label-mono text-[9px] text-on-surface-variant mt-0.5">{a.aciklama}</div>
+        <div className="bg-surface-container-low border border-outline-variant p-4 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-on-surface-variant text-mono-label-sm font-mono-label-sm">SYSTEM_STATUS</span>
+            <Icon name="dns" className="text-outline text-sm" />
+          </div>
+          <div className="flex items-end justify-between">
+            <div>
+              <div className={`text-mono-score-lg font-mono-score-lg ${cevrimici ? "text-secondary" : "text-error"}`}>
+                {cevrimici == null ? "…" : cevrimici ? "ONLINE" : "OFFLINE"}
+              </div>
+              <div className="text-mono-label-sm font-mono-label-sm text-on-surface-variant mt-1">
+                {gecikmeMs != null ? `Latency: ${gecikmeMs}ms` : "—"}
               </div>
             </div>
-          ))}
-          <div className="mt-auto pt-4 border-t border-outline-variant/20">
-            <p className="font-label-mono text-[9px] text-on-surface-variant leading-relaxed">
-              Veri/Skorlama/Danışman deterministik pipeline aşamalarıdır (agent değil). Ayrıca üç gerçek agent
-              çalışıyor: AsistanAgent, BelgeAgent ve Claude tool-calling danışmanı.
-            </p>
+            {cevrimici && <div className="w-3 h-3 bg-secondary rounded-full pulse-dot mb-2" />}
           </div>
         </div>
       </section>
 
-      {/* Portfolio Pulse */}
-      <section className="col-span-1 md:col-span-6 card-surface rounded-lg flex flex-col h-[350px]">
-        <div className="glass-header px-4 py-3 flex justify-between items-center">
-          <h2 className="font-label-mono text-label-mono text-on-surface-variant">PORTFÖY NABZI</h2>
-          <span className="font-label-mono text-[10px] text-on-surface-variant">Kurtarılan / persona</span>
-        </div>
-        <div className="p-4 flex-1 relative flex items-end justify-center">
-          {portfoy ? (
-            <div className="w-full h-full flex items-end justify-between px-2 gap-3">
-              {Object.entries(portfoy.persona_kirilimi).map(([persona, adet]) => (
-                <div className="flex-1 flex flex-col justify-end items-center gap-1 group h-full" key={persona}>
-                  <span className="font-label-mono text-[10px] text-on-surface-variant opacity-0 group-hover:opacity-100">
-                    {adet}
-                  </span>
-                  <div
-                    className="w-full bg-gradient-to-t from-primary-container to-secondary-container rounded-t-sm shadow-[0_0_10px_rgba(79,70,229,0.3)] transition-all"
-                    style={{ height: `${Math.max(6, (adet / maxKirilim) * 100)}%` }}
-                  />
-                  <span className="font-label-mono text-[9px] text-on-surface-variant text-center mt-1">
-                    {(PERSONA_ETIKET[persona] ?? persona).split(" ")[0]}
-                  </span>
-                </div>
-              ))}
+      {/* Quick Access Grid */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-gutter mt-4">
+        {HIZLI_ERISIM.map((h) => (
+          <Link
+            key={h.to}
+            to={h.to}
+            className="group bg-surface-container border border-outline-variant p-6 flex items-center justify-between hover:border-primary hover:bg-surface-container-high transition-colors duration-200"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 border border-outline-variant flex items-center justify-center bg-surface-dim group-hover:border-primary transition-colors">
+                <Icon name={h.ikon} className="text-on-surface" />
+              </div>
+              <div>
+                <div className="text-mono-data-md font-mono-data-md text-on-surface">{h.baslik}</div>
+                <div className="text-mono-label-sm font-mono-label-sm text-on-surface-variant mt-1">{h.aciklama}</div>
+              </div>
             </div>
-          ) : (
-            <p className="text-on-surface-variant font-body-sm text-body-sm">Portföy verisi yükleniyor…</p>
-          )}
-        </div>
+            <Icon name="arrow_forward" className="text-outline group-hover:text-primary transition-colors" />
+          </Link>
+        ))}
       </section>
-
-      {/* Segment Alpha Metrics */}
-      <section className="col-span-1 md:col-span-6 card-surface rounded-lg flex flex-col h-[350px] relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-container/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-        <div className="glass-header px-4 py-3">
-          <h2 className="font-label-mono text-label-mono text-on-surface-variant">HEDEF SEGMENT KURTARMA ORANI</h2>
-        </div>
-        <div className="p-6 flex-1 flex flex-col justify-center gap-6 z-10">
-          <div className="grid grid-cols-2 gap-4">
-            {HEDEF_PERSONALAR.map((persona) => {
-              const tpr = adalet?.aks_skor.gruplar[persona]?.kredibl_onay_orani_tpr;
-              return (
-                <div className="bg-[#1E293B]/50 p-4 rounded-DEFAULT border border-outline-variant/20" key={persona}>
-                  <div className="font-label-mono text-[10px] text-on-surface-variant mb-1 uppercase">
-                    {PERSONA_ETIKET[persona]}
-                  </div>
-                  <div className="font-display-sm text-display-sm text-on-surface flex items-baseline gap-1">
-                    {tpr != null ? (tpr * 100).toFixed(1) : "—"}
-                    <span className="text-body-sm text-secondary-container">%</span>
-                  </div>
-                  <div className="font-label-mono text-[10px] text-on-surface-variant mt-2">
-                    kredibl onay oranı (TPR)
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="text-body-sm text-on-surface-variant border-l-2 border-primary-container pl-3">
-            AKS eşiğinde ({"≥650"}) hedef segmentteki kredibl müşterilerin onaylanma oranı — davranışsal modelin
-            asıl iddia ettiği yerde ölçülen gerçek performans.
-          </div>
-        </div>
-      </section>
-    </div>
+    </>
   );
 }

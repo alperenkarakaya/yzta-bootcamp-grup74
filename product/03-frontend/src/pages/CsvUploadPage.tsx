@@ -29,6 +29,8 @@ function ornekIndir() {
   URL.revokeObjectURL(url);
 }
 
+// Tasarım: planning/stitch_aks_finansal_kapasite_platformu/aks_belge_y_kleme
+// ("AKS Terminal" — geniş sürükle-bırak alanı + yanında beklenen şema paneli).
 export default function CsvUploadPage() {
   const [dosya, setDosya] = useState<File | null>(null);
   const [suruklemede, setSuruklemede] = useState(false);
@@ -59,214 +61,203 @@ export default function CsvUploadPage() {
   }
 
   return (
-    <div className="flex flex-col gap-stack-lg pb-8 max-w-4xl mx-auto">
-      <header>
-        <h1 className="font-headline-md text-headline-md text-on-background">Belge / Ekstre Yükleme</h1>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+    <div className="flex flex-col gap-stack-default pb-8">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-headline-lg font-headline-lg text-on-surface">Veri Enjeksiyonu</h1>
+        <p className="text-body-md font-body-md text-on-surface-variant">
           Kendi işlem ekstrenizi (CSV, Excel ya da PDF) yükleyin — AKS aynı davranışsal model ile (dekuple/LR
-          eğitimli) canlı bir skor üretir. Bu yol demo popülasyonundan bağımsızdır; her istek{" "}
-          <code className="font-label-mono text-[11px] bg-surface-container px-1 rounded">POST /api/csv-skorla</code>{" "}
+          eğitimli) canlı bir skor üretir. Her istek{" "}
+          <code className="font-mono-data-md text-[11px] bg-surface-container px-1">POST /api/csv-skorla</code>{" "}
           uç noktasına gider.
         </p>
       </header>
 
-      {/* Format bilgisi */}
-      <section className="card-surface rounded-lg p-6">
-        <div className="flex justify-between items-start gap-4 flex-wrap">
-          <div>
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-2">
-              CSV İçin Beklenen Kolonlar (Excel/PDF Otomatik Tanınır)
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {["tarih (YYYY-AA-GG)", "islem_tipi (gelir/gider)", "kategori", "tutar", "aciklama (opsiyonel)"].map(
-                (k) => (
-                  <span
-                    key={k}
-                    className="font-label-mono text-[11px] bg-surface-container-high border border-outline-variant/30 px-2 py-1 rounded-DEFAULT text-on-surface"
-                  >
-                    {k}
-                  </span>
-                )
-              )}
-            </div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mt-3">
-              Gider tutarları <strong>negatif</strong> yazılmalı (örn. <code>-850</code>). En az 5 işlem gerekir.
-            </p>
-          </div>
-          <button
-            onClick={ornekIndir}
-            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-label-mono text-on-surface hover:bg-surface-container transition-colors"
-          >
-            <Icon name="download" className="text-[16px]" />
-            Örnek CSV indir
-          </button>
-        </div>
-      </section>
-
-      {/* Upload alanı */}
-      <section
-        className={`card-surface rounded-lg p-8 border-2 border-dashed transition-colors ${
-          suruklemede ? "border-primary bg-primary-container/10" : "border-outline-variant/40"
-        }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setSuruklemede(true);
-        }}
-        onDragLeave={() => setSuruklemede(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setSuruklemede(false);
-          const f = e.dataTransfer.files?.[0];
-          if (f) dosyaSec(f);
-        }}
-      >
-        <input
-          ref={girisRef}
-          type="file"
-          accept=".csv,text/csv,.xlsx,.xls,.pdf,application/pdf"
-          className="hidden"
-          onChange={(e) => dosyaSec(e.target.files?.[0] ?? null)}
-        />
-        <div className="flex flex-col items-center text-center gap-3">
-          <Icon name="upload_file" className="text-5xl text-primary" />
+      {/* Upload & Schema */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+        <div
+          className={`lg:col-span-2 bg-surface-container-low border-2 border-dashed rounded flex flex-col items-center justify-center p-12 text-center transition-colors cursor-pointer ${
+            suruklemede ? "border-primary bg-primary-container/10" : "border-outline hover:border-primary-container"
+          }`}
+          onClick={() => girisRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setSuruklemede(true);
+          }}
+          onDragLeave={() => setSuruklemede(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setSuruklemede(false);
+            const f = e.dataTransfer.files?.[0];
+            if (f) dosyaSec(f);
+          }}
+        >
+          <input
+            ref={girisRef}
+            type="file"
+            accept=".csv,text/csv,.xlsx,.xls,.pdf,application/pdf"
+            className="hidden"
+            onChange={(e) => dosyaSec(e.target.files?.[0] ?? null)}
+          />
+          <Icon name="cloud_upload" className="text-4xl text-outline-variant mb-4" />
           {dosya ? (
             <>
-              <div className="font-body-sm text-body-sm text-on-surface font-semibold">{dosya.name}</div>
-              <div className="font-label-mono text-[11px] text-on-surface-variant">
-                {(dosya.size / 1024).toFixed(1)} KB
-              </div>
+              <p className="text-body-md font-body-md text-on-surface mb-1">{dosya.name}</p>
+              <p className="text-mono-label-sm font-mono-label-sm text-outline">{(dosya.size / 1024).toFixed(1)} KB</p>
             </>
           ) : (
             <>
-              <div className="font-body-sm text-body-sm text-on-surface">
-                CSV, Excel ya da PDF dosyasını buraya sürükleyin veya seçin
-              </div>
-              <div className="font-label-mono text-[11px] text-on-surface-variant">.csv / .xlsx / .pdf</div>
+              <p className="text-body-md font-body-md text-on-surface text-center mb-2">
+                Ekstrenizi buraya sürükleyin veya <span className="text-primary-container underline">göz atın</span>
+              </p>
+              <p className="text-mono-label-sm font-mono-label-sm text-outline">(CSV, XLSX, PDF) — Max 10MB</p>
             </>
           )}
-          <div className="flex gap-3 mt-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              gonder();
+            }}
+            disabled={!dosya || yukleniyor}
+            className="mt-6 px-6 py-2 bg-primary-container text-on-primary-container font-mono-label-sm text-mono-label-sm font-bold rounded-DEFAULT hover:bg-primary-fixed transition-colors disabled:opacity-40"
+          >
+            {yukleniyor ? "Skorlanıyor…" : "Skorla"}
+          </button>
+        </div>
+
+        <div className="bg-surface-container-low border border-outline-variant rounded p-6 flex flex-col gap-6">
+          <div>
+            <h3 className="text-mono-label-sm font-mono-label-sm text-outline uppercase tracking-wider mb-4 border-b border-outline-variant pb-2">
+              Beklenen Kolon Şeması
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {["tarih (YYYY-AA-GG)", "islem_tipi (gelir/gider)", "kategori", "tutar", "aciklama (opsiyonel)"].map((k) => (
+                <span
+                  key={k}
+                  className="px-2 py-1 bg-surface-dim border border-outline-variant rounded-DEFAULT text-mono-label-sm font-mono-label-sm text-on-surface"
+                >
+                  {k}
+                </span>
+              ))}
+            </div>
+            <p className="text-body-md font-body-md text-on-surface-variant mt-3">
+              Gider tutarları <strong>negatif</strong> yazılmalı (örn. <code>-850</code>). En az 5 işlem gerekir.
+              Excel/PDF'te kolonlar otomatik tanınır.
+            </p>
+          </div>
+          <div className="mt-auto">
             <button
-              onClick={() => girisRef.current?.click()}
-              className="px-4 py-2 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-label-mono text-on-surface hover:bg-surface-container transition-colors"
+              onClick={ornekIndir}
+              className="w-full py-2 bg-surface-dim border border-outline-variant rounded-DEFAULT text-mono-label-sm font-mono-label-sm text-on-surface hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"
             >
-              Dosya Seç
-            </button>
-            <button
-              onClick={gonder}
-              disabled={!dosya || yukleniyor}
-              className="px-4 py-2 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors disabled:opacity-40"
-            >
-              {yukleniyor ? "Skorlanıyor…" : "Skorla"}
+              <Icon name="download" className="text-[16px]" />
+              Örnek CSV İndir
             </button>
           </div>
         </div>
       </section>
 
       {hata && (
-        <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-4 font-body-sm text-body-sm">
+        <div className="border border-error/40 bg-error-container/20 text-error rounded-DEFAULT p-4 font-body-md text-body-md">
           {hata}
         </div>
       )}
 
       {sonuc && (
-        <section className="grid grid-cols-1 md:grid-cols-12 gap-stack-md">
+        <section className="flex flex-col gap-gutter">
           {sonuc.anomali_bayrak && (
-            <div className="col-span-1 md:col-span-12 bg-amber-400/10 border border-amber-400/30 text-amber-400 rounded-DEFAULT p-3 font-body-sm text-body-sm flex items-center gap-2">
-              <Icon name="warning" className="text-[16px] shrink-0" />
-              Bu ekstre, İzolasyon Ormanı'na (denetimsiz OOD tespiti) göre eğitim dağılımının tipik aralığının
-              dışında bir profil gösteriyor — skoru değiştirmez, yalnızca modele diğer profillere göre biraz daha
-              az güvenilmesi gerektiğini işaret eder (tipiklik skoru: {sonuc.anomali_skoru}).
+            <div className="border caveat-banner text-caveat rounded p-4 flex gap-3 items-start">
+              <Icon name="warning" className="shrink-0" filled />
+              <p className="text-body-md font-body-md">
+                Bu ekstre, İzolasyon Ormanı'na (denetimsiz OOD tespiti) göre eğitim dağılımının tipik aralığının
+                dışında bir profil gösteriyor — skoru değiştirmez, yalnızca modele diğer profillere göre biraz daha
+                az güvenilmesi gerektiğini işaret eder (tipiklik skoru: {sonuc.anomali_skoru}).
+              </p>
             </div>
           )}
           {(sonuc.belge_meta?.bayraklar ?? []).map((b) => (
-            <div
-              key={b}
-              className="col-span-1 md:col-span-12 bg-amber-400/10 border border-amber-400/30 text-amber-400 rounded-DEFAULT p-3 font-body-sm text-body-sm flex items-center gap-2"
-            >
-              <Icon name="warning" className="text-[16px] shrink-0" />
-              {BELGE_BAYRAK_METNI[b] ?? b}
+            <div key={b} className="border caveat-banner text-caveat rounded p-4 flex gap-3 items-start">
+              <Icon name="warning" className="shrink-0" filled />
+              <p className="text-body-md font-body-md">{BELGE_BAYRAK_METNI[b] ?? b}</p>
             </div>
           ))}
-          <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col items-center justify-center text-center">
-            <span className="font-label-mono text-label-mono text-on-surface-variant mb-2">AKS Skoru</span>
-            <span className="font-display-lg text-display-lg text-primary drop-shadow-[0_0_10px_rgba(195,192,255,0.5)]">
-              {sonuc.aks_skor}
-            </span>
-            <span className="font-label-mono text-label-mono text-secondary mt-3">{sonuc.risk_seviyesi}</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant mt-1">{sonuc.karar}</span>
-          </div>
 
-          <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col items-center justify-center text-center">
-            <span className="font-label-mono text-label-mono text-on-surface-variant mb-2">Önerilen Limit</span>
-            <span className="font-display-sm text-display-sm text-on-background">
-              {paraFormat(sonuc.onerilen_limit)}
-            </span>
-            <span className="font-label-mono text-[10px] text-on-surface-variant mt-3">
-              {sonuc.islem_sayisi} işlemden hesaplandı
-            </span>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+            <div className="bg-surface-container-low border border-outline-variant rounded p-6 flex flex-col justify-center text-center">
+              <span className="text-mono-label-sm font-mono-label-sm text-on-surface-variant mb-2">AKS Skoru</span>
+              <span className="text-mono-score-lg font-mono-score-lg text-primary">{sonuc.aks_skor}</span>
+              <span className="text-mono-label-sm font-mono-label-sm text-secondary mt-3">{sonuc.risk_seviyesi}</span>
+              <span className="text-body-md font-body-md text-on-surface-variant mt-1">{sonuc.karar}</span>
+            </div>
 
-          <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col justify-center">
-            <p className="font-label-mono text-[10px] text-on-surface-variant leading-relaxed">
-              Bu yükleme yolunda banka/klasik skor bilinmiyor, bu yüzden Formülasyon B (PD-Gap / Kapasite Sinyali)
-              hesaplanmaz — yalnızca demo müşterileri için (klasik skor bilindiğinde) üretilir.
-            </p>
-          </div>
+            <div className="bg-surface-container-low border border-outline-variant rounded p-6 flex flex-col justify-center text-center">
+              <span className="text-mono-label-sm font-mono-label-sm text-on-surface-variant mb-2">Önerilen Limit</span>
+              <span className="text-headline-lg font-headline-lg text-on-background">{paraFormat(sonuc.onerilen_limit)}</span>
+              <span className="text-[10px] font-mono-label-sm text-on-surface-variant mt-3">
+                {sonuc.islem_sayisi} işlemden hesaplandı
+              </span>
+            </div>
 
-          <div className="col-span-1 md:col-span-8 bg-surface-container hairline-border rounded-xl p-6">
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-4">
-              Davranışsal Faktörler (SHAP)
-            </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {sonuc.aciklama.riski_azaltan.map((f) => (
-                <div
-                  className="bg-surface-container-low border border-emerald-400/20 p-3 rounded-lg"
-                  key={f.kod}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-label-mono text-[10px] text-emerald-400">RİSKİ AZALTIR</span>
-                    <span className="font-label-mono text-label-mono text-on-surface">{f.etki.toFixed(3)}</span>
-                  </div>
-                  <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>
-                </div>
-              ))}
-              {sonuc.aciklama.riski_artiran.map((f) => (
-                <div className="bg-surface-container-low border border-error/20 p-3 rounded-lg" key={f.kod}>
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-label-mono text-[10px] text-error">RİSKİ ARTIRIR</span>
-                    <span className="font-label-mono text-label-mono text-on-surface">+{f.etki.toFixed(3)}</span>
-                  </div>
-                  <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>
-                </div>
-              ))}
+            <div className="bg-surface-container-low border border-outline-variant rounded p-6 flex flex-col justify-center">
+              <p className="text-[10px] font-mono-label-sm text-on-surface-variant leading-relaxed">
+                Bu yükleme yolunda banka/klasik skor bilinmiyor, bu yüzden Formülasyon B (PD-Gap / Kapasite Sinyali)
+                hesaplanmaz — yalnızca demo müşterileri için (klasik skor bilindiğinde) üretilir.
+              </p>
             </div>
           </div>
 
-          <div className="col-span-1 md:col-span-4 bg-surface-container hairline-border rounded-xl p-6">
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-4">
-              Danışman Özeti
-            </h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">{sonuc.danisman.ozet}</p>
-            {sonuc.danisman.oneriler.length > 0 && (
-              <ul className="space-y-2">
-                {sonuc.danisman.oneriler.map((o, i) => (
-                  <li key={i} className="font-body-sm text-body-sm text-on-surface-variant flex gap-2">
-                    <Icon name="arrow_right" className="text-primary text-sm shrink-0" />
-                    {o}
-                  </li>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+            <div className="lg:col-span-2 bg-surface-container-low border border-outline-variant rounded p-6">
+              <h3 className="text-mono-label-sm font-mono-label-sm text-outline uppercase tracking-wider mb-6">
+                Davranışsal Faktörler (SHAP)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sonuc.aciklama.riski_azaltan.map((f) => (
+                  <div className="bg-surface-container border border-shap-positive/20 rounded-lg p-3" key={f.kod}>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-mono-label-sm text-shap-positive">RİSKİ AZALTIR</span>
+                      <span className="text-mono-label-sm font-mono-label-sm text-on-surface">{f.etki.toFixed(3)}</span>
+                    </div>
+                    <div className="text-body-md font-body-md text-on-background">{f.faktor}</div>
+                  </div>
                 ))}
-              </ul>
-            )}
+                {sonuc.aciklama.riski_artiran.map((f) => (
+                  <div className="bg-surface-container border border-shap-negative/20 rounded-lg p-3" key={f.kod}>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-mono-label-sm text-shap-negative">RİSKİ ARTIRIR</span>
+                      <span className="text-mono-label-sm font-mono-label-sm text-on-surface">+{f.etki.toFixed(3)}</span>
+                    </div>
+                    <div className="text-body-md font-body-md text-on-background">{f.faktor}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-surface-container-low border border-outline-variant rounded p-6">
+              <h3 className="text-mono-label-sm font-mono-label-sm text-outline uppercase tracking-wider mb-4">
+                Danışman Özeti
+              </h3>
+              <p className="text-body-md font-body-md text-on-surface-variant mb-4">{sonuc.danisman.ozet}</p>
+              {sonuc.danisman.oneriler.length > 0 && (
+                <ul className="space-y-2">
+                  {sonuc.danisman.oneriler.map((o, i) => (
+                    <li key={i} className="text-body-md font-body-md text-on-surface-variant flex gap-2">
+                      <Icon name="arrow_right" className="text-primary text-sm shrink-0" />
+                      {o}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
 
           {!!sonuc.belge_meta?.iz?.length && (
-            <details className="col-span-1 md:col-span-12 bg-surface-container hairline-border rounded-xl p-6">
-              <summary className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider cursor-pointer">
+            <details className="bg-surface-container-low border border-outline-variant rounded p-6">
+              <summary className="text-mono-label-sm font-mono-label-sm text-outline uppercase tracking-wider cursor-pointer">
                 Belge Agent İzi ({sonuc.belge_meta.kaynak_format?.toUpperCase()})
               </summary>
               <ol className="mt-4 space-y-1.5">
                 {sonuc.belge_meta.iz.map((adim, i) => (
-                  <li key={i} className="font-label-mono text-[11px] text-on-surface-variant flex gap-2">
+                  <li key={i} className="text-[11px] font-mono-label-sm text-on-surface-variant flex gap-2">
                     <span className="text-primary shrink-0">{i + 1}.</span>
                     {adim}
                   </li>

@@ -30,3 +30,15 @@ Thumbs.db
 *.sqlite3
 staticfiles/
 media/
+
+# Stitch export klasorune Stitch icin kopyalanan kok dokuman kopyalari.
+# Tasarim varliklari (code.html/screen.png/DESIGN.md) repoda tutulur, ama bu
+# kopyalar CLAUDE.md nin "uc dokuman, dorduncusu asla" kuralini ihlal eder ve
+# kok dokumanlardan ayrisip "hangisi dogru" karisikligi yaratir.
+planning/stitch_aks_finansal_kapasite_platformu/**/architecture.md
+planning/stitch_aks_finansal_kapasite_platformu/**/claude.md
+planning/stitch_aks_finansal_kapasite_platformu/**/execution.md
+planning/stitch_aks_finansal_kapasite_platformu/**/overview.md
+planning/stitch_aks_finansal_kapasite_platformu/**/readme.md
+planning/stitch_aks_finansal_kapasite_platformu/**/frontend_pages_full_source.md
+planning/stitch_aks_finansal_kapasite_platformu/**/frontend_rebuild_handoff.md

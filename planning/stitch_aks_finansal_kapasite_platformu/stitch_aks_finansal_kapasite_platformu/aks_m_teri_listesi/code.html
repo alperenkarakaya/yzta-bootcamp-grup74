@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Müşteri Listesi - AKS Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#353438",
+                      "surface-dim": "#131317",
+                      "secondary": "#45dfa4",
+                      "primary-fixed": "#e3dfff",
+                      "outline": "#928f9a",
+                      "on-primary-container": "#4e4c83",
+                      "inverse-on-surface": "#313034",
+                      "on-secondary-fixed": "#002114",
+                      "on-secondary-container": "#00452e",
+                      "outline-variant": "#47464f",
+                      "on-error-container": "#ffdad6",
+                      "secondary-fixed-dim": "#45dfa4",
+                      "background": "#131317",
+                      "inverse-surface": "#e5e1e7",
+                      "surface": "#131317",
+                      "surface-variant": "#353438",
+                      "primary-container": "#c3c0ff",
+                      "error-container": "#93000a",
+                      "on-tertiary-container": "#982a2f",
+                      "on-background": "#e5e1e7",
+                      "surface-container-low": "#1c1b1f",
+                      "tertiary-fixed": "#ffdad8",
+                      "on-primary-fixed-variant": "#434176",
+                      "tertiary-container": "#ffb3b0",
+                      "on-tertiary-fixed": "#410006",
+                      "on-surface-variant": "#c8c5d0",
+                      "on-error": "#690005",
+                      "tertiary-fixed-dim": "#ffb3b0",
+                      "tertiary": "#ffdad8",
+                      "on-secondary": "#003825",
+                      "inverse-primary": "#5a5890",
+                      "on-surface": "#e5e1e7",
+                      "surface-bright": "#3a393d",
+                      "on-primary-fixed": "#161349",
+                      "surface-container-lowest": "#0e0e11",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "on-primary": "#2c2a5e",
+                      "on-tertiary": "#670211",
+                      "on-secondary-fixed-variant": "#005137",
+                      "surface-container": "#201f23",
+                      "secondary-container": "#00bd85",
+                      "surface-container-high": "#2a292d",
+                      "primary": "#e2dfff",
+                      "on-tertiary-fixed-variant": "#881d24",
+                      "secondary-fixed": "#68fcbf",
+                      "error": "#ffb4ab",
+                      "surface-tint": "#c3c0ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-default": "12px",
+                      "grid-margin": "24px",
+                      "gutter": "16px",
+                      "stack-compact": "4px",
+                      "container-padding": "16px"
+              },
+              "fontFamily": {
+                      "mono-data-md": [
+                              "JetBrains Mono"
+                      ],
+                      "mono-label-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Geist"
+                      ],
+                      "headline-md": [
+                              "Geist"
+                      ],
+                      "mono-score-lg": [
+                              "JetBrains Mono"
+                      ],
+                      "body-md": [
+                              "Geist"
+                      ]
+              },
+              "fontSize": {
+                      "mono-data-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "mono-label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "mono-score-lg": [
+                              "40px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.04em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        /* Custom scrollbar for data dense tables */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131317; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #47464f; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c3c0ff; 
+        }
+        
+        .zebra-row:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-16 bg-surface-dim border-b border-outline-variant hidden md:flex">
+<div class="flex items-center gap-8">
+<h1 class="text-headline-md font-headline-md font-bold text-primary tracking-tighter cursor-default">AKS Intelligence</h1>
+<nav class="flex gap-6 h-full items-center">
+<a class="text-mono-label-sm font-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Intelligence</a>
+<a class="text-mono-label-sm font-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Portföy</a>
+<a class="text-mono-label-sm font-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Denetim Defteri</a>
+<a class="text-mono-label-sm font-mono-label-sm text-primary border-b-2 border-primary pb-1 hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80 h-full flex items-center pt-[2px]" href="#">Müşteriler</a>
+<a class="text-mono-label-sm font-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80" href="#">Belge Yükle</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-mono-label-sm font-mono-label-sm text-on-surface-variant">user@aks.ai</span>
+<button class="text-mono-label-sm font-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer active:opacity-80 border border-outline-variant px-3 py-1 rounded">Çıkış</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-[80px] pb-24 md:pb-8 px-grid-margin md:px-8 max-w-[1600px] mx-auto w-full flex flex-col gap-6">
+<!-- Header Actions & Search -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 w-full">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-on-background mb-1">Müşteri Listesi</h2>
+<p class="text-mono-label-sm font-mono-label-sm text-outline">Demo Popülasyon Veri Seti v2.4 | 12.043 Kayıt</p>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<div class="relative w-full md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-9 pr-3 py-2 text-mono-data-md font-mono-data-md text-on-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" placeholder="ID, İsim veya Etiket ara..." type="text"/>
+</div>
+<button class="bg-surface-container border border-outline-variant rounded p-2 text-outline hover:text-primary hover:border-primary transition-colors flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Data Dense Table Container Level 1 Elevation -->
+<div class="bg-[#0f172a] border border-outline-variant rounded overflow-hidden flex flex-col flex-grow">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-dim border-b border-outline-variant sticky top-0 z-10">
+<tr>
+<th class="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline cursor-pointer hover:text-primary transition-colors group">
+<div class="flex items-center gap-1">MÜŞTERİ ID <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline">
+                                PROFİL
+                            </th>
+<th class="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline cursor-pointer hover:text-primary transition-colors group">
+<div class="flex items-center gap-1">PERSONA <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline text-right cursor-pointer hover:text-primary transition-colors group">
+<div class="flex items-center justify-end gap-1">KLASİK SKOR <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 text-mono-label-sm font-mono-label-sm text-primary text-right cursor-pointer hover:text-primary-fixed transition-colors group">
+<div class="flex items-center justify-end gap-1">AKS SKORU <span class="material-symbols-outlined text-[14px] opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline cursor-pointer hover:text-primary transition-colors group">
+<div class="flex items-center gap-1">RİSK BANDI <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline text-right">AKSİYON</th>
+</tr>
+</thead>
+<tbody class="text-mono-data-md font-mono-data-md">
+<!-- Row 1 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-8921-A</td>
+<td class="px-4 py-2">Ahmet Yılmaz</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">Kurumsal</span></td>
+<td class="px-4 py-2 text-right">680</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">745</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/10 border border-secondary/20 text-secondary text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                    Düşük Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-9034-B</td>
+<td class="px-4 py-2">Zeynep Kaya</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">Bireysel / Premium</span></td>
+<td class="px-4 py-2 text-right">720</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">780</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/10 border border-secondary/20 text-secondary text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                    Düşük Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-1145-C</td>
+<td class="px-4 py-2">Mehmet Demir</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">KOBİ</span></td>
+<td class="px-4 py-2 text-right">540</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">510</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/30 text-[#fbbf24] text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
+                                    Orta Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-5521-D</td>
+<td class="px-4 py-2">TechVision A.Ş.</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">Kurumsal / Start-up</span></td>
+<td class="px-4 py-2 text-right">610</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">690</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/10 border border-secondary/20 text-secondary text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                    Düşük Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-8890-E</td>
+<td class="px-4 py-2">Ayşe Çelik</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">Bireysel</span></td>
+<td class="px-4 py-2 text-right">480</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">495</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/30 text-[#fbbf24] text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
+                                    Orta Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 6 (Atypical Profile) -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors bg-error-container/5 relative">
+<td class="px-4 py-2 text-outline-variant">#CST-9999-F
+                                <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-error"></div>
+</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-2">
+                                    Global Trade Ltd.
+                                    <span class="material-symbols-outlined text-[16px] text-[#fbbf24]" title="Atipik Profil - Anomali Tespit Edildi">warning</span>
+</div>
+</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-error/30 text-error">Yabancı Ortaklı / Kompleks</span></td>
+<td class="px-4 py-2 text-right">710</td>
+<td class="px-4 py-2 text-right text-error font-bold border-l border-error/30 ml-2">320</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container/20 border border-error/30 text-error text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+                                    Yüksek Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-error-container/20 text-error border border-error/30 px-3 py-1 rounded hover:bg-error hover:text-on-error transition-colors">İncele</button>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-2341-G</td>
+<td class="px-4 py-2">Burak Yıldız</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">Bireysel / Genç</span></td>
+<td class="px-4 py-2 text-right">390</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">610</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/30 text-[#fbbf24] text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
+                                    Orta Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-7652-H</td>
+<td class="px-4 py-2">Güneş Enerji Sis.</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">KOBİ / Üretim</span></td>
+<td class="px-4 py-2 text-right">650</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">820</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/10 border border-secondary/20 text-secondary text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                    Düşük Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 9 -->
+<tr class="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-1029-I</td>
+<td class="px-4 py-2">Elif Şahin</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">Bireysel</span></td>
+<td class="px-4 py-2 text-right">520</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">540</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/30 text-[#fbbf24] text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
+                                    Orta Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+<!-- Row 10 -->
+<tr class="zebra-row hover:bg-surface-container-high/50 transition-colors">
+<td class="px-4 py-2 text-outline-variant">#CST-4432-J</td>
+<td class="px-4 py-2">Nova İnşaat</td>
+<td class="px-4 py-2"><span class="bg-surface-container px-2 py-0.5 rounded text-mono-label-sm border border-outline-variant/50">Kurumsal / Taahhüt</span></td>
+<td class="px-4 py-2 text-right">580</td>
+<td class="px-4 py-2 text-right text-primary font-bold border-l border-primary/30 ml-2">410</td>
+<td class="px-4 py-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container/20 border border-error/30 text-error text-mono-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                    Yüksek Risk
+                                </div>
+</td>
+<td class="px-4 py-2 text-right">
+<button class="text-mono-label-sm font-bold bg-primary-container text-on-primary-container px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Detay</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="mt-auto border-t border-outline-variant bg-surface-dim px-4 py-3 flex justify-between items-center">
+<span class="text-mono-label-sm font-mono-label-sm text-outline">Showing 1 to 10 of 12,043 entries</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-outline-variant rounded text-mono-label-sm text-outline-variant cursor-not-allowed">Önceki</button>
+<button class="px-3 py-1 border border-outline-variant rounded bg-surface-container text-on-surface text-mono-label-sm hover:border-primary transition-colors">Sonraki</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-around items-center px-4 py-2 mx-auto max-w-md w-[90%] rounded-full bg-surface-container-high/90 border border-outline-variant backdrop-blur-md shadow-2xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full transition-transform duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="text-mono-label-sm font-mono-label-sm">Komut</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full transition-transform duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined">sensors</span>
+<span class="text-mono-label-sm font-mono-label-sm">Sinyal</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full transition-transform duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+<span class="text-mono-label-sm font-mono-label-sm">Yükle</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-full p-2 hover:bg-surface-variant transition-transform duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="text-mono-label-sm font-mono-label-sm">Kasa</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant rounded-full transition-transform duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+<span class="text-mono-label-sm font-mono-label-sm">Destek</span>
+</a>
+</nav>
+</body></html>

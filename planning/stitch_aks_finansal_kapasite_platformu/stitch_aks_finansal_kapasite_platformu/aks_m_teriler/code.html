@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Müşteriler - B2B Staff Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#131317",
+                        "surface-variant": "#353438",
+                        "secondary": "#45dfa4",
+                        "on-tertiary": "#670211",
+                        "on-error": "#690005",
+                        "tertiary-fixed-dim": "#ffb3b0",
+                        "surface-tint": "#c3c0ff",
+                        "on-tertiary-fixed-variant": "#881d24",
+                        "on-primary": "#2c2a5e",
+                        "primary-container": "#c3c0ff",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-secondary": "#003825",
+                        "surface-bright": "#3a393d",
+                        "inverse-on-surface": "#313034",
+                        "primary": "#e2dfff",
+                        "on-surface": "#e5e1e7",
+                        "surface-container-highest": "#353438",
+                        "inverse-primary": "#5a5890",
+                        "on-tertiary-fixed": "#410006",
+                        "on-background": "#e5e1e7",
+                        "tertiary-fixed": "#ffdad8",
+                        "surface-container-low": "#1c1b1f",
+                        "surface-container-high": "#2a292d",
+                        "secondary-fixed": "#68fcbf",
+                        "on-surface-variant": "#c8c5d0",
+                        "on-primary-container": "#4e4c83",
+                        "on-secondary-fixed": "#002114",
+                        "inverse-surface": "#e5e1e7",
+                        "on-secondary-container": "#00452e",
+                        "surface": "#131317",
+                        "error-container": "#93000a",
+                        "tertiary": "#ffdad8",
+                        "on-primary-fixed-variant": "#434176",
+                        "secondary-fixed-dim": "#45dfa4",
+                        "surface-container-lowest": "#0e0e11",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "outline": "#928f9a",
+                        "background": "#131317",
+                        "secondary-container": "#00bd85",
+                        "on-tertiary-container": "#982a2f",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#201f23",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#ffb3b0",
+                        "primary-fixed": "#e3dfff",
+                        "outline-variant": "#47464f",
+                        "on-primary-fixed": "#161349"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "grid-margin": "24px",
+                        "stack-default": "12px",
+                        "gutter": "16px",
+                        "stack-compact": "4px",
+                        "container-padding": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist"],
+                        "mono-label-sm": ["JetBrains Mono"],
+                        "headline-md": ["Geist"],
+                        "headline-lg": ["Geist"],
+                        "mono-score-lg": ["JetBrains Mono"],
+                        "mono-data-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "mono-label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "mono-score-lg": ["40px", { "lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "mono-data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for data density */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131317; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #47464f; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #928f9a; 
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen flex flex-col overflow-hidden">
+<!-- TopNavBar (Shared Component) -->
+<nav class="bg-surface-dim dark:bg-surface-dim flex justify-between items-center px-grid-margin h-16 w-full docked full-width top-0 border-b border-outline-variant flat no shadows">
+<!-- Brand / Title -->
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md font-semibold text-primary dark:text-primary">
+                B2B Staff Portal
+            </span>
+<!-- Navigation Links -->
+<ul class="flex items-center h-full pt-1 space-x-6">
+<!-- Active Link -->
+<li>
+<a class="inline-block text-primary font-bold border-b-2 border-primary pb-1 hover:text-primary transition-colors duration-200" href="#">
+                        Müşteriler
+                    </a>
+</li>
+</ul>
+</div>
+<!-- Trailing Action -->
+<div>
+<button class="font-mono-label-sm text-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200">
+                Çıkış
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto p-grid-margin bg-surface-dim grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Access Request Form -->
+<section class="lg:col-span-4 flex flex-col gap-gutter">
+<div class="bg-surface-container-low border border-outline-variant rounded p-grid-margin flex flex-col gap-stack-default">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-compact">Yeni Erişim Talebi</h2>
+<p class="font-body-md text-on-surface-variant mb-stack-default">Müşteri verilerine erişim sağlamak için onay talebi gönderin. Bu işlem, müşterinin mobil uygulamasına bir onay bildirimi iletecektir.</p>
+<form class="flex flex-col gap-stack-default">
+<div class="flex flex-col gap-stack-compact">
+<label class="font-mono-label-sm text-mono-label-sm text-outline" for="aksNumber">AKS Numarası</label>
+<input class="bg-surface-dim border border-outline-variant rounded px-3 py-2 font-mono-data-md text-mono-data-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors" id="aksNumber" pattern="AKS-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{2}" placeholder="AKS-XXXX-XXXX-XC" required="" type="text"/>
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface-variant text-[10px]">Format: AKS-XXXX-XXXX-XC</span>
+</div>
+<div class="flex flex-col gap-stack-compact">
+<label class="font-mono-label-sm text-mono-label-sm text-outline" for="statedPurpose">Gerekçe (Stated Purpose)</label>
+<textarea class="bg-surface-dim border border-outline-variant rounded px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors resize-none" id="statedPurpose" placeholder="Erişim talebinizin nedenini detaylı olarak açıklayın..." required="" rows="4"></textarea>
+</div>
+<button class="mt-stack-default w-full bg-primary-container text-black font-mono-label-sm text-mono-label-sm font-bold py-3 rounded border border-primary-container hover:bg-primary transition-colors flex justify-center items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+                        Talep Gönder
+                    </button>
+</form>
+<!-- Status Feedback (Hidden by default, shown on action) -->
+<div class="hidden mt-stack-default border border-secondary p-3 bg-secondary/10 rounded flex items-start gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
+<p class="font-body-md text-on-surface text-sm">Talep başarıyla iletildi. Bekleniyor...</p>
+</div>
+</div>
+<!-- Contextual Information Card -->
+<div class="bg-surface-container-low border border-outline-variant rounded p-grid-margin">
+<div class="flex items-center gap-2 mb-stack-default">
+<span class="material-symbols-outlined text-secondary">info</span>
+<h3 class="font-mono-label-sm text-mono-label-sm text-on-surface">Erişim Protokolü</h3>
+</div>
+<ul class="font-body-md text-body-md text-on-surface-variant space-y-2 list-disc list-inside">
+<li>Erişim onayları maksimum 24 saat geçerlidir.</li>
+<li>Tüm işlemler kalıcı olarak loglanmaktadır.</li>
+<li>Sadece spesifik analiz amacına yönelik veriler çekilir.</li>
+</ul>
+</div>
+</section>
+<!-- Right Column: Active Consents Table -->
+<section class="lg:col-span-8 flex flex-col">
+<div class="bg-surface-container-low border border-outline-variant rounded flex flex-col h-full overflow-hidden">
+<!-- Table Header Area -->
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-highest">
+<h2 class="font-headline-md text-headline-md text-on-surface">Aktif Erişimler</h2>
+<div class="flex gap-2">
+<button class="text-outline hover:text-primary transition-colors p-1 border border-transparent hover:border-outline-variant rounded">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+<button class="text-outline hover:text-primary transition-colors p-1 border border-transparent hover:border-outline-variant rounded">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Data Table (Scrollable Body) -->
+<div class="flex-1 overflow-auto">
+<table class="w-full text-left border-collapse">
+<thead class="sticky top-0 bg-surface-container-highest border-b border-outline-variant z-10">
+<tr>
+<th class="py-2 px-4 font-mono-label-sm text-mono-label-sm text-outline font-medium w-1/4">AKS Number</th>
+<th class="py-2 px-4 font-mono-label-sm text-mono-label-sm text-outline font-medium">Stated Purpose</th>
+<th class="py-2 px-4 font-mono-label-sm text-mono-label-sm text-outline font-medium w-1/4 text-right">Consent Expiry</th>
+<th class="py-2 px-2 w-10"></th>
+</tr>
+</thead>
+<tbody class="font-mono-data-md text-mono-data-md text-on-surface divide-y divide-outline-variant/30">
+<!-- Row 1 -->
+<tr class="hover:bg-white/5 cursor-pointer transition-colors group">
+<td class="py-3 px-4 text-primary">AKS-9F2A-X88B-1C</td>
+<td class="py-3 px-4 text-on-surface-variant font-body-md truncate max-w-xs">Kredi risk analizi ve portföy optimizasyonu için veri incelemesi.</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                        23:45:12
+                                    </div>
+</td>
+<td class="py-3 px-2 text-center text-outline group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-white/5 cursor-pointer transition-colors group bg-white/[0.02]">
+<td class="py-3 px-4 text-primary">AKS-4T1C-M99P-4X</td>
+<td class="py-3 px-4 text-on-surface-variant font-body-md truncate max-w-xs">Aylık harcama trendleri ve anomali tespiti modelleme kalibrasyonu.</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                        18:20:00
+                                    </div>
+</td>
+<td class="py-3 px-2 text-center text-outline group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 3 (Expiring soon) -->
+<tr class="hover:bg-white/5 cursor-pointer transition-colors group">
+<td class="py-3 px-4 text-primary">AKS-7R5Y-L22K-9Z</td>
+<td class="py-3 px-4 text-on-surface-variant font-body-md truncate max-w-xs">Dolandırıcılık şüphesi üzerine acil işlem geçmişi incelemesi.</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-2 text-tertiary-container">
+<span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span>
+                                        00:15:30
+                                    </div>
+</td>
+<td class="py-3 px-2 text-center text-outline group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-white/5 cursor-pointer transition-colors group bg-white/[0.02]">
+<td class="py-3 px-4 text-primary">AKS-1A2B-3C4D-5E</td>
+<td class="py-3 px-4 text-on-surface-variant font-body-md truncate max-w-xs">Periyodik KYC güncellemesi ve adres doğrulama belgeleri kontrolü.</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                        12:00:00
+                                    </div>
+</td>
+<td class="py-3 px-2 text-center text-outline group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-white/5 cursor-pointer transition-colors group">
+<td class="py-3 px-4 text-primary">AKS-9X8Y-7Z6W-5V</td>
+<td class="py-3 px-4 text-on-surface-variant font-body-md truncate max-w-xs">Kurumsal hesap birleştirme talebi ön değerlendirmesi.</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                        08:45:10
+                                    </div>
+</td>
+<td class="py-3 px-2 text-center text-outline group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer (Pagination / Count) -->
+<div class="p-3 border-t border-outline-variant bg-surface-container-highest flex justify-between items-center">
+<span class="font-mono-label-sm text-mono-label-sm text-outline">Toplam: 5 Aktif Bağlantı</span>
+<div class="flex gap-4 font-mono-label-sm text-mono-label-sm text-on-surface-variant">
+<button class="hover:text-primary disabled:opacity-50" disabled="">&lt; Prev</button>
+<span>1 / 1</span>
+<button class="hover:text-primary disabled:opacity-50" disabled="">Next &gt;</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

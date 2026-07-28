@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AKS Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#c3c0ff",
+                        "secondary-fixed-dim": "#45dfa4",
+                        "on-tertiary-fixed-variant": "#881d24",
+                        "secondary-container": "#00bd85",
+                        "on-error-container": "#ffdad6",
+                        "outline": "#928f9a",
+                        "surface-container-highest": "#353438",
+                        "surface": "#131317",
+                        "surface-bright": "#3a393d",
+                        "on-primary": "#2c2a5e",
+                        "error": "#ffb4ab",
+                        "on-primary-fixed-variant": "#434176",
+                        "primary-fixed": "#e3dfff",
+                        "inverse-surface": "#e5e1e7",
+                        "tertiary": "#ffdad8",
+                        "surface-container-lowest": "#0e0e11",
+                        "primary-container": "#c3c0ff",
+                        "secondary": "#45dfa4",
+                        "inverse-on-surface": "#313034",
+                        "on-surface": "#e5e1e7",
+                        "on-tertiary-fixed": "#410006",
+                        "on-secondary-container": "#00452e",
+                        "tertiary-fixed": "#ffdad8",
+                        "outline-variant": "#47464f",
+                        "on-tertiary": "#670211",
+                        "secondary-fixed": "#68fcbf",
+                        "background": "#131317",
+                        "inverse-primary": "#5a5890",
+                        "on-surface-variant": "#c8c5d0",
+                        "on-primary-container": "#4e4c83",
+                        "surface-container-high": "#2a292d",
+                        "on-background": "#e5e1e7",
+                        "on-secondary-fixed": "#002114",
+                        "on-secondary": "#003825",
+                        "surface-container": "#201f23",
+                        "on-tertiary-container": "#982a2f",
+                        "surface-container-low": "#1c1b1f",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "surface-dim": "#131317",
+                        "primary": "#e2dfff",
+                        "tertiary-container": "#ffb3b0",
+                        "surface-variant": "#353438",
+                        "tertiary-fixed-dim": "#ffb3b0",
+                        "on-primary-fixed": "#161349",
+                        "primary-fixed-dim": "#c3c0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "stack-default": "12px",
+                        "stack-compact": "4px",
+                        "container-padding": "16px",
+                        "grid-margin": "24px"
+                    },
+                    "fontFamily": {
+                        "mono-label-sm": ["JetBrains Mono"],
+                        "body-md": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "mono-score-lg": ["JetBrains Mono"],
+                        "headline-lg": ["Geist"],
+                        "mono-data-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "mono-label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "mono-score-lg": ["40px", { "lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "mono-data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #020617; /* Level 0 base */
+            color: #e5e1e7;
+        }
+        .tonal-layer-1 {
+            background-color: #0f172a;
+            border: 1px solid #47464f; /* outline-variant */
+        }
+        .file-drag-over {
+            border-color: #c3c0ff !important;
+            background-color: rgba(195, 192, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen flex flex-col md:flex-row bg-surface dark:bg-surface">
+<!-- Desktop SideNav -->
+<nav class="h-full w-64 fixed left-0 top-0 hidden lg:flex flex-col border-r border-outline-variant dark:border-outline-variant bg-surface-container dark:bg-surface-container z-40 p-gutter gap-stack-default">
+<div class="mb-8 mt-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl">analytics</span>
+<div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary tracking-tighter">AKS Portal</h1>
+<p class="font-mono-label-sm text-mono-label-sm text-on-surface-variant">Müşteri Paneli</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full border-l-4 border-primary transition-transform active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+<span class="font-mono-label-sm text-mono-label-sm">Yükle</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest rounded-full transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-mono-label-sm text-mono-label-sm">Profilim</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest rounded-full transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">key</span>
+<span class="font-mono-label-sm text-mono-label-sm">Erişim Talepleri</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest rounded-full transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="font-mono-label-sm text-mono-label-sm">Rıza Defterim</span>
+</a>
+</div>
+<div class="mt-auto">
+<button class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-highest transition-colors font-mono-label-sm text-mono-label-sm">
+<span class="material-symbols-outlined text-sm">logout</span>
+                Çıkış
+            </button>
+</div>
+</nav>
+<!-- Mobile TopNavBar -->
+<nav class="fixed top-0 w-full z-50 border-b border-outline-variant dark:border-outline-variant bg-surface dark:bg-surface lg:hidden flex flex-col">
+<div class="flex justify-between items-center h-16 px-gutter max-w-full mx-auto w-full">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary tracking-tighter flex items-center gap-2">
+<span class="material-symbols-outlined">analytics</span> AKS Portal
+            </h1>
+<button class="text-on-surface-variant p-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+<!-- Mobile Nav Links (Simplified for focus) -->
+<div class="flex justify-around items-center h-12 bg-surface-container-low border-t border-outline-variant overflow-x-auto px-4">
+<a class="text-primary dark:text-primary border-b-2 border-primary dark:border-primary pb-1 font-mono-label-sm text-mono-label-sm whitespace-nowrap px-3 transition-all duration-200 active:scale-95" href="#">Yükle</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface transition-colors font-mono-label-sm text-mono-label-sm whitespace-nowrap px-3 transition-all duration-200 active:scale-95" href="#">Profilim</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface transition-colors font-mono-label-sm text-mono-label-sm whitespace-nowrap px-3 transition-all duration-200 active:scale-95" href="#">Erişim Talepleri</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full lg:ml-64 pt-32 lg:pt-8 p-4 lg:p-grid-margin lg:px-8 max-w-6xl mx-auto flex flex-col gap-8">
+<!-- Header -->
+<header class="flex flex-col gap-2">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Belge Yükleme Merkezi</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Finansal analiz için hesap ekstrelerinizi güvenle yükleyin.</p>
+</header>
+<!-- Caveat Banner -->
+<div class="flex items-start gap-3 p-4 border border-[#fbbf24] bg-[#fbbf24]/10 rounded-lg">
+<span class="material-symbols-outlined text-[#fbbf24] mt-0.5" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div>
+<p class="font-mono-label-sm text-mono-label-sm text-[#fbbf24] font-bold mb-1">YASAL ZORUNLULUK</p>
+<p class="font-body-md text-body-md text-on-surface">Yüklenen tüm belgeler KVKK kapsamında işlenmektedir. Yanıltıcı beyanlar yasal sorumluluk doğurur.</p>
+</div>
+</div>
+<!-- Upload Zone -->
+<section class="tonal-layer-1 rounded-xl p-6 lg:p-8 flex flex-col gap-6">
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-10 flex flex-col items-center justify-center text-center gap-4 transition-colors hover:border-primary-container hover:bg-surface-container cursor-pointer" id="dropzone">
+<span class="material-symbols-outlined text-6xl text-primary-container/70 mb-2">cloud_upload</span>
+<div>
+<p class="font-headline-md text-headline-md text-on-surface mb-2">Dosyalarınızı buraya sürükleyin</p>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">veya seçmek için tıklayın (CSV, XLSX, PDF - Max 10MB)</p>
+</div>
+<button class="bg-surface-container border border-outline text-on-surface px-6 py-2 rounded-lg font-mono-label-sm text-mono-label-sm hover:border-primary transition-colors">
+                    Dosya Seç
+                </button>
+<input accept=".csv, .xlsx, .pdf" class="hidden" id="fileInput" type="file"/>
+</div>
+<!-- File Preview (Hidden by default) -->
+<div class="hidden flex items-center justify-between p-4 bg-surface-container-highest rounded-lg border border-outline-variant" id="filePreview">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">description</span>
+<span class="font-mono-data-md text-mono-data-md text-on-surface" id="fileName">ekstre_2023_q4.pdf</span>
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface-variant" id="fileSize">2.4 MB</span>
+</div>
+<button class="text-error hover:text-error-container" id="removeFileBtn">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-outline-variant/50">
+<label class="flex items-center gap-3 cursor-pointer group">
+<div class="relative flex items-center">
+<input class="peer appearance-none w-5 h-5 border border-outline rounded bg-transparent checked:bg-primary checked:border-primary transition-all" id="ownershipCheck" type="checkbox"/>
+<span class="material-symbols-outlined absolute text-on-primary text-sm opacity-0 peer-checked:opacity-100 pointer-events-none left-0.5 top-0.5" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Bu ekstre bana aittir ve içeriğinin doğruluğunu onaylıyorum.</span>
+</label>
+<button class="bg-primary-container text-on-primary font-mono-label-sm text-mono-label-sm font-bold px-8 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-opacity w-full sm:w-auto flex items-center justify-center gap-2" disabled="" id="analyzeBtn">
+<span class="material-symbols-outlined text-sm">memory</span>
+                    Analiz Et
+                </button>
+</div>
+</section>
+<!-- Loading State (Hidden) -->
+<section class="hidden tonal-layer-1 rounded-xl p-8 flex flex-col items-center justify-center gap-6 min-h-[300px]" id="analyzingState">
+<div class="relative w-16 h-16 flex items-center justify-center">
+<div class="absolute inset-0 border-4 border-surface-container rounded-full"></div>
+<div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
+<span class="material-symbols-outlined text-primary text-2xl animate-pulse">model_training</span>
+</div>
+<div class="text-center">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Analiz Ediliyor...</h3>
+<p class="font-mono-data-md text-mono-data-md text-on-surface-variant animate-pulse" id="loadingText">Veri setleri çıkarılıyor...</p>
+</div>
+</section>
+</main>
+<script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const ownershipCheck = document.getElementById('ownershipCheck');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const removeFileBtn = document.getElementById('removeFileBtn');
+        const analyzingState = document.getElementById('analyzingState');
+
+        let selectedFile = null;
+
+        // File Selection Logic
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('file-drag-over');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('file-drag-over');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('file-drag-over');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            dropzone.classList.add('hidden');
+            filePreview.classList.remove('hidden');
+            updateAnalyzeButtonState();
+        }
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            dropzone.classList.remove('hidden');
+            filePreview.classList.add('hidden');
+            ownershipCheck.checked = false;
+            updateAnalyzeButtonState();
+        });
+
+        // Checkbox Logic
+        ownershipCheck.addEventListener('change', updateAnalyzeButtonState);
+
+        function updateAnalyzeButtonState() {
+            analyzeBtn.disabled = !(selectedFile && ownershipCheck.checked);
+        }
+
+        // Simulate Analysis
+        analyzeBtn.addEventListener('click', () => {
+            if(analyzeBtn.disabled) return;
+            
+            // Hide upload section, show loading
+            dropzone.parentElement.classList.add('hidden');
+            analyzingState.classList.remove('hidden');
+            analyzingState.classList.add('flex');
+
+            const loadingTexts = ["Veriler ayrıştırılıyor...", "Risk modelleri çalıştırılıyor...", "Skor hesaplanıyor..."];
+            let step = 0;
+            const textEl = document.getElementById('loadingText');
+            
+            const interval = setInterval(() => {
+                step++;
+                if(step < loadingTexts.length) {
+                    textEl.textContent = loadingTexts[step];
+                } else {
+                    clearInterval(interval);
+                    // Refresh page to show results (in a real app, this would be an AJAX update)
+                    // For demo purposes, we'll just reload slightly delayed
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            }, 1500);
+        });
+
+    </script>
+</body></html>

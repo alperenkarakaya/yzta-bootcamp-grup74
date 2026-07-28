@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Erişim Talepleri - AKS Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#c3c0ff",
+                    "secondary-fixed-dim": "#45dfa4",
+                    "on-tertiary-fixed-variant": "#881d24",
+                    "secondary-container": "#00bd85",
+                    "on-error-container": "#ffdad6",
+                    "outline": "#928f9a",
+                    "surface-container-highest": "#353438",
+                    "surface": "#131317",
+                    "surface-bright": "#3a393d",
+                    "on-primary": "#2c2a5e",
+                    "error": "#ffb4ab",
+                    "on-primary-fixed-variant": "#434176",
+                    "primary-fixed": "#e3dfff",
+                    "inverse-surface": "#e5e1e7",
+                    "tertiary": "#ffdad8",
+                    "surface-container-lowest": "#0e0e11",
+                    "primary-container": "#c3c0ff",
+                    "secondary": "#45dfa4",
+                    "inverse-on-surface": "#313034",
+                    "on-surface": "#e5e1e7",
+                    "on-tertiary-fixed": "#410006",
+                    "on-secondary-container": "#00452e",
+                    "tertiary-fixed": "#ffdad8",
+                    "outline-variant": "#47464f",
+                    "on-tertiary": "#670211",
+                    "secondary-fixed": "#68fcbf",
+                    "background": "#131317",
+                    "inverse-primary": "#5a5890",
+                    "on-surface-variant": "#c8c5d0",
+                    "on-primary-container": "#4e4c83",
+                    "surface-container-high": "#2a292d",
+                    "on-background": "#e5e1e7",
+                    "on-secondary-fixed": "#002114",
+                    "on-secondary": "#003825",
+                    "surface-container": "#201f23",
+                    "on-tertiary-container": "#982a2f",
+                    "surface-container-low": "#1c1b1f",
+                    "on-secondary-fixed-variant": "#005137",
+                    "on-error": "#690005",
+                    "error-container": "#93000a",
+                    "surface-dim": "#131317",
+                    "primary": "#e2dfff",
+                    "tertiary-container": "#ffb3b0",
+                    "surface-variant": "#353438",
+                    "tertiary-fixed-dim": "#ffb3b0",
+                    "on-primary-fixed": "#161349",
+                    "primary-fixed-dim": "#c3c0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "stack-default": "12px",
+                    "stack-compact": "4px",
+                    "container-padding": "16px",
+                    "grid-margin": "24px"
+            },
+            "fontFamily": {
+                    "mono-label-sm": ["JetBrains Mono"],
+                    "body-md": ["Geist"],
+                    "headline-md": ["Geist"],
+                    "mono-score-lg": ["JetBrains Mono"],
+                    "headline-lg": ["Geist"],
+                    "mono-data-md": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "mono-label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "mono-score-lg": ["40px", {"lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "mono-data-md": ["14px", {"lineHeight": "18px", "fontWeight": "500"}]
+            }
+          }
+        }
+      }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Geist:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { background-color: #020617; /* Level 0 base from style guide */ }
+        /* Ensuring strict 1px borders per technical brutalism */
+        .card-layer {
+            background-color: #0f172a; /* Level 1 */
+            border: 1px solid theme('colors.outline-variant');
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col lg:flex-row">
+<!-- TopNavBar (Mobile) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center h-16 px-gutter mx-auto border-b border-outline-variant bg-surface lg:hidden flat no shadows transition-all duration-200 active:scale-95">
+<div class="font-headline-md text-headline-md font-bold text-primary tracking-tighter">AKS Portal</div>
+<nav class="flex gap-4">
+<!-- Yükle -->
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-high rounded-lg px-2 py-1 flex flex-col items-center" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="upload_file">upload_file</span>
+</a>
+<!-- Profilim -->
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-high rounded-lg px-2 py-1 flex flex-col items-center" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="account_circle">account_circle</span>
+</a>
+<!-- Erişim Talepleri (Active) -->
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1 hover:bg-surface-container-high rounded-lg px-2 py-1 flex flex-col items-center" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="key">key</span>
+</a>
+<!-- Rıza Defterim -->
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-high rounded-lg px-2 py-1 flex flex-col items-center" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="history_edu">history_edu</span>
+</a>
+</nav>
+</header>
+<!-- SideNavBar (Desktop) -->
+<aside class="bg-surface-container text-primary font-mono-label-sm h-full w-64 fixed left-0 top-0 hidden lg:flex flex-col border-r border-outline-variant flat no shadows flex flex-col gap-stack-default p-gutter active:scale-[0.98] transition-transform">
+<div class="mb-8">
+<div class="font-headline-md text-headline-md text-primary font-bold tracking-tighter">AKS Portal</div>
+<div class="text-on-surface-variant mt-1 opacity-70">Müşteri Paneli</div>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<!-- Yükle -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span>Yükle</span>
+</a>
+<!-- Profilim -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span>Profilim</span>
+</a>
+<!-- Erişim Talepleri (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-full border-l-4 border-primary transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="key">key</span>
+<span>Erişim Talepleri</span>
+</a>
+<!-- Rıza Defterim -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span>Rıza Defterim</span>
+</a>
+</nav>
+<button class="mt-auto flex items-center justify-center gap-2 px-4 py-3 border border-outline-variant text-on-surface-variant hover:bg-surface-container-highest rounded-DEFAULT transition-colors w-full">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+            Çıkış
+        </button>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 mt-16 lg:mt-0 lg:ml-64 p-gutter md:p-grid-margin min-h-screen">
+<!-- Caveat Banner (Using a custom inline style color to approximate Amber per guidelines, while keeping structural classes theme-based) -->
+<div class="mb-6 p-stack-default border border-[#fbbf24] bg-[#fbbf24]/10 rounded-DEFAULT flex items-start gap-3">
+<span class="material-symbols-outlined text-[#fbbf24]" data-icon="warning">warning</span>
+<div>
+<h4 class="font-body-md text-body-md font-bold text-[#fbbf24]">Regülatif Bilgilendirme</h4>
+<p class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mt-1">
+                    Bu ekrandaki erişim onayları, 6698 sayılı KVKK kapsamında işlenmektedir. Onaylanan taleplerin kalıcı log kayıtları Rıza Defterim üzerinden izlenebilir.
+                </p>
+</div>
+</div>
+<header class="mb-8 flex justify-between items-end border-b border-outline-variant pb-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Erişim Talepleri</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Kurumlardan gelen veri erişim isteklerini yönetin.</p>
+</div>
+<div class="font-mono-data-md text-mono-data-md text-primary-fixed bg-surface-container-high px-3 py-1 rounded-DEFAULT border border-outline-variant">
+                TOTAL: 04 REQ
+            </div>
+</header>
+<!-- Requests Grid (Bento/Data-Dense inspired) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-default">
+<!-- Card 1: Pending (Bekliyor) -->
+<div class="card-layer rounded-DEFAULT p-stack-default flex flex-col justify-between group hover:border-primary-container transition-colors">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="account_balance">account_balance</span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-surface">FinansBank A.Ş.</h3>
+</div>
+<span class="font-mono-label-sm text-mono-label-sm px-2 py-1 bg-surface-variant text-on-surface-variant border border-outline-variant rounded-DEFAULT flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span> Bekliyor
+                        </span>
+</div>
+<div class="mb-4">
+<div class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-1 uppercase tracking-widest">Erişim Amacı</div>
+<div class="font-body-md text-body-md text-on-surface bg-surface-container-lowest p-2 border border-outline-variant rounded-DEFAULT">
+                            Kredi değerlendirme süreci kapsamında AKS Skoru ve temel finansal geçmiş sorgulaması.
+                        </div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-2 pt-4 border-t border-outline-variant border-opacity-50">
+<div class="font-mono-data-md text-mono-data-md text-primary-fixed">REQ_ID: #882A-F1</div>
+<div class="flex gap-2">
+<button class="font-mono-label-sm text-mono-label-sm font-bold bg-error text-on-error px-4 py-2 rounded-DEFAULT flex items-center gap-1 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span> Reddet
+                        </button>
+<button class="font-mono-label-sm text-mono-label-sm font-bold bg-secondary text-on-secondary px-4 py-2 rounded-DEFAULT flex items-center gap-1 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="check">check</span> Onayla
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 2: Approved (Onaylandı) -->
+<div class="card-layer rounded-DEFAULT p-stack-default flex flex-col justify-between relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary opacity-50"></div>
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="shopping_cart">shopping_cart</span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-surface">E-Ticaret Global</h3>
+</div>
+<span class="font-mono-label-sm text-mono-label-sm px-2 py-1 bg-secondary-container/20 text-secondary border border-secondary/50 rounded-DEFAULT flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Onaylandı
+                        </span>
+</div>
+<div class="mb-4">
+<div class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-1 uppercase tracking-widest">Erişim Amacı</div>
+<div class="font-body-md text-body-md text-on-surface bg-surface-container-lowest p-2 border border-outline-variant rounded-DEFAULT">
+                            Taksitli alışveriş limiti belirleme ve risk analizi.
+                        </div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-2 pt-4 border-t border-outline-variant border-opacity-50">
+<div class="font-mono-data-md text-mono-data-md text-primary-fixed">Tarih: 12.10.2023</div>
+<button class="font-mono-label-sm text-mono-label-sm font-bold border border-error text-error px-4 py-2 rounded-DEFAULT flex items-center gap-1 hover:bg-error-container hover:text-on-error-container active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="block">block</span> Erişimi İptal Et
+                    </button>
+</div>
+</div>
+<!-- Card 3: Rejected (Reddedildi) -->
+<div class="card-layer rounded-DEFAULT p-stack-default flex flex-col justify-between opacity-80">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="real_estate_agent">real_estate_agent</span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-surface">Konut Kredisi A.Ş.</h3>
+</div>
+<span class="font-mono-label-sm text-mono-label-sm px-2 py-1 bg-error-container/20 text-error border border-error/50 rounded-DEFAULT flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="close">close</span> Reddedildi
+                        </span>
+</div>
+<div class="mb-4">
+<div class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-1 uppercase tracking-widest">Erişim Amacı</div>
+<div class="font-body-md text-body-md text-on-surface-variant bg-surface-container-lowest p-2 border border-outline-variant rounded-DEFAULT line-through opacity-70">
+                            Genişletilmiş portföy analizi ve 3. parti paylaşım izni.
+                        </div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-2 pt-4 border-t border-outline-variant border-opacity-50">
+<div class="font-mono-data-md text-mono-data-md text-outline">Tarih: 05.10.2023</div>
+</div>
+</div>
+<!-- Card 4: Canceled (İptal Edildi) -->
+<div class="card-layer rounded-DEFAULT p-stack-default flex flex-col justify-between opacity-60">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="directions_car">directions_car</span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-surface">OtoFinans A.Ş.</h3>
+</div>
+<span class="font-mono-label-sm text-mono-label-sm px-2 py-1 bg-surface-container-highest text-on-surface-variant border border-outline-variant rounded-DEFAULT flex items-center gap-1">
+                            İptal Edildi
+                        </span>
+</div>
+<div class="mb-4">
+<div class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-1 uppercase tracking-widest">Erişim Amacı</div>
+<div class="font-body-md text-body-md text-on-surface-variant bg-surface-container-lowest p-2 border border-outline-variant rounded-DEFAULT">
+                            Taşıt kredisi ön onayı için skor kontrolü.
+                        </div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-2 pt-4 border-t border-outline-variant border-opacity-50">
+<div class="font-mono-data-md text-mono-data-md text-outline">İptal Tarihi: 01.10.2023</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

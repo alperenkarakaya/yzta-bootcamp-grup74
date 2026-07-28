@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
-import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { api, type KurumBilgisi } from "../api";
-import { Icon } from "./Icon";
-
-const KURUM_NAV = [
-  { to: "/kurum/musteriler", label: "Müşteriler", uc: true },
-];
 
 // §3b Phase 7/7.2 — kurum (banka) arayüzü: banka arayüzünden (Layout.tsx,
 // demo/araştırma sayfaları) ve kullanıcı portalinden (PortalLayout.tsx)
 // TAMAMEN ayrı, kendi oturum kapısı. `api.kurumBen()` 403 dönerse (giriş
 // yapmış ama kuruma üye değil) veya 401 dönerse (giriş yapmamış) girişe atar.
+//
+// Tasarım: planning/stitch_aks_finansal_kapasite_platformu/aks_m_teriler
+// ("B2B Staff Portal" — sade tek satır üst nav, tek nav öğesi Müşteriler).
 export default function KurumLayout() {
   const [kurum, setKurum] = useState<KurumBilgisi | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
@@ -34,47 +32,38 @@ export default function KurumLayout() {
   }
 
   if (yukleniyor) {
-    return <p className="p-8 text-center font-body-sm text-body-sm text-on-surface-variant">Yükleniyor…</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="font-mono-label-sm text-mono-label-sm text-on-surface-variant">Yükleniyor…</p>
+      </div>
+    );
   }
   if (!kurum) {
     return <Navigate to="/kurum/giris" replace />;
   }
 
   return (
-    <div className="min-h-screen bg-background text-on-background font-body-sm text-body-sm antialiased">
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-outline-variant/30">
-        <div className="flex justify-between items-center h-16 px-4 md:px-container-padding max-w-[1200px] mx-auto gap-4">
-          <div className="flex items-center gap-6 min-w-0">
-            <span className="font-display-sm text-display-sm font-bold tracking-tighter text-on-background shrink-0 flex items-center gap-2">
-              <Icon name="account_balance" className="text-primary" /> {kurum.kurum}
-            </span>
-            <div className="hidden md:flex items-center gap-1">
-              {KURUM_NAV.map((n) => (
-                <NavLink
-                  key={n.to}
-                  to={n.to}
-                  end={n.uc}
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-DEFAULT font-label-mono text-label-mono transition-colors ${
-                      isActive ? "bg-surface-container-high text-on-background" : "text-on-surface-variant hover:bg-surface-container"
-                    }`
-                  }
-                >
-                  {n.label}
-                </NavLink>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={cikisYap}
-            className="flex items-center gap-1 px-3 py-2 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-label-mono text-on-surface hover:bg-surface-container transition-colors shrink-0"
-          >
-            <Icon name="logout" className="text-[16px]" />
-            Çıkış
-          </button>
+    <div className="bg-background text-on-background font-body-md text-body-md h-screen flex flex-col overflow-hidden">
+      {/* TopNavBar */}
+      <nav className="bg-surface-dim flex justify-between items-center px-4 md:px-grid-margin h-16 w-full border-b border-outline-variant shrink-0">
+        <div className="flex items-center gap-6 min-w-0">
+          <span className="font-headline-md text-headline-md font-semibold text-primary truncate">{kurum.kurum}</span>
+          <ul className="hidden md:flex items-center h-full pt-1 space-x-6">
+            <li>
+              <span className="inline-block text-primary font-bold border-b-2 border-primary pb-1">Müşteriler</span>
+            </li>
+          </ul>
         </div>
+        <button
+          onClick={cikisYap}
+          className="font-mono-label-sm text-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200"
+        >
+          Çıkış
+        </button>
       </nav>
-      <main className="pt-24 pb-16 px-4 md:px-container-padding max-w-[1200px] mx-auto min-h-screen">
+
+      {/* Main Content Canvas */}
+      <main className="flex-1 overflow-y-auto p-4 md:p-grid-margin bg-surface-dim">
         <Outlet context={kurum} />
       </main>
     </div>

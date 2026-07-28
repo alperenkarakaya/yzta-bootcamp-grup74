@@ -29,6 +29,9 @@ function ornekIndir() {
   URL.revokeObjectURL(url);
 }
 
+// Tasarım: planning/stitch_aks_finansal_kapasite_platformu/aks_portal_ana_sayfa
+// ("AKS Terminal" — "Belge Yükleme Merkezi" başlığı, KVKK zorunluluk banner'ı,
+// geniş sürükle-bırak alanı, dosya önizleme + sahiplik onayı + Analiz Et akışı).
 export default function PortalPage() {
   const kullanici = useOutletContext<KullaniciBilgisi>();
 
@@ -108,31 +111,40 @@ export default function PortalPage() {
   };
 
   return (
-    <div className="flex flex-col gap-stack-lg pb-8">
-      <header>
-        <h1 className="font-headline-md text-headline-md text-on-background">Merhaba, {kullanici.ad}</h1>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-          Kendi işlem ekstrenizi yükleyin, davranışsal kapasite skorunuzu görün — sonuçlar yalnızca size ait
-          "Geçmişim" listesine kaydedilir.
+    <div className="flex flex-col gap-stack-default">
+      <header className="flex flex-col gap-2">
+        <h2 className="font-headline-lg text-headline-lg text-on-surface">Belge Yükleme Merkezi</h2>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Merhaba, {kullanici.ad} — finansal analiz için hesap ekstrenizi güvenle yükleyin. Sonuçlar yalnızca size
+          ait "Geçmişim" listesine kaydedilir.
         </p>
       </header>
 
-      {/* Format bilgisi + upload */}
-      <section className="card-surface rounded-lg p-6">
-        <div className="flex justify-between items-start gap-4 flex-wrap mb-4">
-          <div className="flex flex-wrap gap-2">
-            {["tarih (YYYY-AA-GG)", "islem_tipi (gelir/gider)", "kategori", "tutar", "aciklama (opsiyonel)"].map((k) => (
-              <span
-                key={k}
-                className="font-label-mono text-[11px] bg-surface-container-high border border-outline-variant/30 px-2 py-1 rounded-DEFAULT text-on-surface"
-              >
-                {k}
-              </span>
-            ))}
-          </div>
+      {/* Caveat Banner */}
+      <div className="flex items-start gap-3 p-4 border caveat-banner rounded-lg">
+        <Icon name="warning" className="text-caveat mt-0.5" filled />
+        <div>
+          <p className="font-mono-label-sm text-mono-label-sm text-caveat font-bold mb-1">YASAL ZORUNLULUK</p>
+          <p className="font-body-md text-body-md text-on-surface">
+            Yüklenen tüm belgeler KVKK kapsamında işlenmektedir. Yanıltıcı beyanlar yasal sorumluluk doğurur.
+          </p>
+        </div>
+      </div>
+
+      {/* Upload Zone */}
+      <section className="bg-surface-container-low border border-outline-variant rounded-xl p-6 lg:p-8 flex flex-col gap-6">
+        <div className="flex flex-wrap gap-2">
+          {["tarih (YYYY-AA-GG)", "islem_tipi (gelir/gider)", "kategori", "tutar", "aciklama (opsiyonel)"].map((k) => (
+            <span
+              key={k}
+              className="font-mono-label-sm text-[11px] bg-surface-container-high border border-outline-variant px-2 py-1 rounded-DEFAULT text-on-surface"
+            >
+              {k}
+            </span>
+          ))}
           <button
             onClick={ornekIndir}
-            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-label-mono text-on-surface hover:bg-surface-container transition-colors"
+            className="ml-auto shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-DEFAULT border border-outline-variant font-mono-label-sm text-mono-label-sm text-on-surface hover:bg-surface-container transition-colors"
           >
             <Icon name="download" className="text-[16px]" />
             Örnek CSV indir
@@ -140,9 +152,10 @@ export default function PortalPage() {
         </div>
 
         <div
-          className={`rounded-lg p-8 border-2 border-dashed transition-colors ${
-            suruklemede ? "border-primary bg-primary-container/10" : "border-outline-variant/40"
+          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center gap-4 transition-colors cursor-pointer ${
+            suruklemede ? "file-drag-over" : "border-outline-variant hover:border-primary-container hover:bg-surface-container"
           }`}
+          onClick={() => girisRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
             setSuruklemede(true);
@@ -162,130 +175,135 @@ export default function PortalPage() {
             className="hidden"
             onChange={(e) => dosyaSec(e.target.files?.[0] ?? null)}
           />
-          <div className="flex flex-col items-center text-center gap-3">
-            <Icon name="upload_file" className="text-5xl text-primary" />
-            {dosya ? (
-              <>
-                <div className="font-body-sm text-body-sm text-on-surface font-semibold">{dosya.name}</div>
-                <div className="font-label-mono text-[11px] text-on-surface-variant">
-                  {(dosya.size / 1024).toFixed(1)} KB
-                </div>
-              </>
-            ) : (
-              <div className="font-body-sm text-body-sm text-on-surface">
-                CSV, Excel ya da PDF ekstrenizi sürükleyin veya seçin
-              </div>
-            )}
-            <div className="flex gap-3 mt-2">
-              <button
-                onClick={() => girisRef.current?.click()}
-                className="px-4 py-2 rounded-DEFAULT border border-outline-variant/50 font-label-mono text-label-mono text-on-surface hover:bg-surface-container transition-colors"
-              >
-                Dosya Seç
-              </button>
-              <button
-                onClick={gonder}
-                disabled={!dosya || !beyan || yukleniyor}
-                className="px-4 py-2 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors disabled:opacity-40"
-              >
-                {yukleniyor ? "Analiz ediliyor…" : "Analiz Et"}
-              </button>
+          <Icon name="cloud_upload" className="text-6xl text-primary-container/70 mb-2" />
+          {dosya ? (
+            <div>
+              <p className="font-headline-md text-headline-md text-on-surface mb-1">{dosya.name}</p>
+              <p className="font-body-md text-body-md text-on-surface-variant">{(dosya.size / 1024).toFixed(1)} KB</p>
             </div>
-          </div>
+          ) : (
+            <div>
+              <p className="font-headline-md text-headline-md text-on-surface mb-2">Dosyalarınızı buraya sürükleyin</p>
+              <p className="font-body-md text-body-md text-on-surface-variant mb-4">
+                veya seçmek için tıklayın (CSV, XLSX, PDF — Max 10MB)
+              </p>
+            </div>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              girisRef.current?.click();
+            }}
+            className="bg-surface-container border border-outline text-on-surface px-6 py-2 rounded-lg font-mono-label-sm text-mono-label-sm hover:border-primary transition-colors"
+          >
+            Dosya Seç
+          </button>
         </div>
 
-        {/* §3b Phase 7/7.3 — zorunlu sahiplik beyanı */}
-        <label className="flex items-start gap-3 mt-4 px-1 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={beyan}
-            onChange={(e) => setBeyan(e.target.checked)}
-            className="mt-0.5 accent-primary"
-          />
-          <span className="font-body-sm text-body-sm text-on-surface-variant">
-            Bu ekstrenin <strong className="text-on-surface">bana ait</strong> olduğunu onaylıyorum. AKS isim/kimlik
-            bilgisi tutmaz; sahiplik yalnızca bu beyan + otomatik tutarlılık kontrolleriyle izlenir. Beyanınız, saati
-            ve IP adresinizle birlikte bu analizin değiştirilemez denetim kaydına yazılır. (Kurumların verinize
-            erişimi ayrı bir onaya tabidir — bkz.{" "}
-            <a href="/portal/riza-defterim" className="text-primary underline">
-              rıza defterim
-            </a>
-            .)
-          </span>
-        </label>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-outline-variant/50">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={beyan}
+              onChange={(e) => setBeyan(e.target.checked)}
+              className="w-5 h-5 accent-primary-container"
+            />
+            <span className="font-mono-label-sm text-mono-label-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
+              Bu ekstrenin bana ait olduğunu ve içeriğinin doğruluğunu onaylıyorum.
+            </span>
+          </label>
+          <button
+            onClick={gonder}
+            disabled={!dosya || !beyan || yukleniyor}
+            className="bg-primary-container text-on-primary-container font-mono-label-sm text-mono-label-sm font-bold px-8 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-opacity w-full sm:w-auto flex items-center justify-center gap-2"
+          >
+            <Icon name="memory" className="text-sm" />
+            {yukleniyor ? "Analiz ediliyor…" : "Analiz Et"}
+          </button>
+        </div>
+        <p className="font-body-md text-body-md text-on-surface-variant -mt-2">
+          AKS isim/kimlik bilgisi tutmaz; sahiplik yalnızca bu beyan + otomatik tutarlılık kontrolleriyle izlenir.
+          Beyanınız, saati ve IP adresinizle birlikte değiştirilemez denetim kaydına yazılır. Kurumların verinize
+          erişimi ayrı bir onaya tabidir — bkz.{" "}
+          <a href="/portal/riza-defterim" className="text-primary underline">
+            rıza defterim
+          </a>
+          .
+        </p>
       </section>
 
       {hata && (
-        <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-4 font-body-sm text-body-sm">
+        <div className="border border-error/40 bg-error-container/20 text-error rounded-DEFAULT p-4 font-body-md text-body-md">
           {hata}
         </div>
       )}
 
       {sonuc && (
-        <section className="grid grid-cols-1 md:grid-cols-12 gap-stack-md">
+        <section className="flex flex-col gap-gutter">
           {sonuc.anomali_bayrak && (
-            <div className="col-span-1 md:col-span-12 bg-amber-400/10 border border-amber-400/30 text-amber-400 rounded-DEFAULT p-3 font-body-sm text-body-sm flex items-center gap-2">
-              <Icon name="warning" className="text-[16px] shrink-0" />
-              Bu ekstre, eğitim dağılımının tipik aralığının dışında bir profil gösteriyor — skoru değiştirmez,
-              yalnızca sonuca biraz daha az güvenilmesi gerektiğini işaret eder.
+            <div className="border caveat-banner text-caveat rounded p-3 flex items-center gap-2">
+              <Icon name="warning" className="text-[16px] shrink-0" filled />
+              <p className="font-body-md text-body-md">
+                Bu ekstre, eğitim dağılımının tipik aralığının dışında bir profil gösteriyor — skoru değiştirmez,
+                yalnızca sonuca biraz daha az güvenilmesi gerektiğini işaret eder.
+              </p>
             </div>
           )}
           {/* §3b Phase 7/7.3 — sahiplik/kalite bayrakları: hepsi TESPİT amaçlı, karar mekanizmasını değiştirmez */}
           {[...(sonuc.sahiplik_bayraklari ?? []), ...(sonuc.belge_meta?.bayraklar ?? [])].map((b) => (
-            <div
-              key={b}
-              className="col-span-1 md:col-span-12 bg-amber-400/10 border border-amber-400/30 text-amber-400 rounded-DEFAULT p-3 font-body-sm text-body-sm flex items-center gap-2"
-            >
-              <Icon name="warning" className="text-[16px] shrink-0" />
-              {BAYRAK_METNI[b] ?? b}
+            <div key={b} className="border caveat-banner text-caveat rounded p-3 flex items-center gap-2">
+              <Icon name="warning" className="text-[16px] shrink-0" filled />
+              <p className="font-body-md text-body-md">{BAYRAK_METNI[b] ?? b}</p>
             </div>
           ))}
-          <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col items-center justify-center text-center">
-            <span className="font-label-mono text-label-mono text-on-surface-variant mb-2">AKS Skoru</span>
-            <span className="font-display-lg text-display-lg text-primary drop-shadow-[0_0_10px_rgba(195,192,255,0.5)]">
-              {sonuc.aks_skor}
-            </span>
-            <span className="font-label-mono text-label-mono text-secondary mt-3">{sonuc.risk_seviyesi}</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant mt-1">{sonuc.karar}</span>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+            <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center text-center">
+              <span className="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-2">AKS Skoru</span>
+              <span className="font-mono-score-lg text-mono-score-lg text-primary">{sonuc.aks_skor}</span>
+              <span className="font-mono-label-sm text-mono-label-sm text-secondary mt-3">{sonuc.risk_seviyesi}</span>
+              <span className="font-body-md text-body-md text-on-surface-variant mt-1">{sonuc.karar}</span>
+            </div>
+            <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center text-center">
+              <span className="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-2">Önerilen Limit</span>
+              <span className="font-headline-lg text-headline-lg text-on-background">{paraFormat(sonuc.onerilen_limit)}</span>
+              <span className="text-[10px] font-mono-label-sm text-on-surface-variant mt-3">
+                {sonuc.islem_sayisi} işlemden hesaplandı
+              </span>
+            </div>
+            <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col justify-center">
+              <p className="text-[10px] font-mono-label-sm text-on-surface-variant leading-relaxed">{sonuc.danisman.ozet}</p>
+            </div>
           </div>
-          <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col items-center justify-center text-center">
-            <span className="font-label-mono text-label-mono text-on-surface-variant mb-2">Önerilen Limit</span>
-            <span className="font-display-sm text-display-sm text-on-background">{paraFormat(sonuc.onerilen_limit)}</span>
-            <span className="font-label-mono text-[10px] text-on-surface-variant mt-3">
-              {sonuc.islem_sayisi} işlemden hesaplandı
-            </span>
-          </div>
-          <div className="col-span-1 md:col-span-4 bg-surface-container-high hairline-border rounded-xl p-6 flex flex-col justify-center">
-            <p className="font-label-mono text-[10px] text-on-surface-variant leading-relaxed">{sonuc.danisman.ozet}</p>
-          </div>
-          <div className="col-span-1 md:col-span-12 bg-surface-container hairline-border rounded-xl p-6">
-            <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-4">
+
+          <div className="bg-surface-container border border-outline-variant rounded-xl p-6">
+            <h2 className="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase tracking-wider mb-4">
               Davranışsal Faktörler
             </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sonuc.aciklama.riski_azaltan.map((f) => (
-                <div className="bg-surface-container-low border border-emerald-400/20 p-3 rounded-lg" key={f.kod}>
+                <div className="bg-surface-container-low border border-shap-positive/20 p-3 rounded-lg" key={f.kod}>
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-label-mono text-[10px] text-emerald-400">OLUMLU</span>
-                    <span className="font-label-mono text-label-mono text-on-surface">{f.etki.toFixed(3)}</span>
+                    <span className="text-[10px] font-mono-label-sm text-shap-positive">OLUMLU</span>
+                    <span className="font-mono-label-sm text-mono-label-sm text-on-surface">{f.etki.toFixed(3)}</span>
                   </div>
-                  <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>
+                  <div className="font-body-md text-body-md text-on-background">{f.faktor}</div>
                 </div>
               ))}
               {sonuc.aciklama.riski_artiran.map((f) => (
-                <div className="bg-surface-container-low border border-error/20 p-3 rounded-lg" key={f.kod}>
+                <div className="bg-surface-container-low border border-shap-negative/20 p-3 rounded-lg" key={f.kod}>
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-label-mono text-[10px] text-error">OLUMSUZ</span>
-                    <span className="font-label-mono text-label-mono text-on-surface">+{f.etki.toFixed(3)}</span>
+                    <span className="text-[10px] font-mono-label-sm text-shap-negative">OLUMSUZ</span>
+                    <span className="font-mono-label-sm text-mono-label-sm text-on-surface">+{f.etki.toFixed(3)}</span>
                   </div>
-                  <div className="font-body-sm text-body-sm text-on-background">{f.faktor}</div>
+                  <div className="font-body-md text-body-md text-on-background">{f.faktor}</div>
                 </div>
               ))}
             </div>
             {sonuc.danisman.oneriler.length > 0 && (
-              <ul className="space-y-2 mt-6 pt-6 border-t border-outline-variant/20">
+              <ul className="space-y-2 mt-6 pt-6 border-t border-outline-variant">
                 {sonuc.danisman.oneriler.map((o, i) => (
-                  <li key={i} className="font-body-sm text-body-sm text-on-surface-variant flex gap-2">
+                  <li key={i} className="font-body-md text-body-md text-on-surface-variant flex gap-2">
                     <Icon name="arrow_right" className="text-primary text-sm shrink-0" />
                     {o}
                   </li>
@@ -296,13 +314,13 @@ export default function PortalPage() {
 
           {/* §3b Phase 7/7.5 — belge_agent'ın çok-stratejili karar izi (gerçek agent kanıtı) */}
           {!!sonuc.belge_meta?.iz?.length && (
-            <details className="col-span-1 md:col-span-12 bg-surface-container hairline-border rounded-xl p-6">
-              <summary className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider cursor-pointer">
+            <details className="bg-surface-container border border-outline-variant rounded-xl p-6">
+              <summary className="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase tracking-wider cursor-pointer">
                 Belge Agent İzi ({sonuc.belge_meta.kaynak_format?.toUpperCase()})
               </summary>
               <ol className="mt-4 space-y-1.5">
                 {sonuc.belge_meta.iz.map((adim, i) => (
-                  <li key={i} className="font-label-mono text-[11px] text-on-surface-variant flex gap-2">
+                  <li key={i} className="text-[11px] font-mono-label-sm text-on-surface-variant flex gap-2">
                     <span className="text-primary shrink-0">{i + 1}.</span>
                     {adim}
                   </li>
@@ -314,18 +332,18 @@ export default function PortalPage() {
       )}
 
       {/* Geçmişim */}
-      <section className="bg-surface-container hairline-border rounded-xl p-6">
-        <h2 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider mb-4">
+      <section className="bg-surface-container border border-outline-variant rounded-xl p-6">
+        <h2 className="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase tracking-wider mb-4">
           Geçmişim
         </h2>
         {gecmisYukleniyor ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Yükleniyor…</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">Yükleniyor…</p>
         ) : gecmis.length === 0 ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Henüz bir analiz yapmadınız.</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">Henüz bir analiz yapmadınız.</p>
         ) : (
-          <ul className="space-y-2 font-label-mono text-label-mono">
+          <ul className="space-y-2 font-mono-label-sm text-mono-label-sm">
             {gecmis.map((g) => (
-              <li key={g.id} className="border-b border-outline-variant/10 pb-2">
+              <li key={g.id} className="border-b border-outline-variant/30 pb-2">
                 <button
                   onClick={() => kayitAcKapat(g.id)}
                   className="w-full flex justify-between items-center flex-wrap gap-2 text-left hover:text-on-surface transition-colors"
@@ -336,24 +354,21 @@ export default function PortalPage() {
                   <span className="text-on-surface">{paraFormat(g.onerilen_limit)}</span>
                   <span className="text-on-surface-variant flex items-center gap-1">
                     {g.islem_sayisi} işlem
-                    <Icon
-                      name={acikKayitId === g.id ? "expand_less" : "expand_more"}
-                      className="text-[16px]"
-                    />
+                    <Icon name={acikKayitId === g.id ? "expand_less" : "expand_more"} className="text-[16px]" />
                   </span>
                 </button>
                 {acikKayitId === g.id && (
                   <div className="mt-3 mb-1 bg-surface-container-low rounded-lg p-3 overflow-x-auto">
                     {detayYukleniyor ? (
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">Yükleniyor…</p>
+                      <p className="font-body-md text-body-md text-on-surface-variant">Yükleniyor…</p>
                     ) : !detay?.islemler.length ? (
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">
+                      <p className="font-body-md text-body-md text-on-surface-variant">
                         Bu kayıt için saklanmış işlem bulunamadı.
                       </p>
                     ) : (
                       <table className="w-full text-[11px]">
                         <thead>
-                          <tr className="text-on-surface-variant border-b border-outline-variant/20">
+                          <tr className="text-on-surface-variant border-b border-outline-variant/30">
                             <th className="text-left font-normal pb-1 pr-3">Tarih</th>
                             <th className="text-left font-normal pb-1 pr-3">Kategori</th>
                             <th className="text-left font-normal pb-1 pr-3">Açıklama</th>
@@ -362,15 +377,11 @@ export default function PortalPage() {
                         </thead>
                         <tbody>
                           {detay.islemler.map((i, idx) => (
-                            <tr key={idx} className="border-b border-outline-variant/10 last:border-0">
+                            <tr key={idx} className="border-b border-outline-variant/20 last:border-0">
                               <td className="py-1 pr-3 text-on-surface-variant whitespace-nowrap">{i.tarih}</td>
                               <td className="py-1 pr-3 text-on-surface-variant">{i.kategori}</td>
                               <td className="py-1 pr-3 text-on-surface-variant">{i.aciklama || "—"}</td>
-                              <td
-                                className={`py-1 text-right whitespace-nowrap ${
-                                  i.tutar >= 0 ? "text-emerald-400" : "text-error"
-                                }`}
-                              >
+                              <td className={`py-1 text-right whitespace-nowrap ${i.tutar >= 0 ? "text-shap-positive" : "text-error"}`}>
                                 {paraFormat(i.tutar)}
                               </td>
                             </tr>

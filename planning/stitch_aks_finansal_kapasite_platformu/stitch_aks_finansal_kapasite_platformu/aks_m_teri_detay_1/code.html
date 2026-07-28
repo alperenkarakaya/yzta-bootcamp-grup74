@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Müşteri Detay - B2B Staff Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#131317",
+                        "surface-variant": "#353438",
+                        "secondary": "#45dfa4",
+                        "on-tertiary": "#670211",
+                        "on-error": "#690005",
+                        "tertiary-fixed-dim": "#ffb3b0",
+                        "surface-tint": "#c3c0ff",
+                        "on-tertiary-fixed-variant": "#881d24",
+                        "on-primary": "#2c2a5e",
+                        "primary-container": "#c3c0ff",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-secondary": "#003825",
+                        "surface-bright": "#3a393d",
+                        "inverse-on-surface": "#313034",
+                        "primary": "#e2dfff",
+                        "on-surface": "#e5e1e7",
+                        "surface-container-highest": "#353438",
+                        "inverse-primary": "#5a5890",
+                        "on-tertiary-fixed": "#410006",
+                        "on-background": "#e5e1e7",
+                        "tertiary-fixed": "#ffdad8",
+                        "surface-container-low": "#1c1b1f",
+                        "surface-container-high": "#2a292d",
+                        "secondary-fixed": "#68fcbf",
+                        "on-surface-variant": "#c8c5d0",
+                        "on-primary-container": "#4e4c83",
+                        "on-secondary-fixed": "#002114",
+                        "inverse-surface": "#e5e1e7",
+                        "on-secondary-container": "#00452e",
+                        "surface": "#131317",
+                        "error-container": "#93000a",
+                        "tertiary": "#ffdad8",
+                        "on-primary-fixed-variant": "#434176",
+                        "secondary-fixed-dim": "#45dfa4",
+                        "surface-container-lowest": "#0e0e11",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "outline": "#928f9a",
+                        "background": "#131317",
+                        "secondary-container": "#00bd85",
+                        "on-tertiary-container": "#982a2f",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#201f23",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#ffb3b0",
+                        "primary-fixed": "#e3dfff",
+                        "outline-variant": "#47464f",
+                        "on-primary-fixed": "#161349"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "grid-margin": "24px",
+                        "stack-default": "12px",
+                        "gutter": "16px",
+                        "stack-compact": "4px",
+                        "container-padding": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist"],
+                        "mono-label-sm": ["JetBrains Mono"],
+                        "headline-md": ["Geist"],
+                        "headline-lg": ["Geist"],
+                        "mono-score-lg": ["JetBrains Mono"],
+                        "mono-data-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "mono-label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "mono-score-lg": ["40px", { "lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "mono-data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #020617; /* Level 0 base */
+            color: #e5e1e7;
+        }
+        .tonal-level-1 { background-color: #0f172a; border: 1px solid #47464f; }
+        .tonal-level-2 { background-color: #1e293b; border: 1px solid #47464f; }
+        .hairline-border { border: 1px solid #47464f; }
+        .terminal-divider { border-bottom: 1px solid #334155; /* Slate 700 equivalent approx */ }
+        
+        /* SHAP Bar colors */
+        .shap-positive { background-color: #34d399; }
+        .shap-negative { background-color: #f87171; }
+        
+        /* Caveat Banner */
+        .caveat-banner { border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.1); }
+        .caveat-text { color: #fbbf24; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopNavBar -->
+<nav class="bg-surface-dim dark:bg-surface-dim docked full-width top-0 border-b border-outline-variant flat no shadows flex justify-between items-center px-grid-margin h-16 w-full z-50 sticky">
+<div class="flex items-center gap-8">
+<div class="font-headline-md text-headline-md font-semibold text-primary dark:text-primary tracking-tighter">B2B Staff Portal</div>
+<div class="hidden md:flex gap-6 h-full items-center">
+<!-- Exact active nav matching -->
+<a class="text-primary font-bold border-b-2 border-primary pb-1 h-full flex items-center hover:text-primary transition-colors duration-200" href="#">Müşteriler</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Search placeholder on left of trailing action -->
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="bg-surface-container-high border outline-variant text-on-surface font-mono-label-sm text-mono-label-sm rounded px-8 py-1 focus:border-primary-container focus:ring-1 focus:ring-primary-container w-64 transition-all" placeholder="AKS No veya TCKN" type="text"/>
+</div>
+<button class="font-mono-label-sm text-mono-label-sm text-on-surface-variant hover:text-primary transition-colors duration-200">Çıkış</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-container-padding md:p-grid-margin max-w-[1440px] mx-auto w-full flex flex-col gap-gutter">
+<!-- Header & Breadcrumb -->
+<header class="flex flex-col gap-2 mb-4">
+<div class="font-mono-label-sm text-mono-label-sm text-on-surface-variant flex items-center gap-2">
+<span>Müşteriler</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary">Detay</span>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-[32px] text-primary-container">account_circle</span>
+                        Müşteri: AKS-8291-V
+                    </h1>
+<p class="font-mono-data-md text-mono-data-md text-on-surface-variant mt-1">Son Güncelleme: 2023-10-27T14:32:01Z</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-high border outline-variant px-4 py-2 font-mono-label-sm text-mono-label-sm hover:border-primary-container transition-colors rounded">Rapor İndir</button>
+<button class="bg-primary-container text-black font-mono-label-sm text-mono-label-sm font-bold px-4 py-2 rounded hover:opacity-90 transition-opacity">Yeni Değerlendirme</button>
+</div>
+</div>
+</header>
+<!-- Caveat Banner (if applicable, based on style guide) -->
+<div class="caveat-banner border px-4 py-3 rounded flex gap-3 items-start">
+<span class="material-symbols-outlined caveat-text">warning</span>
+<div>
+<div class="font-mono-label-sm text-mono-label-sm caveat-text font-bold mb-1">Pencere Uyumsuz</div>
+<div class="font-body-md text-body-md text-on-surface">Son 30 gün içindeki işlem hacmi geçmiş 12 aylık ortalamanın standart sapmasının dışında. Düzenleyici inceleme gerektirebilir.</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Scores & SHAP -->
+<div class="lg:col-span-8 flex flex-col gap-gutter">
+<!-- Twin-Score Card Equivalent -->
+<div class="tonal-level-1 rounded p-6 flex flex-col md:flex-row gap-8">
+<div class="flex-1 border-l-4 border-surface-variant pl-4">
+<div class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-2">KLASİK SKOR</div>
+<div class="font-mono-score-lg text-mono-score-lg text-on-surface mb-1">645</div>
+<div class="font-body-md text-body-md text-on-surface-variant">Orta Risk Bandı</div>
+</div>
+<div class="flex-1 border-l-4 border-primary-container pl-4">
+<div class="font-mono-label-sm text-mono-label-sm text-primary-container mb-2">AKS SKORU</div>
+<div class="font-mono-score-lg text-mono-score-lg text-on-surface mb-1">780</div>
+<div class="font-body-md text-body-md text-secondary">Düşük Risk</div>
+</div>
+</div>
+<!-- SHAP Factor Bars -->
+<div class="tonal-level-1 rounded p-6">
+<h2 class="font-headline-md text-headline-md mb-6 terminal-divider pb-2">SHAP Etki Faktörleri</h2>
+<div class="flex flex-col gap-4 font-mono-label-sm text-mono-label-sm">
+<!-- Positive Factor -->
+<div class="flex items-center gap-4">
+<div class="w-48 text-right text-on-surface-variant truncate" title="Düzenli Ödeme Tarihçesi">Düzenli Ödeme Tarihçesi</div>
+<div class="flex-1 flex items-center">
+<div class="w-1/2 border-r border-outline-variant h-6"></div>
+<div class="w-1/2 flex items-center">
+<div class="shap-positive h-4 rounded-r" style="width: 65%;"></div>
+<span class="ml-2 text-secondary">+42</span>
+</div>
+</div>
+</div>
+<!-- Positive Factor -->
+<div class="flex items-center gap-4">
+<div class="w-48 text-right text-on-surface-variant truncate" title="Ortalama Bakiye Stabilitesi">Ortalama Bakiye Stabilitesi</div>
+<div class="flex-1 flex items-center">
+<div class="w-1/2 border-r border-outline-variant h-6"></div>
+<div class="w-1/2 flex items-center">
+<div class="shap-positive h-4 rounded-r" style="width: 45%;"></div>
+<span class="ml-2 text-secondary">+28</span>
+</div>
+</div>
+</div>
+<!-- Negative Factor -->
+<div class="flex items-center gap-4">
+<div class="w-48 text-right text-on-surface-variant truncate" title="Kredi Kartı Limit Doluluğu">Kredi Kartı Limit Doluluğu</div>
+<div class="flex-1 flex items-center">
+<div class="w-1/2 flex items-center justify-end border-r border-outline-variant h-6">
+<span class="mr-2 text-error">-15</span>
+<div class="shap-negative h-4 rounded-l" style="width: 25%;"></div>
+</div>
+<div class="w-1/2"></div>
+</div>
+</div>
+<!-- Negative Factor -->
+<div class="flex items-center gap-4">
+<div class="w-48 text-right text-on-surface-variant truncate" title="Son 3 Ay Başvuru Sayısı">Son 3 Ay Başvuru Sayısı</div>
+<div class="flex-1 flex items-center">
+<div class="w-1/2 flex items-center justify-end border-r border-outline-variant h-6">
+<span class="mr-2 text-error">-8</span>
+<div class="shap-negative h-4 rounded-l" style="width: 15%;"></div>
+</div>
+<div class="w-1/2"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Signature Element -->
+<div class="lg:col-span-4 flex flex-col gap-gutter">
+<div class="tonal-level-1 rounded p-6 h-full border-t-2 border-t-primary-container">
+<h2 class="font-headline-md text-headline-md mb-6 text-on-surface">Risk İştahı Profillerine Göre Karar</h2>
+<div class="flex flex-col gap-4">
+<!-- İhtiyatlı -->
+<div class="tonal-level-2 rounded p-4 flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase">İhtiyatlı</span>
+<span class="material-symbols-outlined text-error" data-weight="fill">cancel</span>
+</div>
+<div class="font-body-md text-body-md text-on-surface">Onaylanmaz</div>
+<div class="font-mono-data-md text-mono-data-md text-on-surface-variant mt-2 border-t border-outline-variant pt-2">Limit: -</div>
+</div>
+<!-- Dengeli -->
+<div class="tonal-level-2 rounded p-4 flex flex-col gap-2 border-l-2 border-primary-container">
+<div class="flex justify-between items-center">
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase">Dengeli</span>
+<span class="material-symbols-outlined text-secondary" data-weight="fill">check_circle</span>
+</div>
+<div class="font-body-md text-body-md text-primary-container font-semibold">Onaylanabilir</div>
+<div class="font-mono-data-md text-mono-data-md text-on-surface-variant mt-2 border-t border-outline-variant pt-2">Limit: 25.000 TL</div>
+</div>
+<!-- Atak -->
+<div class="tonal-level-2 rounded p-4 flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface-variant uppercase">Atak</span>
+<span class="material-symbols-outlined text-secondary" data-weight="fill">check_circle</span>
+</div>
+<div class="font-body-md text-body-md text-primary-container font-semibold">Onaylanabilir</div>
+<div class="font-mono-data-md text-mono-data-md text-on-surface-variant mt-2 border-t border-outline-variant pt-2">Limit: 42.500 TL</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Consent Ledger / Audit Trail Snippet -->
+<div class="tonal-level-1 rounded p-6 mt-4">
+<h3 class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mb-4 uppercase tracking-widest">Sistem Logları &amp; Otorizasyon</h3>
+<div class="flex flex-col gap-3 font-mono-label-sm text-mono-label-sm pl-2 border-l border-outline-variant">
+<div class="relative pl-4">
+<div class="absolute w-2 h-2 rounded-full bg-surface-variant -left-[5px] top-1"></div>
+<span class="text-on-surface-variant mr-4">2023-10-27 14:32:01</span>
+<span class="text-primary-container mr-4">[SYSTEM_CALC]</span>
+<span class="text-on-surface">Model v2.4 skorlaması tamamlandı. Hash: 0x8f4a2b...</span>
+</div>
+<div class="relative pl-4">
+<div class="absolute w-2 h-2 rounded-full bg-surface-variant -left-[5px] top-1"></div>
+<span class="text-on-surface-variant mr-4">2023-10-27 14:31:55</span>
+<span class="text-primary-container mr-4">[DATA_FETCH]</span>
+<span class="text-on-surface">KKB sorgusu başarıyla döndü. Gecikme: 42ms.</span>
+</div>
+</div>
+</div>
+</main>
+</body></html>

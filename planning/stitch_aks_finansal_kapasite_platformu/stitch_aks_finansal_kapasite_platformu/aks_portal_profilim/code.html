@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AKS Portal - Profilim</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Geist & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#c3c0ff",
+                        "secondary-fixed-dim": "#45dfa4",
+                        "on-tertiary-fixed-variant": "#881d24",
+                        "secondary-container": "#00bd85",
+                        "on-error-container": "#ffdad6",
+                        "outline": "#928f9a",
+                        "surface-container-highest": "#353438",
+                        "surface": "#131317",
+                        "surface-bright": "#3a393d",
+                        "on-primary": "#2c2a5e",
+                        "error": "#ffb4ab",
+                        "on-primary-fixed-variant": "#434176",
+                        "primary-fixed": "#e3dfff",
+                        "inverse-surface": "#e5e1e7",
+                        "tertiary": "#ffdad8",
+                        "surface-container-lowest": "#0e0e11",
+                        "primary-container": "#c3c0ff",
+                        "secondary": "#45dfa4",
+                        "inverse-on-surface": "#313034",
+                        "on-surface": "#e5e1e7",
+                        "on-tertiary-fixed": "#410006",
+                        "on-secondary-container": "#00452e",
+                        "tertiary-fixed": "#ffdad8",
+                        "outline-variant": "#47464f",
+                        "on-tertiary": "#670211",
+                        "secondary-fixed": "#68fcbf",
+                        "background": "#131317",
+                        "inverse-primary": "#5a5890",
+                        "on-surface-variant": "#c8c5d0",
+                        "on-primary-container": "#4e4c83",
+                        "surface-container-high": "#2a292d",
+                        "on-background": "#e5e1e7",
+                        "on-secondary-fixed": "#002114",
+                        "on-secondary": "#003825",
+                        "surface-container": "#201f23",
+                        "on-tertiary-container": "#982a2f",
+                        "surface-container-low": "#1c1b1f",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "surface-dim": "#131317",
+                        "primary": "#e2dfff",
+                        "tertiary-container": "#ffb3b0",
+                        "surface-variant": "#353438",
+                        "tertiary-fixed-dim": "#ffb3b0",
+                        "on-primary-fixed": "#161349",
+                        "primary-fixed-dim": "#c3c0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "stack-default": "12px",
+                        "stack-compact": "4px",
+                        "container-padding": "16px",
+                        "grid-margin": "24px"
+                    },
+                    "fontFamily": {
+                        "mono-label-sm": ["JetBrains Mono", "monospace"],
+                        "body-md": ["Geist", "sans-serif"],
+                        "headline-md": ["Geist", "sans-serif"],
+                        "mono-score-lg": ["JetBrains Mono", "monospace"],
+                        "headline-lg": ["Geist", "sans-serif"],
+                        "mono-data-md": ["JetBrains Mono", "monospace"]
+                    },
+                    "fontSize": {
+                        "mono-label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "mono-score-lg": ["40px", { "lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "mono-data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #131317; color: #e5e1e7; }
+        /* Hide arrows in number inputs */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased overflow-x-hidden">
+<!-- TopNavBar (Mobile/Tablet) -->
+<nav class="lg:hidden bg-surface dark:bg-surface fixed top-0 w-full z-50 border-b border-outline-variant dark:border-outline-variant flex justify-between items-center h-16 px-gutter max-w-full mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary tracking-tighter">
+            AKS Portal
+        </div>
+<div class="flex gap-4 overflow-x-auto hide-scrollbar">
+<a class="font-body-md text-body-md md:font-headline-md md:text-headline-md text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface transition-colors whitespace-nowrap" href="#">Yükle</a>
+<a class="font-body-md text-body-md md:font-headline-md md:text-headline-md text-primary dark:text-primary border-b-2 border-primary dark:border-primary pb-1 whitespace-nowrap" href="#">Profilim</a>
+<a class="font-body-md text-body-md md:font-headline-md md:text-headline-md text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface transition-colors whitespace-nowrap" href="#">Erişim Talepleri</a>
+<a class="font-body-md text-body-md md:font-headline-md md:text-headline-md text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface transition-colors whitespace-nowrap" href="#">Rıza Defterim</a>
+</div>
+<button class="font-mono-label-sm text-mono-label-sm text-on-surface-variant hover:text-primary transition-colors">
+            Çıkış
+        </button>
+</nav>
+<!-- SideNavBar (Desktop) -->
+<aside class="bg-surface-container dark:bg-surface-container h-full w-64 fixed left-0 top-0 hidden lg:flex flex-col border-r border-outline-variant dark:border-outline-variant p-gutter gap-stack-default z-40">
+<div class="mb-8 mt-4">
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary font-bold tracking-tighter">AKS Portal</h1>
+<p class="font-mono-label-sm text-mono-label-sm text-on-surface-variant mt-1">Müşteri Paneli</p>
+</div>
+<nav class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 px-4 py-3 font-mono-label-sm text-mono-label-sm text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest rounded-full transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+                Yükle
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-mono-label-sm text-mono-label-sm bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full border-l-4 border-primary transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+                Profilim
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-mono-label-sm text-mono-label-sm text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest rounded-full transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">key</span>
+                Erişim Talepleri
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-mono-label-sm text-mono-label-sm text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest rounded-full transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+                Rıza Defterim
+            </a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant">
+<button class="flex items-center gap-3 w-full px-4 py-3 font-mono-label-sm text-mono-label-sm text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">logout</span>
+                Çıkış
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-20 lg:pt-0 lg:ml-64 min-h-screen flex flex-col p-grid-margin">
+<header class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Güvenlik &amp; Kimlik</h2>
+<p class="font-mono-data-md text-mono-data-md text-on-surface-variant mt-2">Sistem erişim parametreleri ve doğrulama akışları.</p>
+</header>
+<div class="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-12 gap-gutter">
+<!-- AKS ID Card Block (Full width on smaller, 12 cols) -->
+<div class="col-span-4 md:col-span-8 lg:col-span-12 bg-surface-container border border-outline-variant rounded-lg p-6 relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
+<!-- Decorative background accent -->
+<div class="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-surface-container-highest to-transparent opacity-20 pointer-events-none"></div>
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm">badge</span>
+<span class="font-mono-label-sm text-mono-label-sm uppercase tracking-widest text-primary-fixed-dim">AKS Kimlik Numarası</span>
+</div>
+<div class="font-mono-score-lg text-mono-score-lg text-on-surface tracking-tight mt-2 flex items-center gap-4">
+                            AKS-1234-5678-XY
+                        </div>
+<p class="font-mono-label-sm text-mono-label-sm text-on-surface-variant opacity-70 mt-1">Sistem içi tüm operasyonlarda temel referans anahtarı.</p>
+</div>
+<button class="flex items-center gap-2 bg-surface-container-high hover:bg-surface-bright border border-outline-variant hover:border-primary text-on-surface font-mono-label-sm text-mono-label-sm px-4 py-3 rounded transition-all active:scale-95 group-hover:text-primary">
+<span class="material-symbols-outlined text-base">content_copy</span>
+                        Kopyala
+                    </button>
+</div>
+</div>
+<!-- Phone Verification Bento Box -->
+<div class="col-span-4 md:col-span-8 lg:col-span-6 bg-surface-container-low border border-outline-variant rounded-lg p-6 flex flex-col mt-4">
+<div class="flex items-center gap-3 border-b border-outline-variant pb-4 mb-6">
+<span class="material-symbols-outlined text-secondary-fixed">phonelink_lock</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Telefon Doğrulama</h3>
+</div>
+<div class="flex flex-col gap-stack-default flex-grow">
+<!-- Phone Input Group -->
+<div class="flex flex-col gap-2">
+<label class="font-mono-label-sm text-mono-label-sm text-on-surface-variant">Kayıtlı GSM Numarası</label>
+<div class="flex gap-2">
+<div class="flex items-center justify-center bg-surface-container-high border border-outline-variant rounded px-3 font-mono-data-md text-mono-data-md text-on-surface-variant">
+                                +90
+                            </div>
+<input class="flex-grow bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-mono-data-md text-mono-data-md text-on-surface opacity-70 focus:outline-none cursor-not-allowed" disabled="" type="text" value="555 *** ** 99"/>
+<button class="bg-primary-container text-on-primary-container font-mono-label-sm text-mono-label-sm font-bold px-6 py-0 rounded hover:opacity-90 transition-opacity whitespace-nowrap">
+                                Kod Gönder
+                            </button>
+</div>
+</div>
+<!-- Visual Separator -->
+<div class="flex items-center justify-center py-4">
+<div class="h-[1px] w-full bg-outline-variant opacity-30"></div>
+<span class="material-symbols-outlined text-outline-variant mx-4 text-sm opacity-50">arrow_downward</span>
+<div class="h-[1px] w-full bg-outline-variant opacity-30"></div>
+</div>
+<!-- OTP Input Flow -->
+<div class="flex flex-col gap-4">
+<div class="flex justify-between items-end">
+<label class="font-mono-label-sm text-mono-label-sm text-on-surface-variant">Doğrulama Kodu (OTP)</label>
+<span class="font-mono-label-sm text-mono-label-sm text-tertiary-fixed-dim flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+                                02:59
+                            </span>
+</div>
+<!-- 6 Digit Input Array -->
+<div class="flex gap-2 justify-between">
+<input class="w-12 h-14 bg-surface-container-lowest border border-outline-variant rounded text-center font-mono-score-lg text-mono-score-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" maxlength="1" placeholder="·" type="number"/>
+<input class="w-12 h-14 bg-surface-container-lowest border border-outline-variant rounded text-center font-mono-score-lg text-mono-score-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" maxlength="1" placeholder="·" type="number"/>
+<input class="w-12 h-14 bg-surface-container-lowest border border-outline-variant rounded text-center font-mono-score-lg text-mono-score-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" maxlength="1" placeholder="·" type="number"/>
+<input class="w-12 h-14 bg-surface-container-lowest border border-outline-variant rounded text-center font-mono-score-lg text-mono-score-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" maxlength="1" placeholder="·" type="number"/>
+<input class="w-12 h-14 bg-surface-container-lowest border border-outline-variant rounded text-center font-mono-score-lg text-mono-score-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" maxlength="1" placeholder="·" type="number"/>
+<input class="w-12 h-14 bg-surface-container-lowest border border-outline-variant rounded text-center font-mono-score-lg text-mono-score-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" maxlength="1" placeholder="·" type="number"/>
+</div>
+<p class="font-mono-label-sm text-mono-label-sm text-on-surface-variant text-center mt-2 opacity-50">Lütfen SMS ile gönderilen 6 haneli kodu giriniz.</p>
+</div>
+</div>
+</div>
+<!-- Contextual Info / Caveat Banner Space -->
+<div class="col-span-4 md:col-span-8 lg:col-span-6 mt-4 flex flex-col gap-4">
+<div class="bg-surface border-l-2 border-[#fbbf24] p-4 flex items-start gap-3">
+<span class="material-symbols-outlined text-[#fbbf24] text-xl mt-0.5">warning</span>
+<div>
+<h4 class="font-mono-data-md text-mono-data-md text-on-surface mb-1">Güvenlik Uyarısı</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Doğrulama kodunuzu personel dahil hiç kimseyle paylaşmayınız. Sistem oturumu 5 başarısız denemede bloke edilecektir.</p>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant border-dashed p-6 rounded-lg flex-grow flex items-center justify-center flex-col opacity-50">
+<span class="material-symbols-outlined text-4xl mb-2">shield_lock</span>
+<p class="font-mono-label-sm text-mono-label-sm">İlave doğrulama adımları için ayrılmış alan.</p>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple script to auto-advance focus on OTP inputs for UX demonstration
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1) {
+                    if (index < inputs.length - 1) inputs[index + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value) {
+                    if (index > 0) inputs[index - 1].focus();
+                }
+            });
+        });
+    </script>
+</body></html>

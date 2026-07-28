@@ -479,8 +479,14 @@ export const api = {
   demoMusteriler: (adetPerPersona = 8) =>
     get<Record<string, number[]>>(`/demo-musteriler?adet_per_persona=${adetPerPersona}`),
   skorlaDemo: (id: number) => get<SkorSonuc>(`/skorla/${id}`),
-  portfoy: () => get<Portfoy>("/portfoy"),
-  adalet: () => get<Adalet>("/adalet"),
+  portfoy: (esikler?: { klasik_esik: number; aks_esik: number }) =>
+    get<Portfoy>(esikler ? `/portfoy?klasik_esik=${esikler.klasik_esik}&aks_esik=${esikler.aks_esik}` : "/portfoy"),
+  // `/portfoy` ile AYNI eşikleri kabul eder — ikisi de aynı simülasyon
+  // parametrelerini yansıtmalı, aksi halde PortfolioPage'de üstteki özet
+  // kartları yeni eşiğe göre güncellenirken alttaki segment oranları/tablosu
+  // eski eşikte kalıyordu (canlı tarayıcı denetiminde bulundu).
+  adalet: (esikler?: { klasik_esik: number; aks_esik: number }) =>
+    get<Adalet>(esikler ? `/adalet?klasik_esik=${esikler.klasik_esik}&aks_esik=${esikler.aks_esik}` : "/adalet"),
   gecmis: (id: number) => get<GecmisYanit>(`/gecmis/${id}`),
   asistan: (soru: string, baglam: unknown = {}) => post<AsistanYanit>("/asistan", { soru, baglam }),
   metrikler: () => get<MetriklerRaporu>("/metrikler"),

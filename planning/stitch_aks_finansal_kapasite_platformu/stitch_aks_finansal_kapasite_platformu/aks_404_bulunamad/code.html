@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>404 - AKS Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#353438",
+                      "surface-dim": "#131317",
+                      "secondary": "#45dfa4",
+                      "primary-fixed": "#e3dfff",
+                      "outline": "#928f9a",
+                      "on-primary-container": "#4e4c83",
+                      "inverse-on-surface": "#313034",
+                      "on-secondary-fixed": "#002114",
+                      "on-secondary-container": "#00452e",
+                      "outline-variant": "#47464f",
+                      "on-error-container": "#ffdad6",
+                      "secondary-fixed-dim": "#45dfa4",
+                      "background": "#131317",
+                      "inverse-surface": "#e5e1e7",
+                      "surface": "#131317",
+                      "surface-variant": "#353438",
+                      "primary-container": "#c3c0ff",
+                      "error-container": "#93000a",
+                      "on-tertiary-container": "#982a2f",
+                      "on-background": "#e5e1e7",
+                      "surface-container-low": "#1c1b1f",
+                      "tertiary-fixed": "#ffdad8",
+                      "on-primary-fixed-variant": "#434176",
+                      "tertiary-container": "#ffb3b0",
+                      "on-tertiary-fixed": "#410006",
+                      "on-surface-variant": "#c8c5d0",
+                      "on-error": "#690005",
+                      "tertiary-fixed-dim": "#ffb3b0",
+                      "tertiary": "#ffdad8",
+                      "on-secondary": "#003825",
+                      "inverse-primary": "#5a5890",
+                      "on-surface": "#e5e1e7",
+                      "surface-bright": "#3a393d",
+                      "on-primary-fixed": "#161349",
+                      "surface-container-lowest": "#0e0e11",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "on-primary": "#2c2a5e",
+                      "on-tertiary": "#670211",
+                      "on-secondary-fixed-variant": "#005137",
+                      "surface-container": "#201f23",
+                      "secondary-container": "#00bd85",
+                      "surface-container-high": "#2a292d",
+                      "primary": "#e2dfff",
+                      "on-tertiary-fixed-variant": "#881d24",
+                      "secondary-fixed": "#68fcbf",
+                      "error": "#ffb4ab",
+                      "surface-tint": "#c3c0ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-default": "12px",
+                      "grid-margin": "24px",
+                      "gutter": "16px",
+                      "stack-compact": "4px",
+                      "container-padding": "16px"
+              },
+              "fontFamily": {
+                      "mono-data-md": ["JetBrains Mono"],
+                      "mono-label-sm": ["JetBrains Mono"],
+                      "headline-lg": ["Geist"],
+                      "headline-md": ["Geist"],
+                      "mono-score-lg": ["JetBrains Mono"],
+                      "body-md": ["Geist"]
+              },
+              "fontSize": {
+                      "mono-data-md": ["14px", {"lineHeight": "18px", "fontWeight": "500"}],
+                      "mono-label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "mono-score-lg": ["40px", {"lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #131317; /* surface-dim */
+            color: #e5e1e7; /* on-surface */
+            overflow: hidden; /* Prevent scrolling on 404 */
+        }
+        
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: rgba(195, 192, 255, 0.1);
+            opacity: 0.4;
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 #c3c0ff;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 #45dfa4;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(61px, 9999px, 52px, 0); }
+            5% { clip: rect(33px, 9999px, 14px, 0); }
+            10% { clip: rect(96px, 9999px, 50px, 0); }
+            15% { clip: rect(42px, 9999px, 60px, 0); }
+            20% { clip: rect(62px, 9999px, 86px, 0); }
+            25% { clip: rect(2px, 9999px, 80px, 0); }
+            30% { clip: rect(27px, 9999px, 7px, 0); }
+            35% { clip: rect(98px, 9999px, 55px, 0); }
+            40% { clip: rect(11px, 9999px, 84px, 0); }
+            45% { clip: rect(59px, 9999px, 43px, 0); }
+            50% { clip: rect(41px, 9999px, 32px, 0); }
+            55% { clip: rect(18px, 9999px, 2px, 0); }
+            60% { clip: rect(9px, 9999px, 77px, 0); }
+            65% { clip: rect(44px, 9999px, 22px, 0); }
+            70% { clip: rect(79px, 9999px, 31px, 0); }
+            75% { clip: rect(13px, 9999px, 20px, 0); }
+            80% { clip: rect(66px, 9999px, 92px, 0); }
+            85% { clip: rect(74px, 9999px, 59px, 0); }
+            90% { clip: rect(91px, 9999px, 4px, 0); }
+            95% { clip: rect(23px, 9999px, 19px, 0); }
+            100% { clip: rect(82px, 9999px, 73px, 0); }
+        }
+
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            5% { clip: rect(52px, 9999px, 74px, 0); }
+            10% { clip: rect(79px, 9999px, 85px, 0); }
+            15% { clip: rect(75px, 9999px, 5px, 0); }
+            20% { clip: rect(67px, 9999px, 61px, 0); }
+            25% { clip: rect(14px, 9999px, 79px, 0); }
+            30% { clip: rect(1px, 9999px, 66px, 0); }
+            35% { clip: rect(86px, 9999px, 30px, 0); }
+            40% { clip: rect(23px, 9999px, 98px, 0); }
+            45% { clip: rect(85px, 9999px, 72px, 0); }
+            50% { clip: rect(71px, 9999px, 75px, 0); }
+            55% { clip: rect(2px, 9999px, 48px, 0); }
+            60% { clip: rect(30px, 9999px, 16px, 0); }
+            65% { clip: rect(59px, 9999px, 50px, 0); }
+            70% { clip: rect(41px, 9999px, 62px, 0); }
+            75% { clip: rect(2px, 9999px, 82px, 0); }
+            80% { clip: rect(47px, 9999px, 73px, 0); }
+            85% { clip: rect(3px, 9999px, 27px, 0); }
+            90% { clip: rect(26px, 9999px, 55px, 0); }
+            95% { clip: rect(42px, 9999px, 97px, 0); }
+            100% { clip: rect(38px, 9999px, 49px, 0); }
+        }
+        
+        .grid-background {
+            background-image: linear-gradient(#1e293b 1px, transparent 1px), linear-gradient(90deg, #1e293b 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center center;
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center relative">
+<!-- Technical Background -->
+<div class="absolute inset-0 grid-background z-0"></div>
+<div class="scan-line"></div>
+<main class="relative z-10 w-full max-w-2xl px-6 flex flex-col items-center justify-center text-center">
+<!-- 404 Glitch Text -->
+<div class="mb-stack-default">
+<h1 class="text-[120px] md:text-[180px] leading-none font-bold text-primary font-mono-data-md glitch-text tracking-tighter" data-text="404">
+                404
+            </h1>
+</div>
+<!-- Terminal Error Message -->
+<div class="mb-grid-margin bg-surface-container-low border border-outline-variant rounded p-stack-default inline-block">
+<p class="font-mono-data-md text-mono-data-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[18px]">terminal</span>
+                &gt;_ Aradığınız sayfa terminalde bulunamadı.
+            </p>
+</div>
+<!-- 2x2 Navigation Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-default w-full max-w-md">
+<a class="group relative bg-surface flex items-center justify-between p-stack-default border border-outline-variant rounded hover:border-primary transition-colors duration-200" href="#">
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface group-hover:text-primary transition-colors">Ana Sayfa</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">home</span>
+</a>
+<a class="group relative bg-surface flex items-center justify-between p-stack-default border border-outline-variant rounded hover:border-primary transition-colors duration-200" href="#">
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface group-hover:text-primary transition-colors">Banka Paneli</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">account_balance</span>
+</a>
+<a class="group relative bg-surface flex items-center justify-between p-stack-default border border-outline-variant rounded hover:border-primary transition-colors duration-200" href="#">
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface group-hover:text-primary transition-colors">Kullanıcı Portalı</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">person</span>
+</a>
+<a class="group relative bg-surface flex items-center justify-between p-stack-default border border-outline-variant rounded hover:border-primary transition-colors duration-200" href="#">
+<span class="font-mono-label-sm text-mono-label-sm text-on-surface group-hover:text-primary transition-colors">Kurum Girişi</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">business</span>
+</a>
+</div>
+</main>
+</body></html>

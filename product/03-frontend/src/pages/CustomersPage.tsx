@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, PERSONA_ETIKET, HEDEF_PERSONALAR, type SkorSonuc } from "../api";
 import { Icon } from "../components/Icon";
-import { durumBelirle, DURUM_ETIKET, kapasiteYuzdesi, skorDeltaYuzde, type Durum } from "../lib/skor";
+import { durumBelirle, kapasiteYuzdesi, skorDeltaYuzde, type Durum } from "../lib/skor";
 
 interface Satir extends SkorSonuc {
   id: number;
@@ -11,6 +11,24 @@ interface Satir extends SkorSonuc {
 const ADET_PER_PERSONA = 6;
 
 type Filtre = "hepsi" | "kurtarildi" | "reddedildi" | "hedef";
+
+// Tasarım: planning/stitch_aks_finansal_kapasite_platformu/aks_m_teri_listesi
+// ("AKS Terminal" — data-dense tablo, zebra-row, sticky header). Stitch
+// mockup'ı uydurma isimler ve "PROFİL" etiketleri (Ahmet Yılmaz, Kurumsal,
+// vb.) gösteriyordu — hiçbiri gerçek değil (proje isim/kişisel veri
+// TOPLAMIYOR, bkz. execution.md §3b Phase 7 "minimum kişisel veri" kararı;
+// uydurma isim göstermek hem yanlış hem tutarsız olurdu). Görsel dil
+// (tablo/zebra/pill/sticky header) korunuyor, veri GERÇEK: risk bandı pill'i
+// gerçek `risk_seviyesi` alanından, isim yerine persona etiketi.
+function riskRenk(riskSeviyesi: string): { metin: string; nokta: string; sinir: string; zemin: string } {
+  if (riskSeviyesi.includes("yüksek")) {
+    return { metin: "text-error", nokta: "bg-error", sinir: "border-error/30", zemin: "bg-error-container/20" };
+  }
+  if (riskSeviyesi.includes("düşük")) {
+    return { metin: "text-secondary", nokta: "bg-secondary", sinir: "border-secondary/20", zemin: "bg-secondary/10" };
+  }
+  return { metin: "text-caveat", nokta: "bg-caveat", sinir: "border-caveat/30", zemin: "bg-caveat/10" };
+}
 
 export default function CustomersPage() {
   const [satirlar, setSatirlar] = useState<Satir[]>([]);
@@ -71,47 +89,24 @@ export default function CustomersPage() {
   }, [satirlar, filtre, arama]);
 
   const kurtarilanSayisi = satirlar.filter((s) => durumBelirle(s.klasik_skor, s.aks_skor) === "kurtarildi").length;
-  const ortKapasite = satirlar.length
-    ? Math.round(satirlar.reduce((sum, s) => sum + kapasiteYuzdesi(s.aks_skor), 0) / satirlar.length)
-    : 0;
 
   return (
-    <div className="flex flex-col gap-stack-md">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+    <div className="flex flex-col gap-stack-default">
+      {/* Header Actions & Search */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 w-full">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`flex h-2 w-2 rounded-full ${yukleniyor ? "bg-secondary ai-pulse" : "bg-secondary"}`} />
-            <span className="font-label-mono text-label-mono text-secondary uppercase tracking-widest">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`w-2 h-2 rounded-full ${yukleniyor ? "bg-secondary pulse-dot" : "bg-secondary"}`} />
+            <span className="font-mono-label-sm text-mono-label-sm text-secondary uppercase tracking-widest">
               {yukleniyor ? "Skorlanıyor…" : "Canlı Değerlendirme Kuyruğu"}
             </span>
           </div>
-          <h1 className="font-display-sm text-display-sm">Customer Intelligence</h1>
+          <h1 className="text-headline-lg font-headline-lg text-on-background">Müşteri Listesi</h1>
+          <p className="text-mono-label-sm font-mono-label-sm text-outline mt-1">
+            {evrenBuyuklugu != null ? `Demo popülasyon · ${evrenBuyuklugu} kayıt` : "Demo popülasyon"} · Kurtarılan {kurtarilanSayisi}
+          </p>
         </div>
-        <div className="flex gap-gutter overflow-x-auto pb-2">
-          <div className="flex flex-col border-l border-outline-variant/30 pl-4">
-            <span className="font-label-mono text-label-mono text-on-surface-variant uppercase">Kurtarılan</span>
-            <span className="font-display-sm text-display-sm text-primary">{kurtarilanSayisi}</span>
-          </div>
-          <div className="flex flex-col border-l border-outline-variant/30 pl-4">
-            <span className="font-label-mono text-label-mono text-on-surface-variant uppercase">Yüklenen</span>
-            <span className="font-display-sm text-display-sm">{satirlar.length}</span>
-          </div>
-          <div className="flex flex-col border-l border-outline-variant/30 pl-4">
-            <span className="font-label-mono text-label-mono text-on-surface-variant uppercase">Ort. Kapasite</span>
-            <span className="font-display-sm text-display-sm">{ortKapasite}%</span>
-          </div>
-        </div>
-      </header>
-
-      {hata && (
-        <div className="bg-error-container/20 border border-error/40 text-error rounded-DEFAULT p-3 font-label-mono text-label-mono">
-          Backend hatası: {hata}
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="bg-surface-container-lowest/50 border border-outline-variant/30 rounded-xl p-4 backdrop-blur-md flex flex-wrap items-center gap-stack-md">
-        <div className="flex items-center gap-stack-sm mr-auto flex-wrap">
+        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
           {([
             ["hepsi", "Tümü"],
             ["kurtarildi", "Kurtarılan"],
@@ -121,80 +116,101 @@ export default function CustomersPage() {
             <button
               key={key}
               onClick={() => setFiltre(key)}
-              className={`px-4 py-1.5 rounded-full font-label-mono text-label-mono transition-transform hover:scale-105 active:scale-95 ${
+              className={`px-3 py-1.5 rounded-full font-mono-label-sm text-mono-label-sm transition-colors ${
                 filtre === key ? "bg-primary-container text-on-primary-container" : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               {label}
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-2 font-label-mono text-label-mono bg-surface-container px-3 py-1.5 rounded border border-outline-variant/20">
-          <Icon name="search" className="text-sm" />
-          <input
-            value={arama}
-            onChange={(e) => setArama(e.target.value)}
-            placeholder="ID veya persona ara…"
-            className="bg-transparent outline-none placeholder:text-on-surface-variant/60 w-40"
-          />
+          <div className="relative w-full md:w-56">
+            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]" />
+            <input
+              value={arama}
+              onChange={(e) => setArama(e.target.value)}
+              placeholder="ID veya persona ara…"
+              className="w-full bg-surface-container-lowest border border-outline-variant rounded-DEFAULT pl-9 pr-3 py-2 text-mono-data-md font-mono-data-md text-on-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-surface-container border border-outline-variant/30 rounded-xl overflow-hidden shadow-2xl">
+      {hata && (
+        <div className="border border-error/40 bg-error-container/20 text-error p-3 font-mono-label-sm text-mono-label-sm">
+          Backend hatası: {hata}
+        </div>
+      )}
+
+      {/* Data Dense Table */}
+      <div className="bg-surface-container-low border border-outline-variant flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="glass-header text-on-surface-variant font-label-mono text-label-mono uppercase tracking-widest">
-                <th className="py-4 px-6 font-medium">Kimlik / Persona</th>
-                <th className="py-4 px-6 font-medium">Kapasite Sinyali</th>
-                <th className="py-4 px-6 font-medium">Skor Değişimi</th>
-                <th className="py-4 px-6 font-medium">Klasik Skor</th>
-                <th className="py-4 px-6 font-medium">AKS Skoru</th>
-                <th className="py-4 px-6 font-medium text-right">İşlem</th>
+            <thead className="bg-surface-dim border-b border-outline-variant sticky top-0 z-10">
+              <tr>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline">MÜŞTERİ ID</th>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline">PERSONA</th>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline">KAPASİTE SİNYALİ</th>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline text-right">SKOR DEĞİŞİMİ</th>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline text-right">KLASİK SKOR</th>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-primary text-right">AKS SKORU</th>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline">RİSK BANDI</th>
+                <th className="px-4 py-3 text-mono-label-sm font-mono-label-sm text-outline text-right">AKSİYON</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant/20">
+            <tbody className="text-mono-data-md font-mono-data-md">
               {filtreli.map((s) => {
                 const durum = durumBelirle(s.klasik_skor, s.aks_skor);
                 const delta = skorDeltaYuzde(s.klasik_skor, s.aks_skor);
                 const kapasite = kapasiteYuzdesi(s.aks_skor);
+                const risk = riskRenk(s.risk_seviyesi);
                 const renk = durum === "kurtarildi" ? "text-secondary" : durum === "reddedildi" ? "text-error" : "text-primary";
                 return (
-                  <tr className="command-table-row transition-all duration-150" key={s.id}>
-                    <td className="py-4 px-6">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-on-surface">CST-{String(s.id).padStart(4, "0")}</span>
-                        <div className="flex gap-2 mt-1 flex-wrap">
-                          <span className="bg-tertiary-container/30 text-tertiary px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-tertiary-container/50">
-                            {PERSONA_ETIKET[s.persona]?.split(" ")[0] ?? s.persona}
+                  <tr className="border-b border-outline-variant/30 zebra-row hover:bg-surface-container-high/50 transition-colors" key={s.id}>
+                    <td className="px-4 py-3 text-outline-variant">#CST-{String(s.id).padStart(4, "0")}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-surface-container px-2 py-0.5 rounded-DEFAULT text-mono-label-sm border border-outline-variant/50">
+                          {PERSONA_ETIKET[s.persona] ?? s.persona}
+                        </span>
+                        {durum === "kurtarildi" && (
+                          <span className="bg-secondary-container/30 text-secondary px-2 py-0.5 rounded-DEFAULT text-[10px] uppercase font-bold border border-secondary-container/50">
+                            Kurtarıldı
                           </span>
-                          {durum === "kurtarildi" && (
-                            <span className="bg-secondary-container/30 text-secondary px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-secondary-container/50">
-                              Kurtarıldı
-                            </span>
-                          )}
-                        </div>
+                        )}
+                        {s.anomali_bayrak && (
+                          <span title="Atipik profil — anomali tespit edildi">
+                            <Icon name="warning" className="text-caveat text-[16px]" />
+                          </span>
+                        )}
                       </div>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 h-1 bg-surface-container-highest rounded-full overflow-hidden min-w-[80px]">
+                        <div className="flex-1 h-1 bg-surface-container-highest overflow-hidden min-w-[60px]">
                           <div className={`h-full ${renk.replace("text-", "bg-")}`} style={{ width: `${kapasite}%` }} />
                         </div>
-                        <span className={`font-label-mono text-label-mono ${renk}`}>{kapasite}%</span>
+                        <span className={`font-mono-label-sm text-mono-label-sm ${renk}`}>{kapasite}%</span>
                       </div>
                     </td>
-                    <td className="py-4 px-6">
-                      <span className={`font-bold font-label-mono ${delta != null && delta >= 0 ? "text-secondary" : "text-error"}`}>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`font-bold ${delta != null && delta >= 0 ? "text-secondary" : "text-error"}`}>
                         {delta != null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"}
                       </span>
                     </td>
-                    <td className="py-4 px-6 font-label-mono opacity-60">{s.klasik_skor ?? "—"}</td>
-                    <td className={`py-4 px-6 font-label-mono font-bold ${renk}`}>{s.aks_skor}</td>
-                    <td className="py-4 px-6 text-right">
-                      <Link to={`/customers/${s.id}`} className="text-on-surface-variant hover:text-primary transition-colors">
-                        <Icon name="open_in_new" />
+                    <td className="px-4 py-3 text-right text-on-surface-variant">{s.klasik_skor ?? "—"}</td>
+                    <td className={`px-4 py-3 text-right font-bold border-l border-primary/30 ${renk}`}>{s.aks_skor}</td>
+                    <td className="px-4 py-3">
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${risk.zemin} ${risk.sinir} ${risk.metin}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${risk.nokta}`} />
+                        {s.risk_seviyesi}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        to={`/customers/${s.id}`}
+                        className="font-bold text-mono-label-sm bg-primary-container text-on-primary-container px-3 py-1 rounded-DEFAULT hover:bg-primary-fixed transition-colors"
+                      >
+                        Detay
                       </Link>
                     </td>
                   </tr>
@@ -203,24 +219,27 @@ export default function CustomersPage() {
             </tbody>
           </table>
         </div>
-        <div className="glass-header p-4 flex items-center justify-between font-label-mono text-label-mono text-on-surface-variant flex-wrap gap-2">
-          <div className="flex items-center gap-4">
-            <span>
-              Gösterilen {filtreli.length} / yüklenen {satirlar.length}
-              {evrenBuyuklugu != null && ` · demo evreni ${evrenBuyuklugu}`}
-            </span>
-          </div>
+        <div className="border-t border-outline-variant bg-surface-dim px-4 py-3 flex items-center justify-between text-mono-label-sm font-mono-label-sm text-outline flex-wrap gap-2">
+          <span>
+            Gösterilen {filtreli.length} / yüklenen {satirlar.length}
+            {evrenBuyuklugu != null && ` · demo evreni ${evrenBuyuklugu}`}
+          </span>
         </div>
       </div>
 
-      {/* Live activity log — dekoratif telemetri. `fixed` olduğu için tablonun
-          AKS SKORU/İŞLEM kolonlarının üstüne biniyordu; `pointer-events-none`
-          tıklamaların altındaki satır butonlarına geçmesini garanti eder. */}
-      <div className="hidden xl:block fixed right-container-padding bottom-6 w-80 bg-surface-container-high/95 backdrop-blur border border-outline-variant/50 rounded-xl shadow-2xl overflow-hidden pointer-events-none">
-        <div className="bg-surface-container-highest px-4 py-2 border-b border-outline-variant/30 flex items-center justify-between">
-          <span className="font-label-mono text-label-mono text-on-surface">Etkinlik Günlüğü</span>
+      {/* Skorlama telemetrisi. Önceden `fixed` (sağ altta yüzen panel) idi ve
+          `pointer-events-none` ile tıklamaların altına geçmesi sağlanmıştı —
+          ama canlı tarayıcı denetiminde görüldü ki tablonun RİSK BANDI/AKSİYON
+          kolonlarını GÖRSEL olarak kapatıyordu (tıklama geçse de içerik
+          okunamıyordu). Normal akışa, tablonun altına alındı. */}
+      <div className="bg-surface-container-high border border-outline-variant overflow-hidden">
+        <div className="bg-surface-container-highest px-4 py-2 border-b border-outline-variant flex items-center justify-between">
+          <span className="font-mono-label-sm text-mono-label-sm text-on-surface">Etkinlik Günlüğü</span>
+          <span className="font-mono-label-sm text-mono-label-sm text-outline">
+            {yukleniyor ? "skorlanıyor…" : "hazır"}
+          </span>
         </div>
-        <div className="p-4 font-label-mono text-[11px] space-y-1.5 leading-relaxed h-56 overflow-y-auto">
+        <div className="p-4 font-mono-label-sm text-[11px] space-y-1.5 leading-relaxed max-h-40 overflow-y-auto">
           {log.slice(-12).map((l, i) => (
             <p key={i} className={l.startsWith("[ERR]") ? "text-error" : l.startsWith("[OK]") ? "text-on-surface-variant" : "text-primary"}>
               {l}

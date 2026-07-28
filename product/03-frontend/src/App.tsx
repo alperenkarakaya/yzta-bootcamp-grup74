@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import PortalLayout from "./components/PortalLayout";
 import KurumLayout from "./components/KurumLayout";
+import AnaSayfaPage from "./pages/AnaSayfaPage";
 import GirisPage from "./pages/GirisPage";
 import IntelligencePage from "./pages/IntelligencePage";
 import PortfolioPage from "./pages/PortfolioPage";
@@ -23,12 +24,18 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Herkese açık ana sayfa — site kökü. Veri gösteren hiçbir şey yok,
+            yalnızca ürünü anlatır ve doğru kapıya yönlendirir. */}
+        <Route index element={<AnaSayfaPage />} />
+
         {/* Site geneli giriş — banka içi arayüzün önündeki zorunlu kapı */}
         <Route path="giris" element={<GirisPage />} />
 
-        {/* Banka arayüzü (iç kullanım — demo/araştırma), giriş zorunlu (bkz. Layout.tsx) */}
+        {/* Banka arayüzü (iç kullanım — demo/araştırma), YALNIZCA yönetici (bkz. Layout.tsx).
+            Panel ana ekranı `/` iken `/panel`e taşındı (kök artık ana sayfa); diğer
+            panel yolları geriye dönük uyumluluk için yerinde bırakıldı. */}
         <Route element={<Layout />}>
-          <Route index element={<IntelligencePage />} />
+          <Route path="panel" element={<IntelligencePage />} />
           <Route path="portfolio" element={<PortfolioPage />} />
           <Route path="audit" element={<AuditPage />} />
           <Route path="customers" element={<CustomersPage />} />

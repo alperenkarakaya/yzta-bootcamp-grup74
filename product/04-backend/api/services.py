@@ -156,6 +156,11 @@ def politika():
     return sozluk
 
 
+#: Yüklenebilecek en büyük belge (bayt). Hem anonim `/api/csv-skorla` hem de
+#: `/api/portal/yukle` bu sınırdan geçer — tek yerde tanımlı.
+MAKS_BELGE_BAYT = 10 * 1024 * 1024
+
+
 def belge_ayristir(dosya):
     """Multipart dosyadan (CSV/XLSX/PDF) işlem listesi + kalite/meta raporu çıkarır.
 
@@ -172,6 +177,19 @@ def belge_ayristir(dosya):
     bayraklar/iz gibi şeffaflık alanları taşır (kalite.py + belge_agent.py).
     """
     from aks_core.agents.belge_agent import BelgeAgent
+    from aks_core.belge.hatalar import BelgeHatasi
+
+    # Boyut sınırı: `dosya.read()` dosyanın TAMAMINI belleğe alıyor ve Django'nun
+    # `DATA_UPLOAD_MAX_MEMORY_SIZE`'ı multipart DOSYA alanlarına uygulanmıyor —
+    # yani sınır koymazsak yüzlerce MB'lık bir yükleme (ardından pdfplumber'ın
+    # ayrıştırması) süreci belleksiz bırakabilirdi. 10 MB, bir hesap ekstresi
+    # için fazlasıyla yeterli (en büyük test fixture'ı birkaç yüz KB).
+    boyut = getattr(dosya, "size", None)
+    if boyut is not None and boyut > MAKS_BELGE_BAYT:
+        raise BelgeHatasi(
+            f"Dosya çok büyük ({boyut / 1_048_576:.1f} MB). "
+            f"En fazla {MAKS_BELGE_BAYT // 1_048_576} MB yükleyebilirsiniz."
+        )
     return BelgeAgent().calistir(dosya.name, dosya.read())
 
 

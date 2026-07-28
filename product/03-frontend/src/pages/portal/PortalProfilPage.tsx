@@ -43,7 +43,7 @@ export default function PortalProfilPage() {
     try {
       const r = await api.telefonGonder(telefon);
       setDogrulamaId(r.dogrulama_id);
-      setDebugKod(r.debug_kod ?? null);
+      setDebugKod(r.demo_kod ?? r.debug_kod ?? null);
       setMesaj(`Doğrulama kodu gönderildi (${r.gecerlilik_dakika} dakika geçerli).`);
     } catch (e) {
       setHata(String(e instanceof Error ? e.message : e));

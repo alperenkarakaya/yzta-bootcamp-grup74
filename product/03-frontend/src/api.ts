@@ -54,7 +54,10 @@ async function postDosya<T>(yol: string, form: FormData): Promise<T> {
     headers: csrfTokenAl() ? { "X-CSRFToken": csrfTokenAl()! } : undefined,
     body: form,
   });
-  const govde = await r.json();
+  // `.catch(() => null)` get/post ile aynı sebeple: JSON olmayan bir yanıtta
+  // (proxy'nin 413/502 HTML sayfası, sunucu hata sayfası) `r.json()` ham bir
+  // SyntaxError fırlatıyordu ve kullanıcı "Unexpected token '<'" görüyordu.
+  const govde = await r.json().catch(() => null);
   if (!r.ok) throw new Error(_hataMesaji(govde, r));
   return govde as T;
 }
@@ -402,7 +405,11 @@ export interface TelefonGonderSonuc {
   gonderildi: boolean;
   gecerlilik_dakika: number;
   dogrulama_id: number;
-  debug_kod?: string; // yalnızca DEBUG=true iken (SMS sağlayıcısı henüz yok)
+  // Yalnızca DJANGO_DEBUG=true VEYA AKS_OTP_DEMO_KOD=true iken döner
+  // (SMS sağlayıcısı henüz yok — açık OQ). Gerçek dağıtımda ikisi de kapalı,
+  // yani bu alan hiç gelmez ve arayüz kodu göstermez.
+  demo_kod?: string;
+  debug_kod?: string; // eski ad — geriye dönük uyumluluk
 }
 
 export interface ErisimTalebiKaydi {

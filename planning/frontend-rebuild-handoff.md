@@ -398,9 +398,10 @@ sunulamaz. Aynı desen `risk_istahi` (`RiskIstahiRaporu.uyari`) ve
 ### Rota haritası (`App.tsx`)
 
 ```
+/                          AnaSayfaPage                   (herkese açık ana sayfa — veri yok, yalnızca tanıtım + CTA)
 /giris                     GirisPage                      (site geneli landing: Kullanıcı / Kurum kutucukları,
                                                            her birinin altında kendi giriş alanları + demo bilgileri)
-/                          Layout → IntelligencePage      (banka içi, demo/araştırma — YALNIZCA yönetici)
+/panel                     Layout → IntelligencePage      (banka içi, demo/araştırma — YALNIZCA yönetici)
 /portfolio                 Layout → PortfolioPage
 /audit                     Layout → AuditPage
 /customers                 Layout → CustomersPage

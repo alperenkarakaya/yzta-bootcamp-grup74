@@ -286,3 +286,125 @@ class ProfilsizKullaniciTesti(TestCase):
         for uc in self.UCLAR:
             with self.subTest(uc=uc):
                 self.assertEqual(self.client.get(uc).status_code, 200)
+
+
+class GirdiDogrulamaTesti(TestCase):
+    """Kullanıcı hatası 500 dönmemeli — bulunan gerçek hataların regresyonu.
+
+    Hepsi aynı desenin örnekleri: bir istek alanı doğrulanmadan doğrudan
+    `int()`'e / `dict.update()`'e / DB unique kısıtına veriliyordu. Bunlar
+    güvenlik açığı değil ama "kullanıma hazır" bir üründe 500 gövdesi
+    (DEBUG=True'da tam traceback) kullanıcıya gösterilmemeli.
+    """
+
+    def setUp(self):
+        self.musteri = User.objects.create_user(username="gd@example.com", password="GucluSifre123")
+        self.profil = Profil.objects.create(user=self.musteri, aks_no=aks_no_modul.uret())
+        self.kurum = Kurum.objects.create(ad="Girdi Bankası", kod="girdi-bankasi")
+        self.talep = ErisimTalebi.objects.create(kurum=self.kurum, profil=self.profil, amac="test")
+
+    def test_sayisal_olmayan_gecerlilik_gun_400_donuyor(self):
+        self.client.force_login(self.musteri)
+        r = self.client.post(
+            f"/api/kimlik/erisim-talebi/{self.talep.id}/onayla", {"gecerlilik_gun": "otuz"}
+        )
+        self.assertEqual(r.status_code, 400, "Sayı olmayan gecerlilik_gun 500 üretiyor")
+        self.assertIn("hata", r.json())
+
+    def test_gecerli_gecerlilik_gun_hala_calisiyor(self):
+        self.client.force_login(self.musteri)
+        r = self.client.post(
+            f"/api/kimlik/erisim-talebi/{self.talep.id}/onayla", {"gecerlilik_gun": 7}
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json()["onaylandi"])
+
+    def test_simulasyon_sozluk_olmayan_degisiklikler_400(self):
+        yonetici = User.objects.create_user(username="gd-admin@example.com", password="x", is_staff=True)
+        self.client.force_login(yonetici)
+        r = self.client.post(
+            "/api/simulasyon", {"musteri_id": 1, "degisiklikler": ["olmaz"]},
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_simulasyon_sayisal_olmayan_deger_400(self):
+        from api import services
+        if not services.demo_var():
+            self.skipTest("Demo veri yok")
+        yonetici = User.objects.create_user(username="gd-admin2@example.com", password="x", is_staff=True)
+        self.client.force_login(yonetici)
+        mid = next(iter(services.demo_personalar(adet_per_persona=1).values()))[0]
+        r = self.client.post(
+            "/api/simulasyon",
+            {"musteri_id": mid, "degisiklikler": {"gelir_duzenliligi": "çok"}},
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400, "Sayı olmayan özellik değeri 500 üretiyor")
+
+
+class TelefonDogrulamaAkisiTesti(TestCase):
+    """OTP akışının bulunan iki gerçek hatasının regresyonu."""
+
+    def setUp(self):
+        # DRF throttle sayacı cache'te tutuluyor ve LocMemCache süreç boyunca
+        # yaşıyor — testler arasında birikip alakasız 429'lara yol açar.
+        from django.core.cache import cache
+        cache.clear()
+        self.a = User.objects.create_user(username="tel-a@example.com", password="GucluSifre123")
+        Profil.objects.create(user=self.a, aks_no=aks_no_modul.uret())
+        self.b = User.objects.create_user(username="tel-b@example.com", password="GucluSifre123")
+        Profil.objects.create(user=self.b, aks_no=aks_no_modul.uret())
+
+    def _kod_iste(self, user, telefon="+905551112233"):
+        self.client.force_login(user)
+        r = self.client.post("/api/kimlik/telefon/gonder", {"telefon": telefon})
+        self.assertEqual(r.status_code, 200)
+        return r.json()
+
+    def test_yeni_kod_istenince_eski_kod_gecersizlesir(self):
+        """Aksi halde aynı anda birden fazla geçerli OTP olurdu ve MAKS_DENEME
+        sınırı yeni kod isteyerek sıfırlanabilirdi."""
+        with self.settings(DEBUG=True):
+            ilk = self._kod_iste(self.a)
+            self._kod_iste(self.a)  # ikinci kod ilkini geçersiz kılmalı
+            r = self.client.post(
+                "/api/kimlik/telefon/dogrula",
+                {"dogrulama_id": ilk["dogrulama_id"], "kod": ilk["debug_kod"]},
+            )
+        self.assertEqual(r.status_code, 400, "Eski OTP hâlâ geçerli")
+
+    def test_ayni_numara_ikinci_hesapta_dogrulanamaz(self):
+        """`telefon_gonder`'deki Sybil kontrolü tek başına yetmiyordu: iki hesap
+        da HENÜZ doğrulamamışken ikisi de o kontrolden geçiyor, ikinci
+        doğrulama `telefon_hash` unique kısıtına takılıp 500 veriyordu."""
+        with self.settings(DEBUG=True):
+            a_kod = self._kod_iste(self.a)
+            b_kod = self._kod_iste(self.b)  # aynı numara, henüz çakışma yok
+
+            self.client.force_login(self.a)
+            r = self.client.post(
+                "/api/kimlik/telefon/dogrula",
+                {"dogrulama_id": a_kod["dogrulama_id"], "kod": a_kod["debug_kod"]},
+            )
+            self.assertEqual(r.status_code, 200)
+
+            self.client.force_login(self.b)
+            r = self.client.post(
+                "/api/kimlik/telefon/dogrula",
+                {"dogrulama_id": b_kod["dogrulama_id"], "kod": b_kod["debug_kod"]},
+            )
+        self.assertEqual(r.status_code, 409, "İkinci hesap 500 yerine 409 almalı")
+        self.b.refresh_from_db()
+        self.assertFalse(self.b.profil.telefon_dogrulandi_mi)
+
+    def test_dogru_kod_tek_hesapta_calisiyor(self):
+        with self.settings(DEBUG=True):
+            kod = self._kod_iste(self.a)
+            r = self.client.post(
+                "/api/kimlik/telefon/dogrula",
+                {"dogrulama_id": kod["dogrulama_id"], "kod": kod["debug_kod"]},
+            )
+        self.assertEqual(r.status_code, 200)
+        self.a.refresh_from_db()
+        self.assertTrue(self.a.profil.telefon_dogrulandi_mi)

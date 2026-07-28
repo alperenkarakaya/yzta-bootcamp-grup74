@@ -605,3 +605,37 @@ class YuzeyIzolasyonuTesti(TestCase):
         r = self.client.post("/api/auth/kayit", {"email": "cift@izolasyon.aks", "sifre": self.sifre})
         self.assertEqual(r.status_code, 400)
         self.assertIn("hata", r.json())
+
+
+class BelgeBoyutSiniriTesti(TestCase):
+    """`dosya.read()` dosyanın tamamını belleğe alıyor ve Django'nun
+    `DATA_UPLOAD_MAX_MEMORY_SIZE`'ı multipart DOSYA alanlarına uygulanmıyor —
+    sınır olmadan çok büyük bir yükleme süreci belleksiz bırakabilirdi."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(
+            username="boyut@example.com", email="boyut@example.com", password="GucluSifre123"
+        )
+        from kimlik.aks_no import uret
+        from kimlik.models import Profil
+        Profil.objects.create(user=self.user, aks_no=uret())
+        self.client.force_login(self.user)
+
+    def _yukle(self, bayt):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        dosya = SimpleUploadedFile("buyuk.csv", bayt, content_type="text/csv")
+        return self.client.post("/api/portal/yukle", {"dosya": dosya, "beyan": "true"})
+
+    def test_sinirin_ustundeki_dosya_400_donuyor(self):
+        from api import services
+        r = self._yukle(b"x" * (services.MAKS_BELGE_BAYT + 1))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("çok büyük", r.json()["hata"])
+
+    def test_normal_boyutlu_dosya_boyut_hatasi_almiyor(self):
+        """Sınır meşru yüklemeleri engellememeli — bu dosya içerik olarak
+        geçersiz, ama alınan hata BOYUT hatası olmamalı."""
+        r = self._yukle(b"gecersiz icerik")
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn("çok büyük", r.json()["hata"])

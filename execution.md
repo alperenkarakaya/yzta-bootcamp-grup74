@@ -371,6 +371,27 @@ URL yolu (`<int:musteri_id>`) negatif değer kabul etmediği için bu uç dışa
 
 **Doğrulama:** `api/tests.py`'ye `YuzeyIzolasyonuTesti` eklendi — anonim ve sıradan kullanıcının araştırma uçlarına erişemediğini, yöneticinin erişebildiğini, kurum hesabının da erişemediğini, `/api/gecmis/-1`'in portal kayıtlarını sızdırmadığını, kayıt ucunun rol bayraklarını döndürdüğünü ve çift kaydın 500 yerine 400 verdiğini ayrı ayrı kanıtlıyor.
 
+#### 7.12 — Ana sayfa + genel hata denetimi
+
+**Ana sayfa (`/`).** PO isteği: "landing page ekleyelim bir ana sayfa olsun, çok content gerekmez, varlığı yeter." `AnaSayfaPage` eklendi — herkese açık, veri gösteren hiçbir çağrı yapmaz (yalnızca `auth/ben` ile butonu "Giriş / Kayıt" ↔ "Panelime git" arasında değiştirir), ürünü dört kutucukta anlatır ve `/giris`'e yönlendirir. Banka içi panelin ana ekranı `/`'tan `/panel`'e taşındı; diğer panel yolları (`/portfolio`, `/customers`, …) geriye dönük uyumluluk için yerinde bırakıldı, böylece sayfa-içi linkler ve handoff dokümanındaki rota haritası kırılmadı. Bu sayfa **zorunlu yönlendirme yapmaz** — giriş yapmış kullanıcı da ana sayfayı görebilmeli; zorunlu kapı `/giris` ve üç `Layout`'un işi.
+
+**Denetimde bulunan altı gerçek hata** (hiçbiri güvenlik açığı değil; hepsi "kullanıma hazır" iddiasını zayıflatan, kullanıcı hatasını 500'e çeviren ya da dayanıklılık boşluğu olan sınıftan):
+
+| # | Nerede | Neydi | Şimdi |
+|---|---|---|---|
+| 1 | `kimlik/views.py::erisim_talebi_onayla` | `int(request.data.get("gecerlilik_gun") or 30)` çıplaktı — `"otuz"` gönderilince `ValueError` → **500** | `try/except` → 400 |
+| 2 | `kimlik/views.py::telefon_dogrula` | Sybil kontrolü yalnızca `telefon_gonder`'deydi. İki hesap da HENÜZ doğrulamamışken ikisi de kontrolden geçiyor, ikinci doğrulamada `Profil.telefon_hash` unique kısıtı patlayıp **500** veriyordu | Kontrol yazma anına taşındı + `IntegrityError` yakalandı → 409 |
+| 3 | `kimlik/views.py::telefon_gonder` | Yeni kod istenince eskiler geçersizleşmiyordu — aynı anda birden çok geçerli OTP, ve `MAKS_DENEME` yeni kod isteyerek sıfırlanabiliyordu | Yeni kod öncesi bekleyen doğrulamalar `kullanildi_mi=True` yapılıyor |
+| 4 | `api/views.py::simulasyon` | Yalnızca ANAHTARLAR doğrulanıyordu; sözlük olmayan gövde (`.update()` patlar) veya sayı olmayan değer (`predict_proba` patlar) → **500** | Tip doğrulaması → 400 |
+| 5 | `api/services.py::belge_ayristir` | Yükleme boyut sınırı yoktu. `dosya.read()` dosyanın tamamını belleğe alıyor ve Django'nun `DATA_UPLOAD_MAX_MEMORY_SIZE`'ı multipart DOSYA alanlarına uygulanmıyor | `MAKS_BELGE_BAYT = 10 MB` (iki yükleme ucu da aynı sınırdan geçer) |
+| 6 | `03-frontend/src/api.ts::postDosya` | `r.json()` `.catch()`'siz — JSON olmayan hata yanıtında (proxy 413/502 HTML'i) kullanıcıya ham `Unexpected token '<'` gösteriliyordu | `get`/`post` ile aynı `.catch(() => null)` deseni |
+
+**HTTPS sertleştirmesi.** `manage.py check --deploy` dört uyarı veriyordu (W004 HSTS, W008 SSL redirect, W012/W016 Secure çerezler). Dördü de eklendi ama `DEBUG`'a değil ayrı bir `DJANGO_HTTPS` bayrağına bağlandı — `.env`'de zaten `DJANGO_DEBUG=false` ama yerel geliştirme düz http üzerinden; `DEBUG=False` ile otomatik açılsalardı tarayıcı Secure çerezi http'de göndermeyeceği için **giriş sessizce çalışmaz hâle gelirdi**. `DJANGO_HTTPS=true` ile `check --deploy` temiz geçiyor. HTTPS gerektirmeyenler (`SESSION_COOKIE_HTTPONLY`, `SAMESITE=Lax`) her ortamda açık.
+
+**OTP demo kodu `DEBUG`'tan ayrıldı.** SMS sağlayıcısı hâlâ yok (açık OQ), kod API yanıtında dönüyordu — ama yalnızca `settings.DEBUG` iken. `.env`'de `DJANGO_DEBUG=false` olduğu için telefon doğrulama akışı **hiç denenemez** hâle gelmişti: kodu görmek için DEBUG'ı açmak gerekiyordu, o da traceback'leri sızdırıyordu. Ayrı bir `AKS_OTP_DEMO_KOD` bayrağı eklendi (varsayılan `false`, `.env.example`'da "gerçek dağıtımda false" şerhiyle) — iki ödünleşim artık birbirine bağlı değil. Yanıt alanı `demo_kod` olarak adlandırıldı, `debug_kod` geriye dönük uyumluluk için korundu.
+
+**Doğrulama:** Her hata için regresyon testi yazıldı (`GirdiDogrulamaTesti`, `TelefonDogrulamaAkisiTesti`, `BelgeBoyutSiniriTesti`). OTP testlerinde `cache.clear()` gerekti — DRF throttle sayacı LocMemCache'te süreç boyu yaşıyor ve testler arası birikip alakasız 429 üretiyordu.
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |

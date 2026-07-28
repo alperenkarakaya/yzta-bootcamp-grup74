@@ -101,6 +101,38 @@ if _redis_url:
 else:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
+# SMS sağlayıcısı olmadığı için (açık OQ) OTP kodunun API yanıtında
+# döndürülmesi — yalnızca demo/test. `DJANGO_DEBUG`'tan AYRI tutuldu: bu
+# kurulumda DEBUG kapalı (üretim benzeri hata davranışı istendi) ama telefon
+# doğrulama akışının denenebilmesi gerekiyor. GERÇEK DAĞITIMDA `false`.
+OTP_DEMO_KOD = os.environ.get("AKS_OTP_DEMO_KOD", "false").lower() == "true"
+
+# --- HTTPS sertleştirmesi (yalnızca DJANGO_HTTPS=true iken) ---
+# `manage.py check --deploy`'un dört uyarısının (W004/W008/W012/W016) karşılığı.
+# DEBUG'a DEĞİL, ayrı bir bayrağa bağlı olmaları KASITLI: `.env`'de zaten
+# DJANGO_DEBUG=false, ama yerel geliştirme hâlâ düz http üzerinden
+# (localhost:5173 -> :8000). Bunlar DEBUG=False ile otomatik açılsaydı,
+# tarayıcı Secure işaretli çerezi http'de göndermeyeceği için giriş sessizce
+# çalışmaz hâle gelirdi. Gerçek dağıtımda (TLS sonlandıran bir proxy arkasında)
+# DJANGO_HTTPS=true verilir ve dördü birden devreye girer.
+HTTPS_ZORUNLU = os.environ.get("DJANGO_HTTPS", "false").lower() == "true"
+if HTTPS_ZORUNLU:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 yıl
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    # Proxy TLS'i sonlandırıyorsa Django isteği "güvenli" saymalı; aksi halde
+    # SECURE_SSL_REDIRECT sonsuz yönlendirme döngüsü üretir.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Çerezler hiçbir koşulda JavaScript'e açılmamalı ve çapraz-site POST'larda
+# gönderilmemeli — bunlar HTTPS gerektirmediği için her ortamda açık.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
 # Kullanıcı portalı gerçek şifreler kabul ettiğinden (§3b Phase 6) minimum uzunluk
 # doğrulaması aktif — Django'nun kendisi zaten güçlü hashleme (PBKDF2) uyguluyor.
 AUTH_PASSWORD_VALIDATORS = [

@@ -7,7 +7,7 @@ import { Icon } from "../components/Icon";
 // popülasyonunu görür), kurum personeli → kurum paneli (yalnızca rıza verilen
 // müşteriler), sıradan kullanıcı → kendi portalı (yalnızca kendi yüklemeleri).
 function varisYolu(k: KullaniciBilgisi): string {
-  if (k.yonetici) return "/";
+  if (k.yonetici) return "/panel";
   if (k.kurum_uyesi) return "/kurum/musteriler";
   return "/portal";
 }
@@ -17,7 +17,8 @@ function varisYolu(k: KullaniciBilgisi): string {
 // Her kutucuğun altında doğrudan giriş alanları var (ayrı bir sayfaya
 // geçmeye gerek yok). İkisi de AYNI oturum sistemini (`/api/auth/*`)
 // kullanır — Kurum tarafı `kurumBen()` ile üyeliğini doğrular (KurumLoginPage
-// ile birebir aynı mantık), Kullanıcı tarafı banka içi arayüze (`/`) gider.
+// ile birebir aynı mantık). Giriş sonrası varış `varisYolu()` ile role göre
+// belirlenir. Herkese açık ana sayfa ayrı bir sayfadır (`/`, AnaSayfaPage).
 export default function GirisPage() {
   const navigate = useNavigate();
   const [kontrolEdiliyor, setKontrolEdiliyor] = useState(true);

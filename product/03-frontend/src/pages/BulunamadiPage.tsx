@@ -14,6 +14,12 @@ export default function BulunamadiPage() {
             to="/"
             className="px-4 py-2 rounded-DEFAULT bg-primary-container text-white font-label-mono text-label-mono hover:bg-inverse-primary transition-colors"
           >
+            Ana Sayfa
+          </Link>
+          <Link
+            to="/panel"
+            className="px-4 py-2 rounded-DEFAULT border border-outline-variant/50 text-on-surface font-label-mono text-label-mono hover:bg-surface-container transition-colors"
+          >
             Banka Paneli
           </Link>
           <Link

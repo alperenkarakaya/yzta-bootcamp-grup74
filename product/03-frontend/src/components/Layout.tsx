@@ -5,7 +5,7 @@ import { politikaEsikleriniYukle } from "../lib/skor";
 import { api, type KullaniciBilgisi } from "../api";
 
 const NAV_LINKS = [
-  { to: "/", label: "Intelligence", end: true },
+  { to: "/panel", label: "Intelligence", end: true },
   { to: "/portfolio", label: "Portfolio" },
   { to: "/audit", label: "Audit" },
   { to: "/customers", label: "Customers" },
@@ -13,7 +13,7 @@ const NAV_LINKS = [
 ];
 
 const BOTTOM_LINKS = [
-  { to: "/", icon: "terminal", label: "Command", end: true },
+  { to: "/panel", icon: "terminal", label: "Command", end: true },
   { to: "/customers", icon: "sensors", label: "Signals" },
   { to: "/upload", icon: "upload_file", label: "Upload" },
   { to: "/audit", icon: "shield_with_heart", label: "Vault" },

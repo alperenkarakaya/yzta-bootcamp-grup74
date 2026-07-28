@@ -10,6 +10,7 @@ an bu iki uçla telefonunu doğrulayabilir (zorunlu tutulmuyor, PO onayı
 gerekirse ileride `IsAuthenticated` + `telefon_dogrulandi_mi` şartına
 sıkılaştırılabilir — yeni OQ olarak execution.md'de).
 """
+from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
@@ -59,6 +60,12 @@ def telefon_gonder(request):
     if Profil.objects.filter(telefon_hash=telefon_hash).exclude(user=request.user).exists():
         return Response({"hata": "Bu telefon numarası başka bir hesaba kayıtlı"}, status=409)
 
+    # Yeni kod istenince ESKİ bekleyen kodlar geçersizleşir. Aksi halde aynı
+    # anda birden fazla geçerli OTP olurdu (sızan eski bir kod, yenisi
+    # istendikten sonra da süresi dolana kadar çalışırdı) ve MAKS_DENEME
+    # sınırı yeni kod isteyerek sıfırlanabilirdi.
+    TelefonDogrulama.objects.filter(user=request.user, kullanildi_mi=False).update(kullanildi_mi=True)
+
     kod = telefon_modul.otp_uret()
     dogrulama = TelefonDogrulama.objects.create(
         user=request.user, telefon_hash=telefon_hash,
@@ -69,10 +76,18 @@ def telefon_gonder(request):
         "dogrulama_id": dogrulama.id,
     }
     from django.conf import settings
-    if settings.DEBUG:
-        # SMS sağlayıcısı henüz yok (OQ, execution.md) — demo/geliştirmede kod
-        # doğrudan yanıtta görünür. ÜRETİMDE BU SATIR KALDIRILMALI.
-        yanit["debug_kod"] = kod
+    # SMS sağlayıcısı henüz yok (açık OQ, execution.md) — demo/test ortamında
+    # kod doğrudan yanıtta görünür, aksi halde telefon doğrulama akışı hiç
+    # denenemez. GERÇEK DAĞITIMDA İKİSİ DE KAPALI OLMALI.
+    #
+    # `AKS_OTP_DEMO_KOD` ayrı bir bayrak: `.env`'de `DJANGO_DEBUG=false`
+    # (üretim benzeri davranış isteniyor — traceback sızmasın) ama demo
+    # hesaplarıyla akışın denenebilmesi gerekiyor. İkisini tek bayrağa bağlamak,
+    # "kodu görebilmek için DEBUG'ı aç" gibi çok daha kötü bir ödünleşim
+    # dayatıyordu.
+    if settings.DEBUG or settings.OTP_DEMO_KOD:
+        yanit["demo_kod"] = kod
+        yanit["debug_kod"] = kod  # geriye dönük ad (frontend/testler)
     return Response(yanit)
 
 
@@ -96,14 +111,26 @@ def telefon_dogrula(request):
         kalan = dogrulama.MAKS_DENEME - dogrulama.deneme_sayisi
         return Response({"hata": f"Kod hatalı ({max(kalan, 0)} deneme hakkı kaldı)"}, status=400)
 
+    # Sybil kontrolü BURADA tekrarlanır. `telefon_gonder`'deki kontrol tek
+    # başına yetmiyordu: iki hesap da aynı numara için kod isterse ikisi de o
+    # kontrolden geçer (henüz ikisinin de `telefon_hash`'i boş), sonra ikisi de
+    # doğrulayınca ikinci `save()` `telefon_hash` unique kısıtına takılıp 500
+    # veriyordu. Kontrol yazma anına taşındı; kısıt ihlali yine olursa (gerçek
+    # yarış) 500 yerine anlamlı 409 döner.
+    profil = request.user.profil
+    if Profil.objects.filter(telefon_hash=dogrulama.telefon_hash).exclude(pk=profil.pk).exists():
+        return Response({"hata": "Bu telefon numarası başka bir hesaba kayıtlı"}, status=409)
+
     dogrulama.kullanildi_mi = True
     dogrulama.save(update_fields=["kullanildi_mi"])
 
-    profil = request.user.profil
     profil.telefon_hash = dogrulama.telefon_hash
     profil.telefon_dogrulandi_mi = True
     profil.telefon_dogrulandi_at = timezone.now()
-    profil.save(update_fields=["telefon_hash", "telefon_dogrulandi_mi", "telefon_dogrulandi_at"])
+    try:
+        profil.save(update_fields=["telefon_hash", "telefon_dogrulandi_mi", "telefon_dogrulandi_at"])
+    except IntegrityError:
+        return Response({"hata": "Bu telefon numarası başka bir hesaba kayıtlı"}, status=409)
     return Response({"dogrulandi": True})
 
 
@@ -142,7 +169,13 @@ def erisim_talebi_onayla(request, talep_id: int):
     if talep.durum != "bekliyor":
         return Response({"hata": f"Talep zaten '{talep.durum}' durumunda"}, status=400)
 
-    gecerlilik_gun = int(request.data.get("gecerlilik_gun") or 30)
+    # `int(...)` çıplak bırakılınca sayı olmayan bir değer (ör. "otuz")
+    # ValueError fırlatıp 500 döndürüyordu — kullanıcı hatası 500 olmamalı.
+    try:
+        gecerlilik_gun = int(request.data.get("gecerlilik_gun") or 30)
+    except (TypeError, ValueError):
+        return Response({"hata": "gecerlilik_gun bir tam sayı olmalı"}, status=400)
+
     talep.durum = "onaylandi"
     talep.karar_at = timezone.now()
     talep.gecerlilik_bitis = timezone.now() + timezone.timedelta(days=max(1, min(gecerlilik_gun, 365)))

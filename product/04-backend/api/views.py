@@ -150,12 +150,22 @@ def simulasyon(request):
         if islemler is None:
             return Response({"hata": f"Demo müşteri {mid} bulunamadı"}, status=404)
     degisiklikler = request.data.get("degisiklikler") or {}
+    # Tip doğrulaması: önceden yalnızca ANAHTARLAR kontrol ediliyordu. Sözlük
+    # olmayan bir gövde (`.update()` patlar) ya da sayı olmayan bir değer
+    # (model `predict_proba`'da patlar) 400 yerine 500 üretiyordu.
+    if not isinstance(degisiklikler, dict):
+        return Response({"hata": "degisiklikler bir nesne (sözlük) olmalı"}, status=400)
     veri = services.orkestrator.veri_agent.calistir(islemler)
     mevcut = services.orkestrator.skorlama_agent.calistir(veri["vektor"])
     ozellikler = dict(veri["ozellikler"])
     gecersiz = [k for k in degisiklikler if k not in ozellikler]
     if gecersiz:
         return Response({"hata": f"Geçersiz özellik(ler): {gecersiz}"}, status=400)
+    sayisal_olmayan = [
+        k for k, v in degisiklikler.items() if isinstance(v, bool) or not isinstance(v, (int, float))
+    ]
+    if sayisal_olmayan:
+        return Response({"hata": f"Sayısal olmayan değer(ler): {sayisal_olmayan}"}, status=400)
     ozellikler.update(degisiklikler)
     yeni_vektor = [ozellikler[o] for o in OZELLIK_ADLARI]
     senaryo = services.orkestrator.skorlama_agent.calistir(yeni_vektor)

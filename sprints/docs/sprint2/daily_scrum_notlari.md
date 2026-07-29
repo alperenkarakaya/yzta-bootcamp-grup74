@@ -139,13 +139,12 @@ Bu klasördeki ilgili ekran görüntüleri:
 - `dm_02_persona_veri.png` — persona tasarımı ve veri tarafının koordinasyonu
 - `dm_03_repo_paylasimi.png` — GitHub repo paylaşımı ve o anki durumun değerlendirilmesi
 - `dm_04_sprint2_duyuru.png` — Sprint 2 README duyurusu ve kalan işlerin paylaşılması
-- `dm_04_sprint2_duyuru.png` — Sprint 2 README duyurusu ve kalan işlerin paylaşılması
 
 
 **Slack (dokümantasyon ve duyurular):**
 
 - `slack_01_gorev_dagilimi.png` — Sprint 2 durum duyurusu ve nihai alan dağılımı (Veri/Yapay Zeka/Backend/Frontend)
-- `slack_02_sprint2_son.png` — Sprint 2 durum güncellemesi ve herkesin yaptığı görevleri bildirmesi
+- `slack_02_sprint2_son_durum.png` — Sprint 2 durum güncellemesi ve herkesin yaptığı görevleri bildirmesi
 
 **Huddle:**
 

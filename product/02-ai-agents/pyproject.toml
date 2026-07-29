@@ -27,4 +27,8 @@ include = ["aks_core*"]
 aks_core = ["artifacts/*.joblib", "artifacts/*.json"]
 
 [project.optional-dependencies]
-test = ["pytest>=8.0", "reportlab>=4.0"]  # reportlab yalnızca test_belge.py'nin PDF fixture'ı için
+# reportlab yalnızca test_belge.py'nin PDF fixture'ı için.
+# anthropic/google-genai: test_danisman_llm.py bu SDK'ların Client'larını patch'ler;
+# runtime'da lazy import edilseler de test toplaması için kurulu olmaları gerekir
+# (aksi halde temiz klonda 11 test ModuleNotFoundError verir).
+test = ["pytest>=8.0", "reportlab>=4.0", "anthropic>=0.40", "google-genai>=1.0"]

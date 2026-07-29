@@ -5,8 +5,9 @@
 ve sesli huddle. Sprint 1 ve 2'de olduğu gibi toplantılar asenkron ve yazılı
 yürütüldü; sprint açılışı sesli huddle ile yapıldı.
 
-> Not: Aşağıdaki kayıtlar ekibin Slack yazışmalarından, Instagram grup
-> mesajlarından ve huddle'lardan derlenmiştir. İlgili ekran görüntüleri bu klasörde.
+> Not: Aşağıdaki kayıtlar ekibin Slack yazışmalarından, huddle'lardan ve
+> Instagram grup mesajlarından derlenmiştir. İlgili ekran görüntüleri (Slack
+> koordinasyonu, huddle, çalışan arayüz ve board dâhil) bu klasörde.
 
 ---
 
@@ -87,25 +88,56 @@ olunacak şekilde anlaşıldı.
 
 ---
 
-## 24 Temmuz – 2 Ağustos — Sprint'in kalan günleri
+## 25 Temmuz (Cumartesi) — Güncel veri seti teslim edildi
 
-> Bu bölüm plandır, kayıt değil. Gerçekleşen daily scrum notları gün geçtikçe
-> buraya eklenecektir.
+- **Zeynep (Dev):** "Dosyaların güncel hali burada" — güncellenmiş veri
+  paketini (`Akademi.rar`) ekip kanalında paylaştı. Bir gün önce "verileri
+  tekrar hazırlayıp ileteceğim" demişti. Bu teslim, 23 Temmuz'da açılan
+  **"demo verisi ile eğitim verisi farklı"** engelini kapatan adım oldu:
+  eğitim ve demo artık aynı güncel sete dayanıyor.
 
-İç takvime göre 29 Temmuz'a kadar proje bitmiş, kalan günler ekleme ve
-kapanış için ayrılmış olacak.
+## 27 Temmuz (Pazartesi) — Çalışma huddle'ı
 
-`<!-- TODO: günlük kayıtlar buraya. Bootcamp teslimi 2 Ağustos 23.59. -->`
+- **Sesli huddle (27 dk):** Alperen, Ahmet, Havva, Zeynep katıldı; devamında
+  36 yanıtlı thread üzerinden senkron sürdü. Model/metrik durumunun ve kalan
+  frontend + deploy işlerinin gözden geçirildiği ara senkron.
+
+## 28 Temmuz (Salı) — Frontend, bug düzeltmeleri, deploy altyapısı
+
+**Gece:**
+- **Havva (Dev):** Birkaç sayfada tasarım düzenlemesi yaptı ve çalışan
+  arayüzün ekran görüntüsünü paylaştı (Operations Overview / terminal
+  görünümü). "Nasıl buldunuz, ona göre diğerlerini de aynı stilde
+  hazırlayacağım" — geri bildirim bekliyor, henüz push yok.
+- **Alperen (PO):** Frontend üzerinde ertesi gün Havva ile **birlikte
+  çalışma** kararı ("önyüzde beraber bakarız düzenleriz"). Ayrıca bir push
+  attı: **bug düzenlemeleri** + **Redis agent ve Supabase ayağa kaldırıldı**
+  ("çalışıyorlar"); ekstra kontroller sürüyor. → Deploy altyapısı (#15) için
+  ilk somut adım.
+
+**Öğle/öğleden sonra:**
+- **Alperen (PO):** "Bahsettiğim şeyleri ekledim ve **bug testlerini yaptım,
+  bir sorun gözükmüyor**. Frontend kısmını da güncelleyip ileteceğim."
+- **Ahmet (SM):** Bootcamp finali için **video hazırlama rehberini** paylaştı
+  (≤3 dk demo, yatay 16:9, net ses, YouTube **Unlisted**) ve örnek tanıtım
+  videolarını iletti. → Demo videosu çekimi kalan iş olarak netleşti.
+
+## 29 Temmuz – 2 Ağustos — Kapanış
+
+İç takvime göre proje 29 Temmuz'da bitmiş, kalan günler kapanış için ayrılmış
+durumda. Kalan işler: demo videosunun çekilip YouTube'a (Unlisted) yüklenmesi,
+frontend tasarım düzenlemelerinin push'lanması ve deploy'un (#15)
+tamamlanması. Bu kalemler teslim (2 Ağustos 23.59) öncesi kapatılacak.
 
 ---
 
 | Engel | Çözüm |
 |---|---|
 | Headline sayı Sprint 2'de yapısal olarak geçersiz çıkmıştı | Dekuple hat devreye alındı, tüm metrikler yeniden üretildi |
-| Django geçişinde 22 test kırılmıştı | Test paketi iki pakete taşındı, 39 test çalışıyor |
+| Django geçişinde 22 test kırılmıştı | Test paketi iki pakete taşındı; **161 test** çalışıyor (95 `aks_core` + 66 Django) |
 | 22 Temmuz iç hedefi tam tutmadı | Kapsam 23 Temmuz'da netleşti; 29 Temmuz hedefi korundu |
-| Demo verisi ile eğitim verisi farklı | `<!-- TODO: birleştirme sonrası doldurulacak -->` |
-| Yayımlanmış rakamlar döngüsel veriden geliyor | `<!-- TODO -->` |
+| Demo verisi ile eğitim verisi farklı | Birleştirme Zeynep'in kapsamında; teslim öncesi tamamlanacak |
+| Yayımlanmış rakamlar döngüsel veriden geliyor | Metrik güncel dekuple sayılarla değiştirildi (README Sprint 3 §5); arayüz canlı `/api/*`'ten besleniyor |
 
 ---
 
@@ -121,6 +153,17 @@ kapanış için ayrılmış olacak.
 - `slack_02_yapilacaklar.png` — 23 Temmuz detaylı yapılacaklar listesi
 - `slack_03_ana_hedef_gorev.png` — ana hedef ve görev dağılımı
 
-**Instagram grup DM (günlük koordinasyon):**
+**Slack (günlük koordinasyon — 25–28 Temmuz):**
 
-- `<!-- TODO -->`
+- `slack_04_daily_koordinasyon.png` — 25 Temmuz güncel veri teslimi, 27 dk huddle ve Havva'nın tasarım paylaşımı
+- `slack_05_frontend_bugfix_deploy.png` — frontend eşleşmesi, Alperen'in bug-fix push'u + Supabase/Redis ayağa kaldırma
+
+**Ürün çıktıları (Sprint Board & Ürün Durumu):**
+
+- `urun_arayuz_sprint3.png` — çalışan arayüz: Operations Overview (canlı model, LIVE ENGINE FEED, PIPELINE HUB)
+- `urun_durumu_sprint3.png` — canlı metriklerden üretilen dört panel (model AUC, persona, ek onay, portföy kurtarma)
+- `board_sprint3.png` — Sprint 3 board (story/task durumu)
+
+**Instagram grup DM:**
+
+- _Ekip tarafından eklenecek (opsiyonel): Instagram grup DM ekran görüntüsü — Slack kanıtları yukarıda mevcut._

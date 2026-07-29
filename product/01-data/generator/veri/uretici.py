@@ -109,10 +109,16 @@ def csv_yaz(kayitlar, dosya_yolu):
 
 
 if __name__ == "__main__":
+    import os
+    # Çıktı, CWD'den bağımsız olarak 01-data/datasets/ altına yazılır; klasör
+    # yoksa oluşturulur (aksi halde temiz klonda FileNotFoundError alınıyordu).
+    varsayilan_dizin = os.path.join(os.path.dirname(__file__), "..", "..", "datasets")
+    varsayilan_cikti = os.path.join(varsayilan_dizin, "sentetik_islemler.csv")
     p = argparse.ArgumentParser()
     p.add_argument("--musteri-sayisi", type=int, default=2000)
     p.add_argument("--gun", type=int, default=180)
-    p.add_argument("--cikti", type=str, default="data/sentetik_islemler.csv")
+    p.add_argument("--cikti", type=str, default=varsayilan_cikti)
     a = p.parse_args()
+    os.makedirs(os.path.dirname(os.path.abspath(a.cikti)), exist_ok=True)
     k = uret(a.musteri_sayisi, a.gun); csv_yaz(k, a.cikti)
     print(f"{len(k)} işlem üretildi -> {a.cikti} ({a.musteri_sayisi} müşteri)")

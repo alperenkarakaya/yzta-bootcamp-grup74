@@ -12,12 +12,14 @@ const NAV_LINKS = [
   { to: "/upload", label: "Belge Yükle" },
 ];
 
+// Mobil alt-nav: etiket, ikon ve sıra üst-nav (NAV_LINKS) ile hizalıdır —
+// aynı hedef her iki yüzeyde aynı adı ve anlamlı ikonu taşır.
 const BOTTOM_LINKS = [
-  { to: "/panel", icon: "terminal", label: "Komut", end: true },
-  { to: "/customers", icon: "sensors", label: "Sinyal" },
+  { to: "/panel", icon: "monitoring", label: "Panel", end: true },
+  { to: "/portfolio", icon: "pie_chart", label: "Portföy" },
+  { to: "/audit", icon: "receipt_long", label: "Denetim" },
+  { to: "/customers", icon: "group", label: "Müşteri" },
   { to: "/upload", icon: "upload_file", label: "Yükle" },
-  { to: "/audit", icon: "account_balance_wallet", label: "Kasa" },
-  { to: "/portfolio", icon: "support_agent", label: "Destek" },
 ];
 
 // Giriş zorunlu (PO kararı): giriş yapılmamışsa banka içi arayüz yerine

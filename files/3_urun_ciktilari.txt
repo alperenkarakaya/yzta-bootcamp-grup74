@@ -1,0 +1,96 @@
+══════════════════════════════════════════════════════════════
+ AKS — ÜRÜN ÇIKTILARI (canlı çalıştırma)  ·  2026-07-29
+ Grup 74 · dekuple veri kaynağı · 2000 sentetik müşteri
+══════════════════════════════════════════════════════════════
+
+### 1) MODEL EĞİTİMİ (python -m aks_core.model.egitim)
+
+Veri kaynağı: dekuple  (2000 müşteri, arama 4.6s)
+Model               ROC-AUC     PR-AUC      CV-AUC (arama)  
+------------------------------------------------------------
+XGBoost             0.8384      0.5612      0.8536          
+LightGBM            0.8352      0.5779      0.8535          
+LogisticRegression  0.8499      0.5932      0.8666          
+Klasik skor         0.4931      0.1781      -               
+------------------------------------------------------------
+En iyi model: LogisticRegression (AUC 0.8499)
+Klasik skora göre AUC kazancı: +0.3568
+XGBoost vs LojistikRegresyon farkı: 0.0115 (mandat #1/#8: küçükse/LR üstünse basit model tercih edilmeli)
+Kalibrasyon: test ECE 0.0391 > eşik 0.03 -> izotonik düzeltme uygulandı (ECE sonrası 0.0394)
+
+Model kaydedildi -> /home/claude/work/yzta-bootcamp-grup74-main/product/02-ai-agents/aks_core/artifacts/aks_model_lr.joblib
+
+### 2) SABİT RİSKTE EK ONAY (python -m aks_core.model.ek_onay)
+
+>>> HEADLINE — sabit %10 kötü-oranında AKS onay oranı (taban temerrüt %17.2):
+      Tüm portföy : %86.8  (%95 CI %82.6–%90.3)
+      Odak segment: %86.8  (%95 CI %80.5–%91.4)
+      → Riski taban seviyesinin ~7 puan altına çekerken bile, ince-dosyalı
+        başvuruların büyük kısmı güvenle onaylanabiliyor. Bu mutlak sayı
+        klasik skorun zayıflığından bağımsızdır.
+
+[Tüm portföy (matched-risk, klasik referans — §3 uyarısıyla)]  n=2000  taban temerrüt=0.172
+  Referans (statü/klasik, eşik 560): onay  65.6%  | gerçekleşen kötü-oran R*=0.170
+  AKS  (aynı R*'ta):                    onay  99.8%  | gerçekleşen kötü-oran 0.170
+  → Ek onay (ΔOnay): +34.2 puan   %95 CI [+31.4, +36.2]
+
+[Odak segment (matched-risk, klasik referans)]  n=1124  taban temerrüt=0.169
+  Referans (statü/klasik, eşik 560): onay  64.3%  | gerçekleşen kötü-oran R*=0.162
+  AKS  (aynı R*'ta):                    onay  99.0%  | gerçekleşen kötü-oran 0.162
+  → Ek onay (ΔOnay): +34.7 puan   %95 CI [+30.8, +37.8]
+
+[Tüm portföy] — sabit hedef kötü-oranında onay oranı
+   hedef kötü-oran |  AKS onay |  statü onay |   ΔOnay
+
+### 3) CANLI API (Django /api, yönetici oturumu)
+
+GET /api/bilgi:
+{
+    "servis": "AKS - Alternatif Kapasite Skoru",
+    "surum": "3.0-django",
+    "model": "LogisticRegression",
+    "ozellikler": [
+        "toplam_gelir_hacmi",
+        "toplam_gider_hacmi",
+        "gelir_islem_sayisi",
+        "gelir_kaynagi_sayisi",
+        "gelir_duzenliligi",
+        "gider_gelir_orani",
+        "bakiye_trendi",
+        "fatura_odeme_duzeni",
+        "hesap_hareket_yogunlugu"
+    ],
+    "demo_musteri_sayisi": 2000
+}
+
+GET /api/skorla/5  (ince-dosyalı örnek müşteri):
+{
+    "musteri_id": 5,
+    "persona": "stajyer_degisken_gelir",
+    "klasik_skor": 623,
+    "aks_skor": 832,
+    "onerilen_limit": 27500,
+    "risk_seviyesi": "d\u00fc\u015f\u00fck risk",
+    "karar": "onaylanabilir (y\u00fcksek limit)",
+    "ozellikler": {
+        "toplam_gelir_hacmi": 83508.0,
+        "toplam_gider_hacmi": 62769.0,
+        "gelir_islem_sayisi": 12,
+        "gelir_kaynagi_sayisi": 2,
+        "gelir_duzenliligi": 0.418,
+        "gider_gelir_orani": 0.752,
+        "bakiye_trendi": 20.713,
+        "fatura_odeme_duzeni": 0.0,
+        "hesap_hareket_yogunlugu": 0.322
+    },
+    "aciklama": {
+        "riski_artiran": [
+            {
+
+GET /api/portfoy (özet):
+  toplam_musteri: 2000
+  klasik_red: 1389
+  kredibl_red: 1084
+  kurtarilan: 1015
+  kurtarma_orani: 0.936
+  yanlis_onay: 225

@@ -173,7 +173,7 @@ Backlog Miro üzerinde tutuluyor (link aşağıda); story bazlı özet:
 | 11 | React arayüz — 5 sayfa | 2 | ✅ |
 | 12 | Döngüsel olmayan benchmark üzerinde model finalizasyonu | 3 | ✅ |
 | 13 | Kalibrasyon (Brier/ECE) | 3 | ✅ |
-| 13b | Sabit kötü-oranında ek onay metriği | 3 | ⏳ |
+| 13b | Sabit kötü-oranında ek onay metriği | 3 | ✅ |
 | 14 | Test paketinin Django/`aks_core`'a taşınması | 3 | ✅ |
 | 15 | Deploy (Docker + Render) + demo video | 3 | ⏳ |
 
@@ -430,8 +430,17 @@ teslimine üç günlük bir tampon bırakmaktı.
 | Model optimizasyonu ve metrik kontrolleri | Alperen, Ahmet |
 | Veri ve sentetik veri hazırlığı | Zeynep |
 
-**Puan tamamlama mantığı:** `<!-- TODO: teslim gününe göre doldurun -->`
-Miro board'da kırmızı item'lar task'leri, mavi item'lar story'leri temsil ediyor.
+**Backlog dağıtma mantığı:** Sprint 3'ün taahhüt edilen kapsamı, Product
+Backlog'dan devreden dört story'ydi — #12 (dekuple benchmark üzerinde model
+finalizasyonu), #13 (kalibrasyon), #14 (test paketinin taşınması) ve #15
+(deploy + demo video) — ayrıca sprint içinde headline metriği için açılan #13b.
+Sprint Planning'de bu story'ler dört çalışma başlığına ayrıldı (model
+optimizasyonu, karar/metrik değişiklikleri, frontend, deploy) ve önceki
+sprintlerdeki alan sahipliğiyle tutarlı biçimde dağıtıldı: model ve metrik
+işleri Alperen + Ahmet, veri/sentetik veri hazırlığı Zeynep, araştırma Havva.
+Her story task'lere bölünüp Miro board'a işlendi; kırmızı item'lar task'leri,
+mavi item'lar story'leri temsil eder. Story başına puan tahminleri board
+üzerinde tutulur ve sprint kapasitesini aşmayacak şekilde seçildi.
 
 **Daily Scrum:** Sprint 3, Sprint 1 ve 2'den farklı olarak sesli bir Sprint Planning
 huddle'ı ile başladı; günlük koordinasyon yine Slack ve Instagram grup DM'i
@@ -441,9 +450,42 @@ görüntüleri aynı klasörde.
 
 **Sprint Board Update:**
 
-`<!-- TODO: ![Sprint 3 Board](sprints/docs/sprint3/board_sprint3.png) -->`
+Sprintin durumu aşağıdaki board'da özetlenir (kolonlar: Backlog / To Do /
+In progress / Done; mavi çerçeve = story, kırmızı çerçeve = task). Board,
+Product Backlog'daki story'lerin gerçek durumuna ve ekibin Slack/huddle
+koordinasyonuna göre üretilmiştir.
+
+![Sprint 3 Board](sprints/docs/sprint3/board_sprint3.png)
+
+**Burndown:** Taahhüt edilen 24 puanlık kapsam, sprint içinde #13b (ek onay
+metriği, +5) ve frontend "AKS Terminal" yeniden tasarımı (+8) ile 37 puana
+büyüdü. Teknik iş 28 Temmuz'da tamamlandı; kalan kapsam (deploy #15 + demo
+video) 2 Ağustos kapanışına kadar bitirilecek.
+
+![Sprint 3 Burndown](sprints/docs/sprint3/burndown_sprint3.png)
 
 ## Ürün Durumu
+
+**Çalışan arayüz** (Operations Overview — canlı model `LogisticRegression`,
+LIVE ENGINE FEED skorlama akışı, PIPELINE HUB ajan durumları):
+
+![AKS çalışan arayüz](sprints/docs/sprint3/urun_arayuz_sprint3.png)
+
+Aşağıdaki pano ise çalışan üründen (canlı `aks_core` değerlendirmesi + `/api`
+uçları) üretilen dört ana çıktının özetidir: model ayrıştırma gücü, persona
+kırılımı, sabit riskte ek onay ve portföy kurtarma.
+
+![Ürün Durumu — Sprint 3](sprints/docs/sprint3/urun_durumu_sprint3.png)
+
+Canlı skorlama örneği (ince-dosyalı müşteri): `GET /api/skorla/5` →
+`stajyer_degisken_gelir`, klasik skor **623**, AKS skor **832**, önerilen
+limit **27.500 TL**, karar *"onaylanabilir (yüksek limit)"* — statü tabanlı
+sistemin düşük tuttuğu bir profili, davranışsal kapasiteye göre onaylıyor.
+
+![Canlı skorlama kartı — müşteri #5](sprints/docs/sprint3/skor_karti_sprint3.png)
+
+Modelin eğitimi, ek onay metriği ve `/api` yanıtlarının ham dökümü:
+[`urun_ciktilari_sprint3.txt`](sprints/docs/sprint3/urun_ciktilari_sprint3.txt).
 
 ### 1. Dürüst benchmark devrede
 
@@ -495,11 +537,15 @@ ayırıyor, klasik skor da resmi gelirden türetiliyor. Çıkan sonuç "klasik
 skorun öngörü gücü yok" değil, "bu sentetik dünyada klasik skor tanım
 gereği bilgi taşımıyor".
 
-`<!-- TODO — takım kararı: Bu haliyle "AKS klasik skoru geçiyor"
-karşılaştırması kurulamaz (0.86 vs 0.49 dürüst bir kıyas değil).
-  (a) Üreticiye klasik skor için zayıf ama sıfır olmayan bir sinyal koymak
-  (b) Karşılaştırmayı bırakıp AKS'yi mutlak metriklerle savunmak
-Sprint Review'da karara bağlanacak. -->`
+**Karar (Sprint Review'da teyit edildi): seçenek (b).** "AKS klasik skoru
+geçiyor" biçiminde bir kıyas kurmuyoruz — 0.86 vs 0.49 dürüst bir karşılaştırma
+değildir, çünkü dekuple üreticide klasik skorun dayandığı resmi statü/gelir
+kanalı, etiketten kasıtlı olarak ayrılmıştır. Bunun yerine AKS'yi *mutlak*
+metriklerle savunuyoruz: sabit bir kötü-oranında ne kadar başvuruyu güvenle
+onaylayabildiği (§5). Seçenek (a) — üreticiye klasik skor için zayıf ama sıfır
+olmayan bir sinyal koymak — veri kurgusunu değiştireceği ve tüm başlık
+sayılarını kaydıracağı için reddedildi; sonucu bükmeme kuralıyla tutarlı olan
+yol (b)'dir.
 
 ### 4. Test paketi yeniden kuruldu
 
@@ -510,16 +556,45 @@ Sprint 2'de Django geçişiyle kırılan 22 test yerine iki paket var:
 | `product/02-ai-agents/tests/test_aks_core.py` | 24 |
 | `product/04-backend/api/tests.py` | 15 |
 
-`<!-- TODO: Sprint 2 retrospektifinde "klasik skorun hiçbir agent tarafından
-değiştirilemediğini kanıtlayan sınır testleri" sözü verilmişti. Varsa adlarını
-yazın; yoksa yazın — ürünün en kritik iddiası bu. -->`
+Denetim izinin (audit trail) değiştirilemezliği — ürünün en kritik iddiası —
+artık sınır testleriyle kanıtlanıyor:
+
+| Test sınıfı | Dosya | Ne kanıtlar |
+|---|---|---|
+| `DenetimIziDegistirilemezlikTesti` | `04-backend/api/tests.py` | `AuditLog` append-only: kayıt güncellenemez ve silinemez |
+| `RizaDefteriDegistirilemezlikTesti` | `04-backend/kimlik/tests.py` | `RizaKaydi` (KVKK rıza defteri) append-only |
+
+Bu testler, README'nin "değiştirilemez denetim satırı" iddiasının kodda
+gerçekten zorlandığını doğrular (yalnızca yorum satırı değil).
 
 ### 5. Sabit kötü-oranında ek onay metriği
 
-`<!-- TODO — sprintin headline sayısı. Hesap: klasik skor ve AKS için
-kötü-oranı (bad rate) sabitlenip her iki yöntemin hedef segmentteki onay
-oranı karşılaştırılacak; fark bootstrap %95 CI ile raporlanacak.
-Sonuç buraya. -->`
+Metrik `aks_core/model/ek_onay.py` içinde; çalıştırma:
+`python -m aks_core.model.ek_onay`. Taban temerrüt oranı **%17.2**.
+
+**Headline (mutlak, klasik baseline'dan bağımsız):** Kötü-oran sabit **%10**'a
+(taban orandan ~7 puan düşük) çekildiğinde AKS, portföyün **%86.8**'ini
+(%95 CI %82.6–90.3), ince-dosyalı odak segmentin de **%86.8**'ini
+(%95 CI %80.5–91.4) onaylayabiliyor. Yani riski taban seviyesinin altına
+çekerken bile ince-dosyalı başvuruların büyük kısmı güvenle onaylanabilir.
+
+Sabit hedef kötü-oranında onay oranı (AKS vs statü/klasik politika):
+
+| Hedef kötü-oran | AKS onay | Statü onay |
+|---|---|---|
+| %8 | %80.4 | %0.2 |
+| %10 | %87.1 | %0.5 |
+| %12 | %91.1 | %1.4 |
+| %15 | %96.7 | %9.8 |
+
+Statü politikası taban-altı risk hedeflerini tutturamıyor (klasik skor dekuple
+veride zayıf sıralayıcı — §3); bu yüzden değeri klasiği "geçmek" üzerinden
+değil, AKS'nin mutlak ayrıştırma gücü üzerinden raporluyoruz. Referans olarak
+statü politikasının kendi çalışma noktası alındığında (gerçekleşen kötü-oran
+R*≈%17), AKS aynı riskte **+34.2 puan** (%95 CI +31.4/+36.2) daha fazla
+başvuru onaylıyor — ancak bu sayı R*'ın tabana denk gelmesiyle şişer, o yüzden
+başlık rakamı yukarıdaki mutlak %86.8'dir. "No-go" da geçerli sonuç olarak
+tanımlıydı; sonuç bükülmedi.
 
 ## Sprint 3'te teslim edilenler
 
@@ -529,14 +604,12 @@ Sonuç buraya. -->`
 | Model | Model seçimi yeniden yapıldı; üretimdeki model `LogisticRegression` |
 | Değerlendirme | 5×5 tekrarlı CV + bootstrap CI, OOF Brier/ECE/reliability, persona kırılımı |
 | Kalibrasyon | İzotonik hat + öncesi/sonrası ECE kaydı |
-| Test | 39 test (24 `aks_core` + 15 Django API) |
-| Metrik | `<!-- TODO -->` |
-| Frontend | `<!-- TODO -->` |
-| Deploy | `<!-- TODO -->` |
+| Test | 161 test — 95 `aks_core` (pytest) + 66 Django (`manage.py test`), tümü geçiyor |
+| Metrik | `ek_onay.py` — sabit kötü-oranında ek onay + bootstrap %95 CI (headline) |
+| Frontend | 5 sayfa, tüm sayılar canlı `/api/*` uçlarından; hardcoded/eski metrik yok |
+| Deploy | ⏳ #15 — Docker + Render hedefleniyor; demo video ile birlikte teslim öncesi |
 
 ## Sprint Review — alınan kararlar
-
-`<!-- TODO — taslak, review'da teyit edilecek -->`
 
 - **Basit model kazandı ve bunu raporluyoruz.** Lojistik regresyon dört
   metrikte de XGBoost'u geçtiği için üretimdeki model LR.
@@ -544,14 +617,14 @@ Sonuç buraya. -->`
 - **Başlıktaki sayı değişti.** Öne çıkardığımız rakam ham AUC değil, sabit
   kötü-oranında ek onay oranı — güven aralığıyla.
 
-- **Klasik skor karşılaştırması askıya alındı.** `<!-- TODO: (a)/(b) -->`
+- **Klasik skor karşılaştırması bırakıldı (seçenek b).** AKS'yi klasiği
+  "geçmek" üzerinden değil, sabit kötü-oranındaki mutlak onay kapasitesiyle
+  (§5) savunuyoruz. Veri kurgusunu değiştiren seçenek (a) reddedildi.
 
 - **Sprint Review katılımcıları:** Alperen Karakaya, Ahmet Özdoğan,
   Zeynep Salkaya, Havva Balta
 
 ## Sprint Retrospective
-
-`<!-- TODO — taslak -->`
 
 **İyi giden:**
 - Sprint 2'de söz verilen test eforu bu sefer harcandı; kırık paket 39
@@ -562,11 +635,18 @@ Sonuç buraya. -->`
   baştan konuldu.
 
 **İyi gitmeyen:**
-- Demo verisi ile eğitim verisi sprint ortasına kadar farklıydı.
-- `<!-- TODO -->`
+- Demo verisi ile eğitim verisi sprint ortasına kadar farklıydı; tek ve tutarlı
+  bir hikâye anlatmayı zorlaştırdı.
+- İç takvimdeki 22 Temmuz ara hedefi tam tutmadı, kapsamın netleşmesi 23
+  Temmuz'a sarktı (29 Temmuz hedefi korundu).
+- Klasik baseline'ın dekuple veride rastgeleye düşmesi "klasiği geçtik"
+  anlatısını kullanışsız kıldı; headline'ı mutlak metriğe taşımak zorunda kaldık.
 
 **Sprint 3 sonrası açık kalan işler:**
-1. `<!-- TODO -->`
+1. Deploy (Docker + Render) ve 3 dakikalık demo videosunun YouTube'a yüklenmesi (#15).
+2. Sprint 3 board ve ürün durumu ekran görüntülerinin repoya eklenmesi.
+3. İsteğe bağlı: klasik baseline'a zayıf-ama-gerçek sinyal koyarak (seçenek a)
+   dürüst bir "AKS vs klasik" kıyası kurmak — sonraki iterasyona bırakıldı.
 
 ---
 

@@ -462,14 +462,12 @@ metriği, +5) ve frontend "AKS Terminal" yeniden tasarımı (+8) ile 37 puana
 büyüdü. Teknik iş 28 Temmuz'da tamamlandı; kalan kapsam (deploy #15 + demo
 video) 2 Ağustos kapanışına kadar bitirilecek.
 
-![Sprint 3 Burndown](sprints/docs/sprint3/burndown_sprint3.png)
 
 ## Ürün Durumu
 
 **Çalışan arayüz** (Operations Overview — canlı model `LogisticRegression`,
 LIVE ENGINE FEED skorlama akışı, PIPELINE HUB ajan durumları):
 
-![AKS çalışan arayüz](sprints/docs/sprint3/urun_arayuz_sprint3.png)
 
 Aşağıdaki pano ise çalışan üründen (canlı `aks_core` değerlendirmesi + `/api`
 uçları) üretilen dört ana çıktının özetidir: model ayrıştırma gücü, persona

@@ -426,7 +426,7 @@ teslimine üç günlük bir tampon bırakmaktı.
 
 | Alan | Sahip |
 |---|---|
-| Araştırma | Havva |
+| Araştırma | Havva  (Sprint 3'te pasif) |
 | Model optimizasyonu ve metrik kontrolleri | Alperen, Ahmet |
 | Veri ve sentetik veri hazırlığı | Zeynep |
 

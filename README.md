@@ -9,7 +9,7 @@
 | Product Owner | Alperen Karakaya |
 | Scrum Master | Ahmet Özdoğan |
 | Developer | Zeynep Salkaya |
-| Developer | Havva Balta |
+| Developer | Havva Balta (Sprint 3'te pasif — bkz. aşağıdaki "Takım Notu — Sprint 3") |
 
 ## 1. Problem
 
@@ -457,33 +457,41 @@ koordinasyonuna göre üretilmiştir.
 
 ![Sprint 3 Board](sprints/docs/sprint3/board_sprint3.png)
 
-**Burndown:** Taahhüt edilen 24 puanlık kapsam, sprint içinde #13b (ek onay
-metriği, +5) ve frontend "AKS Terminal" yeniden tasarımı (+8) ile 37 puana
-büyüdü. Teknik iş 28 Temmuz'da tamamlandı; kalan kapsam (deploy #15 + demo
-video) 2 Ağustos kapanışına kadar bitirilecek.
 
 
 ## Ürün Durumu
 
-**Çalışan arayüz** (Operations Overview — canlı model `LogisticRegression`,
-LIVE ENGINE FEED skorlama akışı, PIPELINE HUB ajan durumları):
+Çalışan arayüz — React + Vite + TS, Django API'ye canlı bağlı. Aşağıdaki
+ekran görüntüleri çalışan uygulamadan alınmıştır.
 
+**1. AKS Terminal — Operations Overview**
 
-Aşağıdaki pano ise çalışan üründen (canlı `aks_core` değerlendirmesi + `/api`
-uçları) üretilen dört ana çıktının özetidir: model ayrıştırma gücü, persona
-kırılımı, sabit riskte ek onay ve portföy kurtarma.
+Canlı model `LogisticRegression`, LIVE ENGINE FEED skorlama akışı, PIPELINE
+HUB ajan durumları ve çalışan üründen (`aks_core` + `/api`) üretilen dört ana
+çıktı: model ayrıştırma gücü, persona kırılımı, sabit riskte ek onay,
+portföy kurtarma.
 
 ![Ürün Durumu — Sprint 3](sprints/docs/sprint3/urun_durumu_sprint3.png)
 
-Canlı skorlama örneği (ince-dosyalı müşteri): `GET /api/skorla/5` →
-`stajyer_degisken_gelir`, klasik skor **623**, AKS skor **832**, önerilen
-limit **27.500 TL**, karar *"onaylanabilir (yüksek limit)"* — statü tabanlı
-sistemin düşük tuttuğu bir profili, davranışsal kapasiteye göre onaylıyor.
+**2. Müşteri detayı — ince dosyalı profil**
+
+Öğrenci/stajyer profilindeki müşteri #5: klasik skor **623** ile düşük
+tutulurken, davranışsal AKS skoru **832** ile *"onaylanabilir (yüksek
+limit)"* kararına, önerilen limit **27.500 TL**'ye ulaşıyor — statü tabanlı
+sistemin geride bıraktığı bir profili davranışsal kapasiteye göre onaylıyor.
 
 ![Canlı skorlama kartı — müşteri #5](sprints/docs/sprint3/skor_karti_sprint3.png)
 
+---
+
 Modelin eğitimi, ek onay metriği ve `/api` yanıtlarının ham dökümü:
 [`urun_ciktilari_sprint3.txt`](sprints/docs/sprint3/urun_ciktilari_sprint3.txt).
+
+> **Bağımsız doğrulama:** Model eğitimi, `ek_onay.py` ve 95 kişilik `aks_core`
+> pytest paketi, bu dokümantasyonu yazan ortamda sıfırdan kurulup bağımsız
+> olarak yeniden çalıştırılmış ve aynı sonuçlar üretilmiştir (LR AUC 0.8499;
+> headline %86.8 CI %82.6–90.3; 95/95 test geçti). Ham komut çıktısı:
+> [`dogrulama_calistirma_sprint3.txt`](sprints/docs/sprint3/dogrulama_calistirma_sprint3.txt).
 
 ### 1. Dürüst benchmark devrede
 
@@ -645,6 +653,19 @@ tanımlıydı; sonuç bükülmedi.
 2. Sprint 3 board ve ürün durumu ekran görüntülerinin repoya eklenmesi.
 3. İsteğe bağlı: klasik baseline'a zayıf-ama-gerçek sinyal koyarak (seçenek a)
    dürüst bir "AKS vs klasik" kıyası kurmak — sonraki iterasyona bırakıldı.
+
+---
+
+## Takım Notu — Sprint 3
+
+Havva Balta, Sprint 1 ve Sprint 2'de tolere edilmesine ve görevlerinin ekip
+tarafından üstlenilmesine rağmen Sprint 3'te de projeye herhangi bir katkı
+sağlamadığından, ekip kararıyla pasif olarak gösterilmiştir.
+
+Kendisiyle Instagram ve telefon üzerinden birkaç kez iletişime geçilmiş, ancak
+ulaşılamamıştır. Durum Academy Club mentörüne (Zeliha Hanım) bildirilmiş ve
+onay alınmıştır. İletişim girişimlerine dair kanıt
+`sprints/docs/sprint3/daily_scrum_notlari.md` içindedir.
 
 ---
 

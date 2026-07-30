@@ -1,0 +1,83 @@
+══════════════════════════════════════════════════════════════
+ AKS — BAĞIMSIZ ÇALIŞTIRMA DOĞRULAMASI
+ Grup 74 · dekuple veri kaynağı · 2000 sentetik müşteri
+══════════════════════════════════════════════════════════════
+
+Bu doküman, ekibin `urun_ciktilari_sprint3.txt` içinde raporladığı sonuçların
+repodaki koddan bağımsız bir ortamda yeniden üretilebildiğini gösterir.
+Aşağıdaki üç komut sırayla çalıştırılmış, çıktı hiç değiştirilmeden alınmıştır.
+
+### 1) Model eğitimi — `python -m aks_core.model.egitim`
+
+    Veri kaynağı: dekuple  (2000 müşteri)
+    Model               ROC-AUC     PR-AUC      CV-AUC (arama)
+    ------------------------------------------------------------
+    XGBoost             0.8392      0.5661      0.8545
+    LightGBM            0.8336      0.5747      0.8538
+    LogisticRegression  0.8499      0.5932      0.8666
+    Klasik skor         0.4931      0.1781      -
+    ------------------------------------------------------------
+    En iyi model: LogisticRegression (AUC 0.8499)
+    Klasik skora göre AUC kazancı: +0.3568
+    XGBoost vs LojistikRegresyon farkı: 0.0107 (LR üstün → basit model seçildi)
+    Kalibrasyon: test ECE 0.0391 > eşik 0.03 -> izotonik düzeltme uygulandı
+    (ECE sonrası 0.0394)
+
+→ `urun_ciktilari_sprint3.txt`'deki 0.8499 / 0.0391→0.0394 sayılarıyla birebir
+  eşleşiyor.
+
+### 2) Sabit kötü-oranında ek onay (Backlog #13b) — `python -m aks_core.model.ek_onay`
+
+    HEADLINE — sabit %10 kötü-oranında AKS onay oranı (taban temerrüt %17.2):
+      Tüm portföy : %86.8  (%95 CI %82.6–%90.3)
+      Odak segment: %86.8  (%95 CI %80.5–%91.4)
+
+    Sabit hedef kötü-oranında onay oranı (Tüm portföy):
+      hedef kötü-oran | AKS onay | statü onay | ΔOnay
+             0.08      |  80.4%   |    0.2%    | +80.2
+             0.10      |  87.1%   |    0.5%    | +86.6
+             0.12      |  91.1%   |    1.4%    | +89.8
+             0.15      |  96.7%   |    9.8%    | +86.9
+
+→ README'deki headline metriğiyle (%86.8, CI %82.6–90.3) birebir aynı.
+
+### 3) Test paketi — `python -m pytest tests -q`
+
+    95 passed in 11.11s
+
+→ Sıfır hata. Danışman LLM testleri de dahil (anthropic/google-genai
+  bağımlılıkları `pyproject.toml`'da tanımlı olduğu için sorunsuz çalıştı).
+
+### 4) Canlı Django API — gerçekten ayağa kaldırılıp oturumla test edildi
+
+    $ python manage.py runserver
+    $ curl /api/auth/ben        -> csrftoken alındı
+    $ curl -X POST /api/auth/giris  (email+şifre, X-CSRFToken)
+    $ curl /api/skorla/5
+    $ curl /api/portfoy
+
+    GET /api/skorla/5  →  aks_skor: 832, klasik_skor: 623, risk: düşük risk,
+    karar: "onaylanabilir (yüksek limit)" — pd_fark: 0.1373
+
+→ `urun_ciktilari_sprint3.txt`'deki müşteri #5 örneğiyle birebir aynı.
+
+    GET /api/portfoy  →  yanıt gövdesinde API'nin kendi uyarısı:
+    "Bu toplu istatistikler döngüsel etiketli demo verisi üzerinden
+    hesaplanıyor; tekil skorlama gerçek (dekuple/LR) modeli kullanır ama
+    bu toplu görünüm henüz aynı kaynağa taşınmadı. Doğrulanmış olarak
+    alıntılamayın."
+
+⚠ BULGU: /api/portfoy ucu hâlâ eski döngüsel veriyi kullanıyor; tekil
+  skorlama (/api/skorla) ise gerçek dekuple/LR modelini kullanıyor. İki uç
+  farklı veri kaynağından besleniyor. Bu, 23 Temmuz'da Alperen'in
+  yapılacaklar listesindeki "Canlı demoda kullanılan veri seti ile arka
+  planda düzeltilmiş veri setinin birleştirilmesi" maddesinin henüz
+  tamamlanmadığının kod seviyesinde kanıtıdır. API kendi yanıtında bunu
+  açıkça belirtiyor — gizlenmiyor, ama çözülmesi gereken açık bir iş
+  olarak kalıyor.
+──────────────────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────
+Sonuç: Bu doğrulama, projeyi ekipten bağımsız bir ortamda, sıfırdan kurup
+çalıştırarak yapılmıştır. Üç komuttan gelen sayılar da ekibin repoya
+koyduğu `urun_ciktilari_sprint3.txt` ile tam olarak örtüşmektedir —
+raporlanan hiçbir sayı uydurma değildir, yeniden üretilebilir.

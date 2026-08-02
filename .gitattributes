@@ -1,0 +1,15 @@
+# Satır sonları — §7.15 dağıtımı için KRİTİK.
+#
+# Bu depo Windows'ta `core.autocrlf=true` ile kullanılıyor, yani git checkout
+# sırasında metin dosyalarını CRLF'e çeviriyor. Kabuk betikleri için bu sessiz
+# bir bomba: `deploy/hf/baslat.sh` CRLF ile çıkarsa shebang satırı `#!/bin/sh\r`
+# olur ve Linux konteyneri betiği
+#     exec /app/baslat.sh: no such file or directory
+# diye reddeder — hata mesajı dosyanın var olmadığını söylediği için teşhisi
+# şaşırtıcı derecede zordur. Aynısı Dockerfile ve entrypoint için de geçerli.
+#
+# Bu dosya olmasa da MEVCUT çalışma kopyası LF olduğu için dağıtım çalışıyordu;
+# hata ancak temiz bir klondan sonra ortaya çıkardı.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.dockerignore text eol=lf

@@ -1,0 +1,56 @@
+# AKS — Render Blueprint (tek servis: Django + derlenmiş React arayüzü)
+#
+# Render bu dosyayı deponun KÖKÜNDE arar. Bağlandığında servis, ortam
+# değişkenleri ve sağlık kontrolü otomatik kurulur; Dockerfile sağlayıcıdan
+# bağımsızdır (aynı imaj HF Spaces'te de çalışıyor).
+#
+# NEDEN RENDER: Hugging Face, ücretsiz katmanda yalnızca *statik* Space'e izin
+# veriyor — "hosting Gradio and Docker Spaces on free cpu-basic requires a PRO
+# subscription". Django statik Space'te çalışamaz, arayüzü ayırmak da oturum
+# çerezi yüzünden girişi kırar (bkz. settings.py SPA_DIR bloğu). Render'ın
+# ücretsiz katmanı 512 MB veriyor ve ÖLÇÜLDÜ: tek worker ile 286 MB tepe,
+# 0 OOM (§7.16).
+services:
+  - type: web
+    name: aks
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    region: frankfurt          # Supabase/Upstash örnekleriyle aynı kıtada olsun
+    healthCheckPath: /api/bilgi
+    envVars:
+      # KRİTİK: ücretsiz katman 512 MB. Worker başına ~285 MB yerleşik bellek
+      # (shap/xgboost/lightgbm import zinciri) — 2 worker ölçülerek elendi,
+      # gunicorn "Worker was sent SIGKILL! Perhaps out of memory?" basıp
+      # worker'ları sürekli yeniden doğurdu. 1 worker sığıyor.
+      - key: GUNICORN_WORKERS
+        value: "1"
+      - key: DJANGO_DEBUG
+        value: "false"
+      # Render TLS'i kendi sonlandırıyor; SECURE_PROXY_SSL_HEADER zaten ayarlı
+      # olduğu için yönlendirme döngüsü oluşmaz.
+      - key: DJANGO_HTTPS
+        value: "true"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true    # Render rastgele üretir; yereldeki asla taşınmaz
+      # SMS sağlayıcısı yok (OQ-47) — PO kararı: OTP kodu API yanıtında dönsün
+      # ki telefon doğrulama akışı demoda denenebilsin. Gerçek kullanıcı
+      # alınacaksa `false` yapılmalı.
+      - key: AKS_OTP_DEMO_KOD
+        value: "true"
+      # --- Aşağıdakiler panoya ELLE girilir (sync: false => Render sormadan
+      #     boş bırakmaz, sır olarak saklar ve depoya asla yazılmaz) ---
+      - key: DATABASE_URL      # Supabase session pooler URI
+        sync: false
+      - key: REDIS_URL         # Upstash URI (opsiyonel; yoksa LocMem'e düşer)
+        sync: false
+      - key: AKS_PEPPER        # yereldekiyle AYNI olmalı: değişirse mevcut
+        sync: false            # telefon_hash kayıtları doğrulanamaz hâle gelir
+      - key: GEMINI_API_KEY    # opsiyonel; yoksa deterministik asistan çalışır
+        sync: false
+      # DJANGO_ALLOWED_HOSTS: servis adı belli olduktan sonra panodan girilir
+      # (ör. aks.onrender.com). Render'ın RENDER_EXTERNAL_HOSTNAME değişkeni
+      # settings.py tarafından okunmuyor, o yüzden açıkça veriliyor.
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false

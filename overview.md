@@ -91,7 +91,7 @@ The AI/ML core (`aks_core`) is an installable Python package imported identicall
 | LLM | Same tool-calling agent (`danisman_llm`) over Claude or Gemini — Claude preferred if both configured (execution.md §3b Phase 7/7.5, §7.10; Gemini path live-verified), deterministic rule-based fallback if neither | Justified, five-question-tested agents; never the decision engine |
 | Database | Supabase (Postgres) via Django ORM; SQLite fallback | Assessments, per-customer history, immutable audit trail |
 | Cache | Upstash Redis (`django-redis`); LocMem fallback | Cache heavy portfolio/fairness aggregates |
-| Deploy | Docker on Hugging Face Spaces; Supabase + Upstash hosted | One web service, one origin — Django serves the built React bundle via WhiteNoise. Not a style choice: all auth is session-cookie based (`credentials: "same-origin"`), so a split-domain deploy would break login (architecture.md §12) |
+| Deploy | Docker on Render (free tier); Supabase + Upstash hosted | One web service, one origin — Django serves the built React bundle via WhiteNoise. Not a style choice: all auth is session-cookie based (`credentials: "same-origin"`), so a split-domain deploy would break login (architecture.md §12). Hugging Face was the first choice and the Space was built and pushed successfully, but its free tier allows only *static* Spaces — a Docker Space needs PRO. |
 
 **Verified toolchain:** Python 3.11.9 · Node 18.14.0 · npm 9.3.1 · Django 5.2.16 · DRF 3.17.1 · Vite 5.4.21 · **`scikit-learn>=1.8,<1.9` pinned** (the model artifacts are joblib pickles built by 1.8.0).
 

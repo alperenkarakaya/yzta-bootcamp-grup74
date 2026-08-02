@@ -1,13 +1,14 @@
-# AKS — Hugging Face Spaces (Docker SDK) dağıtım imajı
+# AKS — dağıtım imajı (sağlayıcıdan bağımsız)
 #
 # TEK SERVİS: Django hem /api'yi hem derlenmiş React arayüzünü servis eder.
 # Gerekçe settings.py'deki SPA_DIR bloğunda: arayüz ayrı bir alan adına
 # konsaydı `credentials: "same-origin"` yüzünden oturum çerezi hiç gönderilmez
 # ve giriş komple çalışmazdı.
 #
-# Bu dosya doğrudan bu depodan build EDİLMEZ; `deploy/hf/yayinla.sh` betiği
-# kaynakları Space deposuna kopyalarken bunu kökE taşır (Space'in build
-# bağlamı kendi deposunun köküdür).
+# Build bağlamı DEPO KÖKÜDÜR (COPY yolları `product/...` ile başlar).
+#   Render : render.yaml `dockerfilePath: ./deploy/Dockerfile` ile bunu kullanır.
+#   HF     : `deploy/hf/yayinla.sh` bunu Space deposunun köküne taşır.
+# Dinlenen port `PORT` env'inden gelir (Render bunu kendi atar), yoksa 7860.
 
 # ---- 1) Arayüz derlemesi ----
 FROM node:20-slim AS arayuz
@@ -60,7 +61,7 @@ RUN pip install -e product/02-ai-agents \
     && pip install -r product/04-backend/requirements.txt
 # Derlenmiş arayüz -> settings.SPA_DIR
 COPY --chown=user:user --from=arayuz /arayuz/dist/ product/04-backend/spa/
-COPY --chown=user:user deploy/hf/baslat.sh /app/baslat.sh
+COPY --chown=user:user deploy/baslat.sh /app/baslat.sh
 RUN chmod +x /app/baslat.sh
 
 ENV AKS_DATA_DIR=/app/product/01-data/datasets

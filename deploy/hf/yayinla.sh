@@ -31,18 +31,38 @@ hazirla() {
 
     echo "==> Kaynaklar kopyalanıyor (yalnızca git'in tanıdığı dosyalar)"
     cd "$REPO"
+    # stitch-output/ hariç: Google Stitch'in tasarım referansı (mockup HTML'leri +
+    # 5 ekran görüntüsü, ~1.7 MB). Dağıtımda HİÇ kullanılmıyor — Vite yalnızca
+    # src/'yi paketliyor. Dahası HF'in pre-receive hook'u bu PNG'ler için git-lfs
+    # dayatıp push'u reddediyor. Referans olarak GitHub deposunda kalıyor.
     git ls-files -z product/01-data product/02-ai-agents product/03-frontend product/04-backend \
+        ':(exclude)product/03-frontend/stitch-output/*' \
         | while IFS= read -r -d '' dosya; do
             mkdir -p "$hedef/$(dirname "$dosya")"
             cp "$dosya" "$hedef/$dosya"
         done
 
     # Dockerfile ve .dockerignore Space'in KÖKÜNE gider (build bağlamı orası).
-    cp "$REPO/deploy/hf/Dockerfile" "$hedef/Dockerfile"
-    cp "$REPO/deploy/hf/.dockerignore" "$hedef/.dockerignore"
-    mkdir -p "$hedef/deploy/hf"
-    cp "$REPO/deploy/hf/baslat.sh" "$hedef/deploy/hf/baslat.sh"
-    chmod +x "$hedef/deploy/hf/baslat.sh"
+    cp "$REPO/deploy/Dockerfile" "$hedef/Dockerfile"
+    cp "$REPO/.dockerignore" "$hedef/.dockerignore"
+    mkdir -p "$hedef/deploy"
+    cp "$REPO/deploy/baslat.sh" "$hedef/deploy/baslat.sh"
+    chmod +x "$hedef/deploy/baslat.sh"
+
+    # HF'in pre-receive hook'u ikili dosyaları düz git ile kabul etmiyor
+    # ("Your push was rejected because it contains binary files"). Model
+    # artifact'ları (`anomali_model.joblib`, 2.7 MB) çalışma anında GEREKLİ,
+    # atlanamaz — bu yüzden Space kopyasında LFS ile izleniyor. HF, imajı
+    # derlerken LFS içeriğini çözüyor, dolayısıyla konteynere gerçek dosya iniyor.
+    # `eol=lf` kuralı da buraya taşınıyor: kök .gitattributes Space'e
+    # kopyalanmıyor ve CRLF'e dönen bir `baslat.sh` konteyneri
+    # "no such file or directory" ile düşürürdü.
+    echo "==> Space .gitattributes (LFS + LF satır sonu) yazılıyor"
+    cat > "$hedef/.gitattributes" <<'ATTR'
+*.joblib filter=lfs diff=lfs merge=lfs -text
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+ATTR
 
     echo "==> Space yapılandırması (README.md) üretiliyor"
     cat > "$hedef/README.md" <<'YAML'
@@ -54,7 +74,8 @@ colorTo: blue
 sdk: docker
 app_port: 7860
 pinned: false
-short_description: Finansal kapasiteyi alternatif verilerle skorlayan karar destek platformu
+# HF sınırı: short_description en fazla 60 karakter (aşarsa push reddedilir).
+short_description: Alternatif verilerle finansal kapasite skorlama
 ---
 
 # AKS — Alternatif Kapasite Skoru
@@ -105,6 +126,9 @@ hazirla "$STAGE/space"
 
 echo "==> Space'e gönderiliyor"
 cd "$STAGE/space"
+# LFS filtresi `git add`'den ÖNCE kayıtlı olmalı; aksi halde .joblib dosyaları
+# pointer yerine ham içerikle indekslenir ve hook yine reddeder.
+git lfs install --local >/dev/null
 git add -A
 if git diff --cached --quiet; then
     echo "!! Değişiklik yok, gönderilmedi."

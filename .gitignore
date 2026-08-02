@@ -46,3 +46,6 @@ planning/stitch_aks_finansal_kapasite_platformu/**/frontend_rebuild_handoff.md
 # §7.15 — tek servis dağıtımında Django tarafından servis edilen React build
 # çıktısı (Dockerfile üretir, versiyonlanmaz)
 product/04-backend/spa/
+
+# Egitim hata ayiklama ciktisi — her kosumda yeniden uretilir, versiyonlanmaz
+product/02-ai-agents/aks_core/artifacts/egitim_verisi_debug.csv

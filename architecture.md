@@ -346,7 +346,10 @@ All scoring responses (`/skorla`, `/skorla/{id}`, `/csv-skorla`) also carry `ano
 
 ## 12. Deployment
 
-**Hugging Face Spaces (Docker SDK), one service, one origin** (§3b Phase 7/7.15). Config lives in `deploy/hf/`: `Dockerfile` (Node stage builds the React bundle, Python stage runs Django), `baslat.sh` (migrate → idempotent demo-account bootstrap → gunicorn), `yayinla.sh` (publishes to the Space; `--hazirla <dir>` stages the identical tree without pushing, so what gets tested is what gets shipped). Supabase + Upstash stay external. The old FastAPI `Dockerfile`/`render.yaml` in `product/04-backend/_legacy_fastapi/` is **reference only, not live**.
+**Render (Docker), one service, one origin** (§3b Phase 7/7.15–7.16). Config: `render.yaml` (Blueprint at the repo root), `deploy/Dockerfile` (Node stage builds the React bundle, Python stage runs Django — provider-agnostic), `deploy/baslat.sh` (migrate → idempotent demo-account bootstrap → gunicorn). Supabase + Upstash stay external. `deploy/hf/yayinla.sh` publishes the same image to a Hugging Face Space and still works, but **HF is not viable on the free tier** — see below. The old FastAPI `Dockerfile`/`render.yaml` in `product/04-backend/_legacy_fastapi/` is **reference only, not live**.
+
+- **Why not Hugging Face** (it was the first choice, and the Space was actually built and pushed successfully): HF only allows *static* Spaces for free — *"hosting Gradio and Docker Spaces on free cpu-basic requires a PRO subscription"* (HTTP 402 from `/api/repos/create`). A static Space cannot run Django, and splitting the frontend out would break cookie auth. HF remains one `deploy/hf/yayinla.sh` invocation away if a PRO subscription is ever bought.
+- **Worker count is bounded by memory, not CPU, and was measured rather than guessed.** Each gunicorn worker imports the app separately (~285 MB resident: shap/xgboost/lightgbm/sklearn). Running the real image constrained to Render's free 512 MB with the original `--workers 2` produced repeated `Worker was sent SIGKILL! Perhaps out of memory?` — 8 worker boots, 6 kills, workers thrashing while still returning 200s. The same test with **1 worker peaked at 293 MB / 512 MB (57%) with zero kills**, serving every surface plus 8 parallel `/api/portfoy` requests. Hence `GUNICORN_WORKERS` defaults to **1** and `render.yaml` pins it; raise it only in proportion to available memory (~285 MB per worker).
 
 - **Why one service rather than a static frontend host + API backend:** `api.ts` uses `credentials: "same-origin"` and every surface (portal, institution, panel) authenticates by session cookie. On a split domain the browser would not send the cookie at all; forcing `SameSite=None` would still break under third-party-cookie blocking. Django serves the built bundle via WhiteNoise (`WHITENOISE_ROOT = spa/`, served from the site root so `index.html`'s `/assets/*` references work untouched — no Vite `base` change, so the dev server is unaffected). This required **zero frontend changes**.
 - **SPA fallback** (`config/urls.py`): React Router owns `/panel`, `/portal/*`, `/kurum/*`; those paths do not exist server-side, so a direct visit or page refresh would 404 without it. `api/`, `admin/` and `static/` are excluded by negative lookahead — otherwise a nonexistent API endpoint would silently return HTML instead of a JSON 404. `index.html` is served `Cache-Control: no-cache`: it is the one stable address pointing at hashed assets, and a cached copy would white-screen the app after the next deploy.
@@ -358,19 +361,20 @@ All scoring responses (`/skorla`, `/skorla/{id}`, `/csv-skorla`) also carry `ano
 
   Before deciding on 2 and 3, the question "does any of this change a score?" was answered empirically rather than assumed: the model's `predict_proba` over 100 real feature vectors is **bit-identical** between the local (numpy 1.26.4 / sklearn 1.8.0) and container (numpy 2.4.6 / sklearn 1.9.0) stacks — fingerprint `c37c4e2a5e88b310` on both. Nothing was silently mis-scoring. The sklearn bound was still added so that "the deployed model scores the same as the validated model" is a declared property rather than an observed coincidence.
 
-**Space secrets** (set in the Space's *Settings → Variables and secrets*; the container reads them as plain env vars, and `load_dotenv` does not override real env vars so there is no conflict with a local `.env`):
+**Environment** (Render dashboard → *Environment*; `render.yaml` marks the secret ones `sync: false` so they are never committed. The container reads them as plain env vars, and `load_dotenv` does not override real env vars, so there is no conflict with a local `.env`):
 
 | Key | Value | Note |
 |---|---|---|
 | `DATABASE_URL` | Supabase session-pooler URI | Same instance as local — data persists across deploys |
 | `REDIS_URL` | Upstash URI | Optional; unreachable Redis degrades to no-op caching, never 500s |
-| `DJANGO_SECRET_KEY` | **new random value**, not the local one | |
-| `DJANGO_ALLOWED_HOSTS` | `<user>-<space>.hf.space` | |
-| `DJANGO_HTTPS` | `true` | HF terminates TLS; `SECURE_PROXY_SSL_HEADER` is already set, so this does not loop |
+| `DJANGO_SECRET_KEY` | generated by Render (`generateValue: true`) | Never carried over from local |
+| `DJANGO_ALLOWED_HOSTS` | the service hostname, e.g. `aks.onrender.com` | |
+| `DJANGO_HTTPS` | `true` | Set in `render.yaml`. Render terminates TLS; `SECURE_PROXY_SSL_HEADER` is already set, so this does not loop |
 | `DJANGO_DEBUG` | `false` | |
 | `AKS_PEPPER` | same value as local | **Changing it orphans every existing `telefon_hash`** — phone numbers become unverifiable against stored hashes |
 | `AKS_OTP_DEMO_KOD` | `true` | PO decision (§7.15): deliberate demo concession while OQ-47 (no SMS provider) is open — returns the OTP in the API response so the flow is demonstrable. Must be `false` for real users |
 | `GEMINI_API_KEY` | live key | Optional; absent → deterministic rule-based assistant |
+| `GUNICORN_WORKERS` | `1` | Set in `render.yaml`. Memory-bound, measured — see above |
 
 **Priority note:** the entire stack/deploy track is priority #8 — it is *not* the bottleneck; it is intentionally not pushed further until the #1–#3 research items (§5) are addressed.
 

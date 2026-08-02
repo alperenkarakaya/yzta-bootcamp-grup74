@@ -449,6 +449,27 @@ PO ürünü canlıya almak istedi. Barındırma seçimi PO'ya soruldu (maliyet +
 
 **Doğrulama.** Yerelde üretim kurulumu birebir simüle edildi (`vite build` → `spa/` → `collectstatic` → `DJANGO_DEBUG=false`): 6 SPA rotası 200/`text/html`, hash'li varlıklar + admin statikleri 200, `/api/bilgi` JSON kalıyor, olmayan API ucu HTML'e DÜŞMÜYOR (404), `manage.py check --deploy` (`DJANGO_HTTPS=true` ile) sıfır uyarı, ve **tam oturum döngüsü tek origin üzerinde çalışıyor** (csrftoken çerezi → yönetici girişi 200 → korumalı `/api/portfoy` 200).
 
+#### 7.16 — Hugging Face ücretsiz katmanda çıkmaz; Render'a geçiş (ölçümle)
+
+§7.15'in dağıtımı HF'e **başarıyla gönderildi** (LFS'li model artifact'ları, üretilen `sdk: docker` README'si, 189 dosya) ama Space `CONFIG_ERROR` verdi: PO Space'i Gradio+ZeroGPU şablonuyla açmıştı ve `"ZeroGPU is only available on Gradio SDK"` çıktı. Donanımı düşürmek API'den denendi → **402**: *"Without a PRO subscription, you can't downgrade this Space to cpu-basic."* Sıfırdan yeni bir Docker Space açmak da aynı duvara çarptı:
+
+> *"Static Spaces are free for everyone, but hosting Gradio and Docker Spaces on free cpu-basic requires a PRO subscription."*
+
+Yani HF ücretsiz katmanda **sunucu çalıştıran hiçbir Space'e** izin vermiyor. Statik Space Django'yu koşamaz; arayüzü ayırıp statik Space'e koymak da §7.15'teki oturum-çerezi gerekçesiyle girişi kırardı. HF ancak PRO ile mümkün — `deploy/hf/yayinla.sh` duruyor ve çalışıyor, tek eksik abonelik.
+
+**Render'ın ücretsiz katmanı seçildi ama "512 MB yeter mi?" varsayılmadı, ÖLÇÜLDÜ.** Elde çalışan imaj olduğu için konteyner gerçekten 512 MB'a hapsedilip yük verildi:
+
+| Yapılandırma | Sonuç |
+|---|---|
+| `--workers 2` (§7.15 varsayılanı) | **Çöküyor.** 8 worker açılışı, 6 kez `Worker was sent SIGKILL! Perhaps out of memory?`. İstekler 200 dönüyordu (gunicorn worker'ı yeniden doğuruyor) — yani **yalnızca HTTP durum koduna bakan bir doğrulama bu hatayı GÖREMEZDİ**. |
+| `--workers 1` | **Sağlam.** 293 MB / 512 MB tepe (%57), 0 SIGKILL, `OOMKilled=false`; giriş + `/`, `/panel`, `/api/portfoy`, `/api/adalet`, `/api/skorla/1`, `/api/demo-musteriler` ve 8 paralel `/api/portfoy` isteğinin tamamı 200. |
+
+Kök neden: her gunicorn worker'ı uygulamayı ayrı import ediyor (~285 MB yerleşik — shap/xgboost/lightgbm/sklearn zinciri), 2 × 285 MB > 512 MB. Worker sayısı **CPU'yla değil bellekle** sınırlı; `GUNICORN_WORKERS` env'ine bağlandı, varsayılan **1**, `render.yaml`'da sabitlendi.
+
+**Yapılandırma sağlayıcıdan bağımsız hâle getirildi:** `deploy/hf/{Dockerfile,baslat.sh}` → `deploy/`, `.dockerignore` depo köküne alındı, kök `render.yaml` (Blueprint) eklendi. `PORT` env'i zaten okunuyordu (Render kendi atıyor). Aynı imaj hem Render'da hem HF'te çalışıyor; `yayinla.sh` yalnızca yol güncellemesi aldı.
+
+**Doğrulama:** imaj Render'ın kuracağı gibi depo kökünden (`-f deploy/Dockerfile .`) derlendi, `PORT=10000` + 512 MB sınırıyla koşturuldu ve yukarıdaki tablo bu koşumdan çıktı.
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |
@@ -481,7 +502,7 @@ PO ürünü canlıya almak istedi. Barındırma seçimi PO'ya soruldu (maliyet +
 | E9 | Wire live Supabase persistence (fill `.env`) | P8 | 🔴 BLOCKED | OQ-35 credentials | PO+Eng | Live audit trail persists; code is ready, falls back to SQLite |
 | E10 | Wire live Upstash Redis cache | P8 | 🔴 BLOCKED | OQ-35 credentials | PO+Eng | Live cache; code ready, falls back to LocMem |
 | E11 | Integrate Google Stitch design into React | P10 | ✅ DONE | OQ-34 | Eng | 5 pages (Intelligence, Portfolio, Audit, Customers, Customer Detail) built with Tailwind + react-router, wired to all real `/api/*` endpoints. Fabricated Stitch content (blockchain ledger, ECOA/GDPR compliance claims, invented customer counts/segment names) was replaced with real backend data or honest architecture-derived content, per the priority-#1 (validity) and AI-honesty rules in overview.md §5–§6 |
-| E12 | Docker single-service deploy (Django serves React build) | P10 | ✅ DONE | E11 | Eng | Hugging Face Spaces / Docker (PO chose the host; free tier's 16 GB removes the memory constraint — the app's resident footprint is 335 MB). WhiteNoise + SPA fallback + `deploy/hf/` (Dockerfile, entrypoint, publish script). Single-origin is mandatory, not stylistic: `api.ts` uses `credentials: "same-origin"` and all auth is cookie-based — a split-domain deploy would break login outright. See §3b Phase 7/7.15 |
+| E12 | Docker single-service deploy (Django serves React build) | P10 | ✅ DONE | E11 | Eng | Render (Docker, free tier) — HF was tried first and rejected: its free tier allows only static Spaces (§7.16). Measured on the real image under a 512 MB cap: 1 worker → 293 MB peak, 0 OOM. WhiteNoise + SPA fallback + `deploy/hf/` (Dockerfile, entrypoint, publish script). Single-origin is mandatory, not stylistic: `api.ts` uses `credentials: "same-origin"` and all auth is cookie-based — a split-domain deploy would break login outright. See §3b Phase 7/7.15 |
 
 ## 5b. Data-architecture track (per `planning/` — alternative-data research intake)
 

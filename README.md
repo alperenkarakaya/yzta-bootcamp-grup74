@@ -677,4 +677,4 @@ onay alınmıştır. İletişim girişimlerine dair kanıt
   kullanmaz; yalnızca davranışsal/finansal özelliklere dayanır.
 
 
-#Canlı Web Linki: https://yzta-bootcamp-grup74.onrender.com/
+# Canlı Web Linki: https://yzta-bootcamp-grup74.onrender.com/

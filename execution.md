@@ -523,6 +523,24 @@ Bu komut `deploy/baslat.sh` içinde **her konteyner açılışında** koşuyor. 
 
 **Doğrulama:** iki yeni test — (1) komut ikinci kez koşunca açık oturum hayatta kalıyor, (2) şifre dışarıdan bozulmuşsa yine demo değerine geri çekiliyor (idempotentlik kaybolmadı). Django 69/69 OK.
 
+#### 7.20 — Çapraz kullanıcı sızıntısı: portal yüklemeleri paylaşılan hafızada birikiyordu
+
+PO "oturumlar karışıyor, gizli sekmede bile" dedi ve ısrar etti. Sunucu tarafındaki oturum mekanizması ölçülerek **temiz çıktı** (3 eş zamanlı oturum, 15 paralel istek, hepsi kendi kimliğini döndürdü; portal geçmişi/profil/rıza defteri kullanıcıya özel). Ama ısrar üzerine paylaşılan süreç-içi duruma bakıldı ve **gerçek bir çapraz kullanıcı hatası** bulundu.
+
+`portal_yukle` her kullanıcı için `degerlendir(-1, ...)` çağırıyor — `-1` sahte, kimliksiz bir müşteri numarası (anonim `/api/csv-skorla` da aynısını kullanıyor). `Orkestrator.hafiza` ise süreç genelinde paylaşılan ve `musteri_id` ile anahtarlanan bir sözlük. Sonuç: **tüm kullanıcıların yüklemeleri `hafiza[-1]` içinde birikiyordu** ve orkestratör "önceki skor"u bu ortak listenin son elemanından alıyordu:
+
+```
+A yükledi → skor 850,  onceki_skor: None      (doğru)
+B yükledi → skor 841,  onceki_skor: 850  ← A'NIN SKORU
+                       skor_degisimi: -9
+```
+
+**Dürüst kapsam:** bu alanlar veritabanına yazılmıyor ve `portal_yukle`'nin yanıt sözlüğünde yer almıyor, dolayısıyla **ekrana yansımıyordu** — yani PO'nun yaşadığı "karışma" muhtemelen bu değil (o, §7.19'daki oturum düşmesi + Chrome'da tüm gizli pencerelerin tek çerez kavanozunu paylaşması). Yine de yapı yanlıştı: yanıta eklenecek tek bir alan sızıntıyı görünür kılardı, üstelik liste hiç temizlenmediği için her yükleme kalıcı olarak bellekte birikiyordu (512 MB'lık konteynerde önemli).
+
+**Düzeltme:** `Orkestrator.degerlendir(..., hafizaya_yaz=True)` parametresi eklendi; `services.degerlendir` kimliksiz çağrılarda (`musteri_id == -1`) `False` geçiyor — bu çağrılar paylaşılan hafızayı ne okuyor ne yazıyor. Kullanıcının gerçek geçmişi zaten kalıcı ve kullanıcıya özel (`Assessment.objects.filter(user=...)`), yani kaybedilen bir işlevsellik yok.
+
+**Doğrulama:** üç yeni test — (1) B kullanıcısı A'nın skorunu görmüyor, (2) kimliksiz skorlama paylaşılan hafızaya hiç yazmıyor, (3) **regresyon koruması**: gerçek `musteri_id` ile banka içi demo geçmişi ve `onceki_skor` hâlâ çalışıyor (düzeltme fazla geniş değil). Django 72/72 OK, aks_core pytest 95/95.
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |

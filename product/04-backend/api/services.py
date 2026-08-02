@@ -231,7 +231,14 @@ def degerlendir(musteri_id, islemler, kaynak="api", persona="", user=None, belge
     ve denetim kaydına yazılır (anomali_bayrak ile aynı "şeffaflık sinyali,
     karar mekanizması değil" deseni — overview.md §7 sınırı).
     """
-    sonuc = orkestrator.degerlendir(musteri_id, islemler)
+    # Kimliksiz skorlamalar (portal yüklemesi, anonim CSV ucu) sahte `-1`
+    # kimliğiyle gelir. Bunlar süreç-içi paylaşılan hafızaya YAZILMAZ: aksi
+    # halde tüm kullanıcıların yüklemeleri `hafiza[-1]` içinde birikir ve bir
+    # kullanıcının "önceki skoru" başka bir kullanıcınınkinden hesaplanırdı
+    # (§7.20). Portal kullanıcısının gerçek geçmişi zaten kullanıcıya özel ve
+    # kalıcı: `Assessment.objects.filter(user=...)`.
+    kimlikli = str(musteri_id) != KIMLIKSIZ_MUSTERI_ID
+    sonuc = orkestrator.degerlendir(musteri_id, islemler, hafizaya_yaz=kimlikli)
     klasik = None
     if persona:
         veri = orkestrator.veri_agent.calistir(islemler)

@@ -20,7 +20,26 @@ class Orkestrator:
         self.danisman_agent = DanismanAgent(llm_fonksiyonu)
         self.hafiza = {}  # musteri_id -> [değerlendirme kayıtları]
 
-    def degerlendir(self, musteri_id, islemler):
+    def degerlendir(self, musteri_id, islemler, hafizaya_yaz=True):
+        """`hafizaya_yaz=False`: bu çağrı süreç-içi hafızaya HİÇ dokunmaz.
+
+        `self.hafiza` süreç genelinde paylaşılan bir sözlük ve `musteri_id` ile
+        anahtarlanıyor. Kimliği olmayan skorlamalar (kullanıcı portalı yüklemesi,
+        anonim CSV ucu) tek bir sahte kimlikle (`-1`) çağrıldığı için TÜM
+        kullanıcıların yüklemeleri aynı listede birikiyordu; sonuç olarak bir
+        kullanıcının `onceki_skor`/`skor_degisimi` alanları BAŞKA bir kullanıcının
+        skorundan hesaplanıyordu (§7.20'de iki hesapla yeniden üretildi:
+        A→850, ardından B→841 ve B'nin kaydında `onceki_skor: 850`).
+
+        Bu alanlar veritabanına yazılmadığı ve portal yanıtında yer almadığı için
+        ekrana yansımıyordu, ama yapı yanlıştı: eklenecek tek bir alan onu
+        görünür kılardı. Ayrıca liste hiç temizlenmediğinden her yükleme kalıcı
+        olarak bellekte birikiyordu (512 MB'lık dağıtım konteynerinde önemli).
+
+        Kullanıcının GERÇEK geçmişi zaten kalıcı ve kullanıcıya özel:
+        `Assessment.objects.filter(user=...)`. Paylaşılan hafıza yalnızca banka
+        içi demo yüzeyinin (gerçek `musteri_id`'li) yedek geçmişi için var.
+        """
         # 1) Veri agent: özellik çıkar
         veri = self.veri_agent.calistir(islemler)
         # 2) Skorlama agent: skor + karar
@@ -43,12 +62,13 @@ class Orkestrator:
             "danisman": danisman,
             "kullanilan_agentlar": [self.veri_agent.ad, self.skorlama_agent.ad, self.danisman_agent.ad],
         }
-        # Hafızaya yaz + önceki skorla kıyas
-        gecmis = self.hafiza.setdefault(musteri_id, [])
-        if gecmis:
-            kayit["onceki_skor"] = gecmis[-1]["aks_skor"]
-            kayit["skor_degisimi"] = skor["aks_skor"] - gecmis[-1]["aks_skor"]
-        gecmis.append(kayit)
+        # Hafızaya yaz + önceki skorla kıyas (yalnızca gerçek kimlikli çağrılarda)
+        if hafizaya_yaz:
+            gecmis = self.hafiza.setdefault(musteri_id, [])
+            if gecmis:
+                kayit["onceki_skor"] = gecmis[-1]["aks_skor"]
+                kayit["skor_degisimi"] = skor["aks_skor"] - gecmis[-1]["aks_skor"]
+            gecmis.append(kayit)
         return kayit
 
     def gecmis(self, musteri_id):

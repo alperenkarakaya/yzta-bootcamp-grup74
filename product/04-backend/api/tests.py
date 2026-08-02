@@ -667,3 +667,76 @@ class BelgeBoyutSiniriTesti(TestCase):
         r = self._yukle(b"gecersiz icerik")
         self.assertEqual(r.status_code, 400)
         self.assertNotIn("çok büyük", r.json()["hata"])
+
+
+class PortalCaprazKullaniciSizintiTesti(TestCase):
+    """§7.20: iki kullanıcının portal yüklemesi birbirine karışmamalı.
+
+    `portal_yukle` her kullanıcı için `degerlendir(-1, ...)` çağırıyor; `-1`
+    sahte bir kimlik. `Orkestrator.hafiza` süreç genelinde paylaşılan ve
+    `musteri_id` ile anahtarlanan bir sözlük olduğu için TÜM kullanıcıların
+    yüklemeleri `hafiza[-1]` içinde birikiyordu ve bir kullanıcının
+    `onceki_skor`/`skor_degisimi` alanları BAŞKA bir kullanıcının skorundan
+    hesaplanıyordu.
+
+    Bu alanlar DB'ye yazılmadığı ve portal yanıtında yer almadığı için ekrana
+    yansımıyordu — ama tek bir alan eklemesi onu görünür kılardı, üstelik liste
+    hiç temizlenmediği için bellek sınırsız büyüyordu.
+    """
+
+    def _kullanici(self, email):
+        from django.contrib.auth.models import User
+        from kimlik.aks_no import uret
+        from kimlik.models import Profil
+        u = User.objects.create_user(username=email, email=email, password="Sifre12345")
+        Profil.objects.create(user=u, aks_no=uret())
+        return u
+
+    def _islemler(self, carpan):
+        return [
+            {"tarih": f"2026-0{(i % 6) + 1}-15",
+             "islem_tipi": "gelir" if i % 3 else "gider",
+             "kategori": "maas" if i % 3 else "market",
+             "tutar": 1000 * carpan * ((i % 4) + 1),
+             "aciklama": "test"}
+            for i in range(40)
+        ]
+
+    def test_ikinci_kullanici_birincinin_skorunu_gormemeli(self):
+        from api import services
+        a = self._kullanici("a@sizinti.test")
+        b = self._kullanici("b@sizinti.test")
+
+        sonuc_a, _ = services.degerlendir(-1, self._islemler(1), kaynak="portal", user=a)
+        sonuc_b, _ = services.degerlendir(-1, self._islemler(9), kaynak="portal", user=b)
+
+        self.assertIsNone(
+            sonuc_b.get("onceki_skor"),
+            "B'nin sonucunda 'onceki_skor' var — başka bir kullanıcının skoru sızıyor",
+        )
+        self.assertIsNone(sonuc_b.get("skor_degisimi"))
+        self.assertNotEqual(sonuc_b.get("onceki_skor"), sonuc_a["aks_skor"])
+
+    def test_kimliksiz_skorlama_paylasilan_hafizaya_yazmiyor(self):
+        """Bellek sızıntısı tarafı: `hafiza[-1]` hiç büyümemeli."""
+        from api import services
+        u = self._kullanici("c@sizinti.test")
+        for _ in range(3):
+            services.degerlendir(-1, self._islemler(2), kaynak="portal", user=u)
+        self.assertEqual(
+            len(services.orkestrator.hafiza.get(-1, [])), 0,
+            "Kimliksiz skorlamalar paylaşılan hafızada birikiyor",
+        )
+
+    def test_gercek_musteri_kimligiyle_hafiza_hala_calisiyor(self):
+        """Regresyon koruması: banka içi demo yüzeyinin geçmişi bozulmamalı."""
+        from api import services
+        services.orkestrator.hafiza.pop(4242, None)
+        self.addCleanup(services.orkestrator.hafiza.pop, 4242, None)
+        services.degerlendir(4242, self._islemler(1), kaynak="demo")
+        ikinci, _ = services.degerlendir(4242, self._islemler(5), kaynak="demo")
+        self.assertEqual(len(services.orkestrator.hafiza.get(4242, [])), 2)
+        self.assertIsNotNone(
+            ikinci.get("onceki_skor"),
+            "Gerçek kimlikli çağrıda 'onceki_skor' kaybolmuş — düzeltme fazla geniş",
+        )

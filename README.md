@@ -675,3 +675,6 @@ onay alınmıştır. İletişim girişimlerine dair kanıt
 - Üretimde KVKK kapsamında açık rıza ve veri minimizasyonu gerekir.
 - Model, ayrımcı (discriminatory) sinyalleri (yaş, cinsiyet vb.) doğrudan
   kullanmaz; yalnızca davranışsal/finansal özelliklere dayanır.
+
+
+#Canlı Web Linki: https://yzta-bootcamp-grup74.onrender.com/

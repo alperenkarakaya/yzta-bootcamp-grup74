@@ -6,10 +6,14 @@ Servis katmanı — aks_core'u Django'ya bağlar.
 - portföy / adalet hesapları (eski FastAPI main.py'den taşındı)
 - Her skorlamadan sonra DEĞİŞTİRİLEMEZ denetim kaydı yazımı (boundary hikâyesi)
 """
+import logging
+import threading
 from collections import Counter
 
 import numpy as np
 from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 from aks_core import paths
 from aks_core.agents.orkestrator import Orkestrator
@@ -352,6 +356,18 @@ def gecmis(musteri_id):
             for k in orkestrator.gecmis(musteri_id)]
 
 
+_HEPSI_ONBELLEK = None
+_HEPSI_KILIT = threading.Lock()
+
+
+def _skorla_hepsi_isit():
+    """Ağır hesabı arka planda önden yapar (bkz. `_skorla_hepsi` önbellek notu)."""
+    try:
+        _skorla_hepsi()
+    except Exception:  # ısınma asla servisi düşürmemeli
+        logger.exception("Demo popülasyonu ısıtılamadı; ilk istek yavaş olacak")
+
+
 def _skorla_hepsi():
     """DİKKAT (§3b/U17 bulgusu, D5): bu, canlı demo popülasyonunu (`sentetik_islemler.csv`)
     HALA eski, döngüsel `etiketle()` ile etiketliyor — Phase 1'in düzeltmesi (decoupled
@@ -361,14 +377,37 @@ def _skorla_hepsi():
     tekil skorlama (skorla/skorla_demo) gerçek (LR/dekuple-eğitilmiş) modeli kullanıyor
     ama bu fonksiyondaki "gerçek temerrüt" etiketi döngüsel kalıyor. Canlı demo veri
     kaynağının da değiştirilip değiştirilmeyeceği OQ-44 olarak açık bırakıldı (bu,
-    hangi demo müşterilerin/personaların gösterileceğini değiştiren ürün kararı)."""
-    musteriler = etiketle(tum_musteriler(VERI_YOLU), hedef_temerrut_orani=0.18)
-    X = np.array([[m[o] for o in OZELLIK_ADLARI] for m in musteriler], dtype=float)
-    p = orkestrator.skorlama_agent.model.predict_proba(X)[:, 1]
-    for m, pi in zip(musteriler, p):
-        m["klasik_skor"] = klasik_risk_skoru(m)
-        m["aks_skor"] = olasilik_to_aks(float(pi))
-    return musteriler
+    hangi demo müşterilerin/personaların gösterileceğini değiştiren ürün kararı).
+
+    SÜREÇ-İÇİ ÖNBELLEK (§7.18). Bu fonksiyonun çıktısı EŞİKTEN BAĞIMSIZDIR:
+    `portfoy()`/`adalet()` eşiği yalnızca burada üretilen hazır skorları
+    *dilimlemek* için kullanır. Önbelleksizken her yeni eşik çifti 2000
+    müşterinin CSV'den okunmasını, özelliklerinin çıkarılmasını ve yeniden
+    skorlanmasını tetikliyordu — canlıda ölçülen maliyet: ilk çağrı 78 sn,
+    her yeni eşik ~18 sn (Render ücretsiz katmanın kısıtlı CPU'su). Girdi
+    (`sentetik_islemler.csv`) imaja gömülü ve çalışma anında değişmiyor,
+    dolayısıyla süreç ömrü boyunca bir kez hesaplamak yeterli; yeni dağıtım
+    = yeni süreç = yeniden hesap.
+
+    Kilit, soğuk açılışta 4 gunicorn thread'inin aynı işi 4 kez yapmasını
+    engeller. Dönen liste ÇAĞIRANLARCA DEĞİŞTİRİLMEMELİDİR — mevcut iki
+    çağıran da yalnızca okur (liste kavraması / Counter / adalet_raporu).
+    """
+    global _HEPSI_ONBELLEK
+    if _HEPSI_ONBELLEK is not None:
+        return _HEPSI_ONBELLEK
+    with _HEPSI_KILIT:
+        # Çift kontrol: kilidi beklerken başka bir thread doldurmuş olabilir.
+        if _HEPSI_ONBELLEK is not None:
+            return _HEPSI_ONBELLEK
+        musteriler = etiketle(tum_musteriler(VERI_YOLU), hedef_temerrut_orani=0.18)
+        X = np.array([[m[o] for o in OZELLIK_ADLARI] for m in musteriler], dtype=float)
+        p = orkestrator.skorlama_agent.model.predict_proba(X)[:, 1]
+        for m, pi in zip(musteriler, p):
+            m["klasik_skor"] = klasik_risk_skoru(m)
+            m["aks_skor"] = olasilik_to_aks(float(pi))
+        _HEPSI_ONBELLEK = musteriler
+    return _HEPSI_ONBELLEK
 
 
 # İçerik korunmalı (statistical-validity mandate — bu sayılar gerçekten döngüsel

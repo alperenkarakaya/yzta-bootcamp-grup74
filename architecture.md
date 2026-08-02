@@ -376,6 +376,8 @@ All scoring responses (`/skorla`, `/skorla/{id}`, `/csv-skorla`) also carry `ano
 | `GEMINI_API_KEY` | live key | Optional; absent → deterministic rule-based assistant |
 | `GUNICORN_WORKERS` | `1` | Set in `render.yaml`. Memory-bound, measured — see above |
 
+- **Portfolio/fairness aggregates are computed once per process, not per request** (§7.18). `services._skorla_hepsi()` scores the whole 2000-customer demo population, and its output is **threshold-independent** — `portfoy()`/`adalet()` only *slice* those precomputed scores. The Django cache keyed the aggregated result per threshold, so every slider move re-scored all 2000 customers from CSV: measured live at **78 s** for the first call and **~18 s** per new threshold pair on Render's free CPU. It is now memoised in-process behind a double-checked lock, and warmed by a daemon thread started in `wsgi.py` (which only runs under gunicorn, so `migrate`/`collectstatic`/`test` are unaffected; a synchronous warm-up would have blocked the worker for ~78 s and failed Render's health check). Result: any threshold combination now answers in **~4 ms in-process / 0.78 s over HTTP** (the latter dominated by the Supabase session lookup), with resident memory stable at 376 MB under 16 parallel requests. The retained structure itself is ~1 MB — 15 scalar fields × 2000 records, no transactions held.
+
 **Priority note:** the entire stack/deploy track is priority #8 — it is *not* the bottleneck; it is intentionally not pushed further until the #1–#3 research items (§5) are addressed.
 
 ## 13. Future architecture ideas

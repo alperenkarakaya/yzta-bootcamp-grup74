@@ -486,6 +486,29 @@ Ama tarama sırasında asıl risk görüldü: sızan anahtar değil, **koruması
 
 > Not: testler bu turda SQLite üzerinde koşuldu. Supabase'de önceki koşumlardan kalan `test_postgres`, session pooler bağlantıyı bırakmadığı için düşürülemiyordu (`database is being accessed by other users`). Django için SQLite standart test pratiği ve paketin tamamı Postgres'te de daha önce yeşil geçmişti (§7.15).
 
+#### 7.18 — Portföy ekranının canlıdaki bekleme süresi: 78 sn → 1 sn altı
+
+Tarayıcı denetiminde (§7.17 sonrası) `/portfolio` ekranının canlıda dolmadığı görüldü: `/api/portfoy` ve `/api/adalet` **20 saniyeden uzun süre `pending`** kalıyordu. Dışarıdan ölçüldü — ilk çağrı **78 sn**, her yeni eşik çifti **~18 sn** (aynı imaj yerelde 1 sn). Fark Render ücretsiz katmanın kısıtlı CPU'su.
+
+**Kök neden, yavaş CPU değil gereksiz iş.** `services._skorla_hepsi()` 2000 müşteriyi CSV'den okuyup özelliklerini çıkarıp skorluyor — ve bu çıktı **eşikten tamamen bağımsız**: `portfoy()`/`adalet()` eşiği yalnızca hazır skorları *dilimlemek* için kullanıyor. Django cache'i sonucu eşik bazında saklıyordu, dolayısıyla kaydırıcı her oynatıldığında yeni bir anahtar oluşuyor ve 2000 müşteri **baştan** skorlanıyordu. Girdi (`sentetik_islemler.csv`) imaja gömülü ve çalışma anında değişmiyor.
+
+**Çözüm iki parça:**
+1. `_skorla_hepsi()` süreç-içi önbelleğe alındı (çift kontrollü kilit — soğuk açılışta 4 gunicorn thread'i aynı işi 4 kez yapmasın). Dönen liste salt okunur kabul ediliyor; mevcut iki çağıran da yalnızca okuyor (liste kavraması / `Counter` / `adalet_raporu`), bu doğrulandı.
+2. Isınma `wsgi.py`'de bir **daemon thread**'e alındı. `wsgi.py` yalnızca gunicorn altında import edilir — `migrate`/`collectstatic`/`test` bu dosyaya hiç dokunmaz, yani build ve testler yavaşlamaz (`AppConfig.ready()` bu ayrımı yapamazdı). Senkron olsaydı worker ~78 sn hiçbir isteği karşılayamaz ve Render'ın sağlık kontrolü zaman aşımına uğrayıp dağıtım başarısız sayılırdı.
+
+**Ölçüm:**
+
+| | Önce | Sonra |
+|---|---|---|
+| `_skorla_hepsi` ilk çağrı (yerel) | 2,74 sn | 2,74 sn — ama artık arka planda, kullanıcı beklemiyor |
+| 5 farklı eşikte `portfoy`+`adalet` (süreç içi) | her biri 2,74 sn | **en yavaş 4 ms** |
+| 6 farklı eşik, konteynerde HTTP üzerinden | ~2,7 sn+ | **0,78 sn** (çoğu Supabase oturum sorgusu gecikmesi) |
+| Sağlık kontrolünün hazır olması | — | 49 sn (ısınma bloke etmiyor) |
+
+Kalan tek yavaş an: dağıtım/uyanma sonrası ilk ~78 saniye. Cron ping (10 dk) uykuya geçmeyi engellediği için pratikte yalnızca yeni dağıtımlarda görülür ve o pencerede de yalnızca `/portfolio`'ya giren bir kullanıcı etkilenir.
+
+Doğrulama: Django 67/67 OK, imaj yeniden derlendi ve 512 MB sınırlı konteynerde yukarıdaki süreler ölçüldü.
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |

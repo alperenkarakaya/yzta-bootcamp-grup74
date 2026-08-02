@@ -7,6 +7,7 @@ django-redis>=5.4
 psycopg2-binary>=2.9
 python-dotenv>=1.0
 gunicorn>=21.2
+whitenoise>=6.6  # §7.15 — tek servis dağıtımı: statik dosyalar + derlenmiş React arayüzü
 anthropic>=0.40  # §3b Phase 7/7.5 — danisman_llm.py tool-calling; anahtar yoksa fallback
 google-genai>=1.0  # §3b Phase 7/7.10 — danisman_llm.py Gemini tool-calling yolu; anahtar yoksa fallback
 

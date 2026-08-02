@@ -420,6 +420,35 @@ Reskin tamamlandıktan sonra tarayıcı eklentisi bağlandı ve 17 ekranın tama
 
 **Doğrulama (tarayıcı sonrası):** `tsc --noEmit` + `npm run build` temiz, `aks_core` pytest 89/89, Django tam paket yeşil.
 
+#### 7.15 — Canlıya alma: tek servis dağıtımı (Hugging Face Spaces / Docker)
+
+PO ürünü canlıya almak istedi. Barındırma seçimi PO'ya soruldu (maliyet + hesap gerektiriyor): **Hugging Face Spaces, Docker SDK**. Belirleyici kısıt bellek — uygulama açılışta **335 MB** yerleşik bellek tüketiyor (shap/xgboost/lightgbm/sklearn import zinciri) ve Django kurulumu 8 saniye sürüyor; ücretsiz 512 MB'lık katmanlar sınırda kalıyordu, HF'in ücretsiz 16 GB / 2 vCPU'su bu sınıfı tamamen ortadan kaldırıyor. İkinci karar: SMS sağlayıcısı hâlâ yok (OQ-47), bu yüzden PO `AKS_OTP_DEMO_KOD=true` seçti — telefon doğrulama akışı jüri tarafından denenebilsin diye **bilinçli bir demo tavizi**, `.env.example`'daki "gerçek dağıtımda false" notu geçerliliğini koruyor.
+
+**Tek servis / tek origin — tercih değil, zorunluluk.** Arayüzü ayrı bir alan adına (Vercel vb.) koymak cazipti ama `api.ts` `credentials: "same-origin"` kullanıyor ve arayüzün tamamı (portal, kurum, panel) oturum çerezine dayalı kimlik doğrulama yapıyor: ayrı alan adında tarayıcı çerezi **hiç göndermez**, `SameSite=None` ile zorlansa bile üçüncü-taraf çerez engelleyen tarayıcılarda giriş kırılırdı. Django'nun WhiteNoise ile derlenmiş React çıktısını servis etmesi bu sınıf hataların tamamını ortadan kaldırıyor ve **frontend'de tek satır değişiklik gerektirmiyor**.
+
+| Değişiklik | Neden |
+|---|---|
+| `whitenoise` + `STORAGES` (`config/settings.py`) | Statik dosyalar. `ManifestStaticFilesStorage` bilinçli olarak KULLANILMADI: eksik tek bir referansta 500 üretir, buradaki tek tüketici Django admin'i — kırılganlık kazancı karşılamıyor. |
+| `SPA_DIR` / `WHITENOISE_ROOT` | Vite çıktısı site kökünden servis ediliyor, böylece `index.html`'in `/assets/*` referansları olduğu gibi çalışıyor ve Vite'ın `base` ayarına (dolayısıyla dev sunucusuna) dokunulmuyor. Dizin yalnızca imajda var; yerelde yoksa davranış birebir eskisi gibi. |
+| SPA fallback (`config/urls.py`) | `/panel`, `/portal/*`, `/kurum/*` sunucuda tanımlı değil — yönlendirme React Router'da. Bu view olmasa kullanıcı bu adresleri doğrudan açtığında veya **sayfayı yenilediğinde** 404 alırdı. `api/`/`admin/`/`static/` negatif ileri-bakışla dışarıda: aksi halde var olmayan bir API ucu JSON 404 yerine sessizce HTML döndürür ve istemcide teşhisi zor bir "Unexpected token '<'" hatasına dönüşürdü. `index.html` `Cache-Control: no-cache` ile dönüyor (hash'li varlıklara işaret eden tek sabit adres o; cache'lenirse yeni dağıtımdan sonra beyaz ekran). |
+| `deploy/hf/Dockerfile` | İki aşamalı: Node ile arayüz derlemesi (`tsc --noEmit && vite build` — tip hatası varsa imaj hiç üretilmez), ardından Python çalışma imajı. |
+| `deploy/hf/baslat.sh` | `migrate` → `bootstrap_demo_hesaplar` (idempotent, hata alırsa servisi düşürmüyor) → gunicorn `--workers 2 --threads 4`. Worker×thread = **8 eşzamanlı istek = en fazla 8 Postgres bağlantısı**, Supabase'in 15 istemci sınırının altında — §7.14'te tüm paneli 500'e düşüren sınır bu. |
+| `deploy/hf/yayinla.sh` | Space'e yayın. Ayrı betik olmasının nedeni: HF, Space yapılandırmasını (`sdk: docker`, `app_port`) **yalnızca** deponun kökündeki `README.md`'nin YAML ön-bilgisinden okuyor; bu depodaki `README.md` ise jürinin notlandırdığı teslim belgesi (CLAUDE.md: asla düzenlenmez). İki depo aynı dosya adını istediği için betik Space kopyasının README'sini **üretiyor**, bizimkine hiç dokunmuyor. Kopyalama `git ls-files` üzerinden yapılıyor — `.env`, `.venv/`, `node_modules/`, `aks_dev.sqlite3` Space'e fiziksel olarak giremiyor. `--hazirla <dizin>` modu aynı ağacı göndermeden üretir, yani **denenen şey gönderilen şeydir**. |
+
+**Docker build'inin yakaladığı 3 bağımlılık-beyanı hatası.** Hiçbiri testlerle yakalanamazdı: testler zaten kurulu olan sürümlerle koşar, beyanların gerçekte neye çözüldüğünü ancak **sıfırdan kurulum** gösterir.
+
+| # | Beyan | Gerçekte olan |
+|---|---|---|
+| 1 | `shap>=0.52` | **Hiçbir zaman karşılanamazdı** — shap 0.52 `requires-python >=3.12`, proje 3.11'de geliştirildi/doğrulandı (kurulu sürüm 0.51.0). Build `No matching distribution found` ile düştü. |
+| 2 | `scikit-learn>=1.4` | İmaj **1.9.0** kurdu, artifact'lar 1.8.0 ile pickle'lanmıştı → her worker açılışında `InconsistentVersionWarning: ... might lead to ... invalid results`. `>=1.8,<1.9` yapıldı. |
+| 3 | `numpy>=1.26` (üst sınır **yok**) | `overview.md` `numpy<2`'yi "pinned" diye belgeliyordu ama kodda karşılığı yoktu; imaj **numpy 2.4.6** kurdu. |
+
+3 için ilk refleks (belgelenen `<2` sınırını koda yazmak) **yanlış çıktı** ve build bunu da yakaladı: `shap 0.51.0 depends on numpy>=2` → `ResolutionImpossible`. Yani `numpy<2` beyan edilen shap sürümüyle imkânsız; asıl kusur **dokümandaydı**. Üstelik tutarsız olan geliştirme makinesi: orada `pip check`, *"shap 0.51.0 has requirement numpy>=2, but you have numpy 1.26.4"* diyor — SHAP yerelde desteklenmeyen bir NumPy ile koşuyor, imajdaki numpy 2.x doğru yapılandırma. NumPy bilinçli olarak üst sınırsız bırakıldı, `overview.md` düzeltildi.
+
+2 ve 3'te karar vermeden önce "bu bir skoru değiştiriyor mu?" sorusu varsayılmadı, **ölçüldü**: modelin `predict_proba` çıktısı 100 gerçek özellik vektöründe yerel (numpy 1.26.4 / sklearn 1.8.0) ve konteyner (numpy 2.4.6 / sklearn 1.9.0) yığınları arasında **bit düzeyinde aynı** — parmak izi `c37c4e2a5e88b310`. Sessizce yanlış skorlanan bir şey yoktu. sklearn sınırı yine de kondu: "dağıtılan model, doğrulanan modelle aynı skoru verir" cümlesi gözlenen bir tesadüf değil **beyan edilen bir özellik** olmalı; yükseltme ancak yeniden eğitimle yapılabilir. shap'ta ise Python 3.12'ye geçmek yerine sınır gerçeğe hizalandı (`shap>=0.51`) — aynı gerekçe: SHAP çıktısı arayüzdeki gerekçe kodlarını besliyor.
+
+**Doğrulama.** Yerelde üretim kurulumu birebir simüle edildi (`vite build` → `spa/` → `collectstatic` → `DJANGO_DEBUG=false`): 6 SPA rotası 200/`text/html`, hash'li varlıklar + admin statikleri 200, `/api/bilgi` JSON kalıyor, olmayan API ucu HTML'e DÜŞMÜYOR (404), `manage.py check --deploy` (`DJANGO_HTTPS=true` ile) sıfır uyarı, ve **tam oturum döngüsü tek origin üzerinde çalışıyor** (csrftoken çerezi → yönetici girişi 200 → korumalı `/api/portfoy` 200).
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |
@@ -452,7 +481,7 @@ Reskin tamamlandıktan sonra tarayıcı eklentisi bağlandı ve 17 ekranın tama
 | E9 | Wire live Supabase persistence (fill `.env`) | P8 | 🔴 BLOCKED | OQ-35 credentials | PO+Eng | Live audit trail persists; code is ready, falls back to SQLite |
 | E10 | Wire live Upstash Redis cache | P8 | 🔴 BLOCKED | OQ-35 credentials | PO+Eng | Live cache; code ready, falls back to LocMem |
 | E11 | Integrate Google Stitch design into React | P10 | ✅ DONE | OQ-34 | Eng | 5 pages (Intelligence, Portfolio, Audit, Customers, Customer Detail) built with Tailwind + react-router, wired to all real `/api/*` endpoints. Fabricated Stitch content (blockchain ledger, ECOA/GDPR compliance claims, invented customer counts/segment names) was replaced with real backend data or honest architecture-derived content, per the priority-#1 (validity) and AI-honesty rules in overview.md §5–§6 |
-| E12 | Docker/Render single-service deploy (Django serves React build) | P10 | ⏳ TODO | E11 | Eng | One deployed web service |
+| E12 | Docker single-service deploy (Django serves React build) | P10 | ✅ DONE | E11 | Eng | Hugging Face Spaces / Docker (PO chose the host; free tier's 16 GB removes the memory constraint — the app's resident footprint is 335 MB). WhiteNoise + SPA fallback + `deploy/hf/` (Dockerfile, entrypoint, publish script). Single-origin is mandatory, not stylistic: `api.ts` uses `credentials: "same-origin"` and all auth is cookie-based — a split-domain deploy would break login outright. See §3b Phase 7/7.15 |
 
 ## 5b. Data-architecture track (per `planning/` — alternative-data research intake)
 

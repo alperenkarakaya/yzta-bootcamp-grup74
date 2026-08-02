@@ -91,9 +91,11 @@ The AI/ML core (`aks_core`) is an installable Python package imported identicall
 | LLM | Same tool-calling agent (`danisman_llm`) over Claude or Gemini — Claude preferred if both configured (execution.md §3b Phase 7/7.5, §7.10; Gemini path live-verified), deterministic rule-based fallback if neither | Justified, five-question-tested agents; never the decision engine |
 | Database | Supabase (Postgres) via Django ORM; SQLite fallback | Assessments, per-customer history, immutable audit trail |
 | Cache | Upstash Redis (`django-redis`); LocMem fallback | Cache heavy portfolio/fairness aggregates |
-| Deploy (target) | Docker + Render; Supabase + Upstash hosted | One web service |
+| Deploy | Docker on Hugging Face Spaces; Supabase + Upstash hosted | One web service, one origin — Django serves the built React bundle via WhiteNoise. Not a style choice: all auth is session-cookie based (`credentials: "same-origin"`), so a split-domain deploy would break login (architecture.md §12) |
 
-**Verified toolchain:** Python 3.11.9 · Node 18.14.0 · npm 9.3.1 · Django 5.2.16 · DRF 3.17.1 · Vite 5.4.21. **`numpy<2` is pinned** (model artifacts built against NumPy 1.x).
+**Verified toolchain:** Python 3.11.9 · Node 18.14.0 · npm 9.3.1 · Django 5.2.16 · DRF 3.17.1 · Vite 5.4.21 · **`scikit-learn>=1.8,<1.9` pinned** (the model artifacts are joblib pickles built by 1.8.0).
+
+> **Correction (§3b Phase 7/7.15).** This line previously claimed "**`numpy<2` is pinned** (model artifacts built against NumPy 1.x)". That was wrong twice over: the bound existed in no `pyproject.toml`, and it is **unsatisfiable** — `shap 0.51.0 requires numpy>=2`, so adding it makes pip fail with `ResolutionImpossible`. The inconsistency is on the development machine, not in the deployment: `pip check` there reports *"shap 0.51.0 has requirement numpy>=2, but you have numpy 1.26.4"*. The container's numpy 2.x is the correct configuration. Verified rather than assumed: `predict_proba` over 100 real feature vectors is **bit-identical** between the two stacks (fingerprint `c37c4e2a5e88b310`), so no score ever depended on this. NumPy is therefore deliberately left without an upper bound.
 
 ## 10. Directory structure
 
@@ -139,7 +141,7 @@ The five product sections map 1:1 to five workstreams: 01-data, 02-ai-agents (hi
 3. **Target segment performance is weak.** Within the primary target (`ogrenci_yuksek_hacim`) AUC is only 0.61–0.68 — weakest exactly where the product claims value.
 4. **No real data yet.** Everything runs on synthetic data (OQ-36).
 5. **Test suite not ported.** The 22 Sprint-2 tests still import FastAPI/`src.*`; not migrated to Django/`aks_core`.
-6. **Deploy config not updated.** Docker/Render still targets the retired FastAPI single-service setup; needs to serve the React build via Django (E12).
+6. ~~**Deploy config not updated.** Docker/Render still targets the retired FastAPI single-service setup; needs to serve the React build via Django (E12).~~ **Resolved (§3b Phase 7/7.15):** `deploy/hf/` builds and ships a single Django service that serves the React bundle; verified locally with a production-like configuration (`DEBUG=false`, SPA routes, assets, full session-auth round-trip) and by building the image itself.
 
 ## 13. Future roadmap summary
 

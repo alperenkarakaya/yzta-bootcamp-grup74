@@ -42,3 +42,7 @@ planning/stitch_aks_finansal_kapasite_platformu/**/overview.md
 planning/stitch_aks_finansal_kapasite_platformu/**/readme.md
 planning/stitch_aks_finansal_kapasite_platformu/**/frontend_pages_full_source.md
 planning/stitch_aks_finansal_kapasite_platformu/**/frontend_rebuild_handoff.md
+
+# §7.15 — tek servis dağıtımında Django tarafından servis edilen React build
+# çıktısı (Dockerfile üretir, versiyonlanmaz)
+product/04-backend/spa/

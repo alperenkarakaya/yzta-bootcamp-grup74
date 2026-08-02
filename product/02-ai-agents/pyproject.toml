@@ -8,13 +8,37 @@ version = "3.0.0"
 description = "Alternatif Kapasite Skoru — veri, ML, açıklanabilirlik ve agent çekirdeği"
 requires-python = ">=3.11"
 dependencies = [
-    "scikit-learn>=1.4",
+    # Üst sınır (§7.15): model artifact'ları scikit-learn 1.8.0 ile pickle'landı.
+    # Sınırsızken Docker imajı 1.9.0 kurdu ve her worker açılışında
+    # `InconsistentVersionWarning: ... might lead to ... invalid results` bastı.
+    # Çıktı 100 gerçek özellik vektöründe bit düzeyinde AYNI çıktı (parmak izi
+    # c37c4e2a5e88b310) — yani zarar yoktu; sınır, bu garantinin tesadüfe değil
+    # beyana dayanması için kondu. Yükseltme ancak yeniden eğitimle yapılmalı.
+    "scikit-learn>=1.8,<1.9",
+    # NumPy'a ÜST SINIR YOK ve bu kasıtlı. overview.md uzun süre `numpy<2`'yi
+    # "pinned" diye belgeledi ama bu kısıt kodda hiç yoktu VE beyan edilen shap
+    # sürümüyle imkânsız: `shap 0.51.0 depends on numpy>=2`. `<2` denendiğinde
+    # pip `ResolutionImpossible` verdi. Dahası tutarsız olan geliştirme makinesi:
+    # `pip check` orada "shap 0.51.0 has requirement numpy>=2, but you have
+    # numpy 1.26.4" diyor — yani SHAP yerelde desteklenmeyen bir NumPy ile
+    # koşuyor, imajdaki numpy 2.x ise doğru yapılandırma. Skorların iki yığında
+    # da birebir aynı çıkması (yukarıdaki parmak izi) bunu doğruluyor.
+    "numpy>=1.26",
     "xgboost>=2.0",
     "lightgbm>=4.0",
-    "shap>=0.52",   # 0.49 ve altı xgboost>=3 base_score formatını okuyamıyor
+    # 0.49 ve altı xgboost>=3 base_score formatını okuyamıyor — alt sınırın
+    # GERÇEK gerekçesi bu. Sınır bir dönem `>=0.52` yazıyordu ama bu kısıt
+    # HİÇBİR ZAMAN karşılanmadı: shap 0.52 `requires-python >=3.12`, projenin
+    # tamamı ise 3.11'de geliştirildi ve doğrulandı (kurulu ve test edilen sürüm
+    # 0.51.0). Uyumsuzluk ilk kez §7.15'te Docker imajı derlenirken ortaya çıktı
+    # ("No matching distribution found for shap>=0.52").
+    # Python 3.12'ye geçip 0.52 almak yerine sınır gerçeğe hizalandı: SHAP
+    # çıktısı doğrudan arayüzdeki gerekçe kodlarını besliyor, dağıtımın yerelde
+    # hiç çalıştırılmamış bir SHAP sürümüne kayması eğitim/servis tutarlılığı
+    # ilkesine aykırı olurdu.
+    "shap>=0.51",
     "joblib>=1.3",
-    "numpy>=1.26",
-    "pandas>=2.0",       # §3b Phase 7/7.1 — belge/tablo_okuyucu.py (CSV/XLSX ayrıştırma)
+    "pandas>=2.0",     # §3b Phase 7/7.1 — belge/tablo_okuyucu.py (CSV/XLSX ayrıştırma)
     "openpyxl>=3.1",     # belge/tablo_okuyucu.py (.xlsx okuma)
     "pdfplumber>=0.11",  # belge/pdf_okuyucu.py (PDF tablo/metin çıkarımı)
 ]

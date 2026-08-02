@@ -1,0 +1,20 @@
+# yayinla.sh zaten yalnızca `git ls-files` çıktısını kopyaladığı için Space
+# deposuna sır/çöp girmiyor. Bu dosya ikinci savunma hattı: biri Space'i elle
+# doldurursa veya imaj bu depodan build edilirse yine de sızmasın.
+**/.env
+**/.env.*
+!**/.env.example
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/*.sqlite3
+.git
+.gitignore
+**/dist
+**/staticfiles
+**/spa
+planning
+sprints
+files

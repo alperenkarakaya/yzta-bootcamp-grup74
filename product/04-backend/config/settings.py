@@ -35,6 +35,10 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise, SecurityMiddleware'in HEMEN ardında olmalı (resmi öneri): daha
+    # yukarıda olursa SSL yönlendirmesi/HSTS statik dosyalara uygulanmaz, daha
+    # aşağıda olursa her statik istek gereksizce session/auth katmanından geçer.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -156,6 +160,42 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- §7.15 Dağıtım: derlenmiş React arayüzünü Django servis eder ---
+# TEK SERVİS / TEK ORIGIN kararı mimari zarafet değil, ZORUNLULUK:
+# `src/api.ts` `credentials: "same-origin"` kullanıyor ve arayüzün tamamı
+# (portal, kurum, panel) oturum çerezine dayalı kimlik doğrulama yapıyor.
+# Arayüz ayrı bir alan adına konsaydı tarayıcı çerezi HİÇ göndermezdi —
+# SameSite ayarıyla zorlansa bile üçüncü-taraf çerez engelleyen tarayıcılarda
+# giriş kırılırdı. Aynı origin'den servis etmek bu sınıf hataların tamamını
+# ortadan kaldırır ve frontend'de tek satır değişiklik gerektirmez.
+#
+# `spa/` dizini yalnızca dağıtım imajında bulunur (Dockerfile, vite build
+# çıktısını oraya kopyalar). Yerelde yoksa hiçbir şey değişmez: Vite dev
+# sunucusu + /api proxy'si eskisi gibi çalışır (sıfır regresyon).
+SPA_DIR = BASE_DIR / "spa"
+SPA_INDEX = SPA_DIR / "index.html"
+
+if SPA_DIR.is_dir():
+    # WhiteNoise bu dizini sitenin KÖKÜNDEN servis eder; index.html'in referans
+    # verdiği `/assets/*.js` yolları olduğu gibi çalışır. Alternatif (dosyaları
+    # collectstatic'e dahil edip Vite `base`'ini `/static/` yapmak) dev
+    # sunucusunu da etkileyeceği için tercih edilmedi.
+    WHITENOISE_ROOT = SPA_DIR
+    # Kök dizin isteğini WhiteNoise'un değil Django'nun karşılaması gerekiyor:
+    # SPA fallback view'ı (config/urls.py) index.html'i `Cache-Control: no-cache`
+    # ile döndürüyor — Vite varlıkları hash'li olduğu için uzun süre cache'lenir,
+    # ama index.html her dağıtımda tazelenmek ZORUNDA (yoksa tarayıcı eski
+    # index'i tutup silinmiş hash'li dosyaları ister ve arayüz beyaz ekran olur).
+    WHITENOISE_INDEX_FILE = False
+
+# ManifestStaticFilesStorage DEĞİL: manifest, eksik tek bir referansta 500
+# üretir ve buradaki tek tüketici Django admin'i. Sıkıştırma faydası korunur,
+# kırılganlık alınmaz. (SPA varlıkları zaten Vite tarafından hash'lenmiş.)
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],

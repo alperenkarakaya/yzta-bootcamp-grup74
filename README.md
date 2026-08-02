@@ -678,4 +678,4 @@ onay alınmıştır. İletişim girişimlerine dair kanıt
 
 
 ## Canlı Web Linki: https://yzta-bootcamp-grup74.onrender.com/
-## Youtube Linki: 
+## Youtube Linki: https://youtu.be/Z21MWiQ2FPU

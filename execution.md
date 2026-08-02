@@ -509,6 +509,20 @@ Kalan tek yavaş an: dağıtım/uyanma sonrası ilk ~78 saniye. Cron ping (10 dk
 
 Doğrulama: Django 67/67 OK, imaj yeniden derlendi ve 512 MB sınırlı konteynerde yukarıdaki süreler ölçüldü.
 
+#### 7.19 — "Belge yükleyince hata veriyor": her dağıtım/uyanış herkesi çıkış yaptırıyordu
+
+PO canlıda belge yükleyemediğini bildirdi; ekran görüntülerinde hem portal yüklemesi hem portföy sayfası **"Bu işlem için giriş yapmalısınız"** hatası veriyordu. Belge hattı sanılan sorun **oturum** çıktı: aynı PDF (`ogrenci_orta_gelir_hesap_dokumu.pdf`) canlıda API üzerinden sorunsuz işlendi — 87 işlem ayrıştırıldı, 179 günlük pencere, kategori güveni 0.9, AKS skoru 807, 4,5 sn.
+
+**Kök neden:** `bootstrap_demo_hesaplar` mevcut kullanıcılar için bile koşulsuz `set_password()` + `save()` yapıyordu. Aynı şifreyle bile `set_password()` farklı salt ile YENİ bir hash üretir; Django ise oturumda parola hash'inin türevini (`_auth_user_hash`) saklayıp her istekte karşılaştırır. Hash değiştiği an o hesabın **tüm açık oturumları** sessizce geçersiz oluyordu.
+
+Bu komut `deploy/baslat.sh` içinde **her konteyner açılışında** koşuyor. Pratik sonucu: her dağıtım ve ücretsiz katmanda **her uykudan uyanış** (15 dk hareketsizlik) giriş yapmış herkesi çıkış yaptırıyordu. Yerelde hiç görülmemesinin sebebi, dev sunucusunun bu komutu çalıştırmaması.
+
+**Düzeltme:** komut gerçekten idempotent yapıldı — `check_password()` ile şifre zaten doğruysa yazılmıyor, `is_staff`/`email` de yalnızca farklıysa güncelleniyor. "Şifre her zaman giriş sayfasındakiyle aynı" garantisi korunuyor (test ediyor), ama oturumlar yaşıyor.
+
+**İkincil bulgu (düzeltilmedi, açık):** `Layout` ve `PortalLayout` oturumu yalnızca `useEffect(..., [])` ile sayfa açılışında bir kez kontrol ediyor. Oturum sonradan düşerse arayüz kullanıcıyı **girişli göstermeye devam ediyor** ve her API çağrısı hata veriyor — PO'nun gördüğü kafa karıştırıcı durum tam olarak buydu (girişli görünen bir sayfada "giriş yapmalısınız"). Kök neden giderildiği için bu artık nadiren tetiklenir; kalıcı çözüm, kimlik doğrulanmamış bir yanıt alındığında giriş ekranına yönlendirmek olur.
+
+**Doğrulama:** iki yeni test — (1) komut ikinci kez koşunca açık oturum hayatta kalıyor, (2) şifre dışarıdan bozulmuşsa yine demo değerine geri çekiliyor (idempotentlik kaybolmadı). Django 69/69 OK.
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |

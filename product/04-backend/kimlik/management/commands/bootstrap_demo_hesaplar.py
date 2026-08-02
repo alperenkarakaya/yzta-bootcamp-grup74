@@ -36,13 +36,41 @@ class Command(BaseCommand):
 
     def _hesap(self, email, sifre, *, yonetici):
         """Idempotent: hesap varsa şifresini/rolünü demo değerine geri çeker —
-        test edenler her koşulda giriş sayfasında yazan bilgilerle girebilsin."""
+        test edenler her koşulda giriş sayfasında yazan bilgilerle girebilsin.
+
+        GERÇEKTEN idempotent olmak zorunda (§7.19). Önceki hali her çağrıda
+        koşulsuz `set_password()` + `save()` yapıyordu. Aynı şifreyle bile
+        `set_password()` YENİ bir hash üretir (farklı salt); Django ise oturumda
+        parola hash'inin türevini (`_auth_user_hash`) saklar ve her istekte
+        karşılaştırır. Sonuç: hash değiştiği an o hesabın TÜM açık oturumları
+        sessizce geçersiz oluyordu.
+
+        Bu komut `deploy/baslat.sh` içinde HER konteyner açılışında koştuğu için
+        pratik etkisi şuydu: her dağıtım ve ücretsiz katmanda her uykudan uyanış
+        (15 dk hareketsizlik) giriş yapmış herkesi çıkış yaptırıyordu. Kullanıcı
+        bunu "belge yükleyince hata veriyor" olarak yaşadı — arayüz oturumu
+        yalnızca sayfa açılışında kontrol ettiği için girişli görünüyor ama her
+        istek reddediliyordu.
+
+        Çözüm: yalnızca GEREKTİĞİNDE yaz. `check_password()` mevcut hash'i
+        doğrular, eşleşiyorsa dokunulmaz — böylece hem "şifre her zaman
+        giriş sayfasındakiyle aynı" garantisi korunur hem de oturumlar yaşar.
+        """
         with transaction.atomic():
             user, yeni = User.objects.get_or_create(username=email, defaults={"email": email})
-            user.email = email
-            user.is_staff = yonetici
-            user.set_password(sifre)
-            user.save()
+            degisti = yeni
+            if user.email != email:
+                user.email = email
+                degisti = True
+            if user.is_staff != yonetici:
+                user.is_staff = yonetici
+                degisti = True
+            # Sadece şifre GERÇEKTEN farklıysa yaz (bkz. docstring).
+            if not user.check_password(sifre):
+                user.set_password(sifre)
+                degisti = True
+            if degisti:
+                user.save()
             # Yönetici hesabı banka içi araştırma yüzeyini kullanır, kendi
             # ekstresini yüklemez — ama Profil'i olması zarar vermez ve portal
             # uçlarını da denemesine izin verir.

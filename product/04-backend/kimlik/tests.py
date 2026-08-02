@@ -10,6 +10,8 @@ kodda zorlanmıyorsa yalnızca bir yorum satırıdır — burada kanıtlanır.
     python manage.py test kimlik
 """
 from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -408,3 +410,53 @@ class TelefonDogrulamaAkisiTesti(TestCase):
         self.assertEqual(r.status_code, 200)
         self.a.refresh_from_db()
         self.assertTrue(self.a.profil.telefon_dogrulandi_mi)
+
+
+class DemoBootstrapOturumKorumaTesti(TestCase):
+    """§7.19: `bootstrap_demo_hesaplar` açık oturumları düşürmemeli.
+
+    Bu komut `deploy/baslat.sh` içinde HER konteyner açılışında koşuyor. Eski
+    hali koşulsuz `set_password()` çağırıyordu; aynı şifreyle bile yeni bir
+    hash üretildiği için Django'nun oturumda sakladığı `_auth_user_hash`
+    eşleşmiyor ve giriş yapmış HERKES sessizce çıkış yapmış oluyordu — yani
+    her dağıtım ve ücretsiz katmanda her uykudan uyanış oturumları kırıyordu.
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+    def test_komut_tekrar_kosunca_oturum_hayatta_kaliyor(self):
+        call_command("bootstrap_demo_hesaplar", verbosity=0)
+
+        giris = self.client.post(
+            "/api/auth/giris",
+            {"email": "ornek@aks.com", "sifre": "OrnekSifre123"},
+            content_type="application/json",
+        )
+        self.assertEqual(giris.status_code, 200, "Demo hesabıyla giriş yapılamadı")
+        self.assertEqual(self.client.get("/api/auth/ben").status_code, 200)
+
+        # Konteynerin yeniden başlaması = komutun tekrar koşması
+        call_command("bootstrap_demo_hesaplar", verbosity=0)
+
+        r = self.client.get("/api/auth/ben")
+        self.assertEqual(
+            r.status_code, 200,
+            "Bootstrap komutu açık oturumu düşürdü — set_password() koşulsuz çağrılıyor olabilir",
+        )
+
+    def test_sifre_bozulmussa_geri_yukleniyor(self):
+        """Idempotentlik kaybolmamalı: şifre değiştirilmişse demo değerine dönmeli."""
+        call_command("bootstrap_demo_hesaplar", verbosity=0)
+        u = User.objects.get(username="ornek@aks.com")
+        u.set_password("BaskaBirSifre999")
+        u.save()
+
+        call_command("bootstrap_demo_hesaplar", verbosity=0)
+
+        u.refresh_from_db()
+        self.assertTrue(
+            u.check_password("OrnekSifre123"),
+            "Şifre demo değerine geri çekilmedi — giriş sayfasındaki bilgi yanlış olurdu",
+        )

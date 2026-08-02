@@ -115,6 +115,24 @@ if _redis_url:
 else:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
+# `throttle` alias'ı KASITLI olarak her zaman süreç-içi (§7.17). Yukarıdaki
+# `IGNORE_EXCEPTIONS=True` bilinçli bir fail-open kararı: Redis erişilemezse
+# cache işlemleri sessizce no-op olur. Bunun görülmeyen yan etkisi, DRF hız
+# sınırlarının da sessizce DEVRE DIŞI kalmasıdır — sayaç cache'te tutulduğu
+# için hiç artmaz. Bu, kullanılabilirlik lehine kabul edilmiş bir ödünleşim
+# (bkz. yukarıdaki not) ama `/api/asistan` için kabul edilemez: orası projedeki
+# tek ücretli dış servisi (Gemini) çağırıyor, yani Redis'in düştüğü an anahtarı
+# koruyan tek mekanizma da yok oluyor — maliyet açısından en kötü zamanda.
+# Süreç-içi sayaç hiçbir dış servise bağlı değil, dolayısıyla asla fail-open
+# olmaz. Sayaç worker başına ayrıdır; dağıtımda GUNICORN_WORKERS=1 olduğu için
+# (bellek sınırı, §7.16) pratikte global. Worker sayısı artarsa efektif sınır
+# worker sayısıyla çarpılır — kabul edilebilir, çünkü amaç kötüye kullanımı
+# durdurmak, tam isabetli bir kota uygulamak değil.
+CACHES["throttle"] = {
+    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    "LOCATION": "aks-throttle",
+}
+
 # SMS sağlayıcısı olmadığı için (açık OQ) OTP kodunun API yanıtında
 # döndürülmesi — yalnızca demo/test. `DJANGO_DEBUG`'tan AYRI tutuldu: bu
 # kurulumda DEBUG kapalı (üretim benzeri hata davranışı istendi) ama telefon
@@ -204,7 +222,9 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     ],
     # §3b Phase 7/7.2 — OTP/erişim-talebi uçlarının hız sınırlaması (kimlik/throttle.py)
-    "DEFAULT_THROTTLE_RATES": {"otp": "5/min", "erisim_talebi": "20/hour"},
+    # `asistan`: güvenlik değil MALİYET sınırı — tek ücretli dış servisi
+    # (Gemini) çağıran uç, herkese açık bir demoda korumasız kalmasın (§7.17).
+    "DEFAULT_THROTTLE_RATES": {"otp": "5/min", "erisim_talebi": "20/hour", "asistan": "10/min"},
 }
 
 CORS_ALLOWED_ORIGINS = os.environ.get(

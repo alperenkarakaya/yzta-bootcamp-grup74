@@ -219,6 +219,34 @@ class ApiUclariTesti(TestCase):
         self.assertIn("yanit", veri)
         self.assertEqual(veri.get("mod"), "kural")
 
+    def test_asistan_ucu_hiz_siniri_uygular(self):
+        """§7.17: `/api/asistan` projedeki tek ücretli dış servisi (Gemini)
+        çağırıyor ve demo yönetici girişi arayüzde yazılı — yani yetkilendirme
+        tek başına kotayı korumuyor. Sınır aşılınca 429 dönmeli.
+
+        Sayaç `caches["throttle"]`'te (süreç-içi LocMem) tutuluyor, varsayılan
+        cache'te DEĞİL — varsayılan `REDIS_URL` doluyken fail-open olduğu için
+        sınır sessizce devre dışı kalıyordu. Temizlik şart: sayaç aynı
+        süreçteki önceki testlerden devreder.
+        """
+        import os
+        from unittest.mock import patch as mock_patch
+        from django.core.cache import caches
+        caches["throttle"].clear()
+        self.addCleanup(caches["throttle"].clear)
+
+        govde = {"soru": "skorum neden düşük?",
+                 "baglam": {"aks_skor": 600, "risk_seviyesi": "orta risk",
+                            "aciklama": {"riski_azaltan": [], "riski_artiran": []}}}
+        kodlar = []
+        with mock_patch.dict(os.environ, {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": ""}):
+            # Oran 10/min; 11. istek sınırı aşmalı.
+            for _ in range(11):
+                kodlar.append(self.client.post("/api/asistan", govde,
+                                               content_type="application/json").status_code)
+        self.assertEqual(kodlar[0], 200, "İlk istek geçmeliydi")
+        self.assertEqual(kodlar[-1], 429, f"11. istek 429 olmalıydı, kodlar: {kodlar}")
+
     def test_asistan_ucu_anahtar_varsa_danisman_llm_e_delege_eder(self):
         """§3b Phase 7/7.10: bir anahtar (Anthropic ya da Gemini) varsa
         `services.asistan_yanit` isteği gerçek bir ağ çağrısı yapmadan

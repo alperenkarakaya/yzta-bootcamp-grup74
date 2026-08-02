@@ -11,12 +11,13 @@ istatistiklerini ve değerlendirme geçmişini gösterir. Bu yüzden hepsi
 Tek istisna `bilgi`: kişisel/portföy verisi içermeyen servis meta bilgisi ve
 kök URL'de "docs" olarak duyurulan giriş noktası — açık bırakıldı.
 """
-from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes, throttle_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
 from aks_core.ozellik.cikarim import OZELLIK_ADLARI
 from kimlik.izinler import YoneticiKullanici
+from kimlik.throttle import AsistanThrottle
 from . import services
 
 
@@ -229,6 +230,11 @@ def csv_skorla(request):
 
 @api_view(["POST"])
 @permission_classes([YoneticiKullanici])
+# Yetkilendirme burada TEK BAŞINA yetmiyor: demo yönetici girişi arayüzde
+# yazılı (jüri sürtünmesiz denesin diye alınmış bilinçli karar), yani
+# `YoneticiKullanici` pratikte herkese açık. Bu uç projedeki tek ücretli dış
+# servisi (Gemini) çağırdığından maliyet sınırı ayrıca gerekiyor (§7.17).
+@throttle_classes([AsistanThrottle])
 def asistan(request):
     return Response(services.asistan_yanit(request.data.get("soru", ""), request.data.get("baglam")))
 

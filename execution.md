@@ -470,6 +470,22 @@ Kök neden: her gunicorn worker'ı uygulamayı ayrı import ediyor (~285 MB yerl
 
 **Doğrulama:** imaj Render'ın kuracağı gibi depo kökünden (`-f deploy/Dockerfile .`) derlendi, `PORT=10000` + 512 MB sınırıyla koşturuldu ve yukarıdaki tablo bu koşumdan çıktı.
 
+#### 7.17 — Canlıya çıkmadan önce: ücretli API ucunun korumasız olması ve sessizce kapanan hız sınırı
+
+PO anahtarların açıkta olmasından endişelendi. Önce **doğrulandı**: `.env` hiç izlenmemiş, tüm git geçmişi anahtar değerleriyle tarandı — `GEMINI_API_KEY`, `DATABASE_URL`, `REDIS_URL`, `AKS_PEPPER`, `DJANGO_SECRET_KEY` hiçbir commit'te yok. Eşleşen iki değer (`DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`) sır değil, `localhost,127.0.0.1,0.0.0.0` gibi varsayılanlar. **Sızıntı yok.**
+
+Ama tarama sırasında asıl risk görüldü: sızan anahtar değil, **korumasız kalan anahtar değeri**.
+
+**Bulgu 1 — `/api/asistan`'da hız sınırı yoktu.** Projedeki tek ücretli dış servisi (Gemini) çağıran uç bu. `YoneticiKullanici` ile korunuyor ama demo yönetici girişi arayüzde yazılı (§7.9'da jüri sürtünmesizliği için alınmış bilinçli karar) — yani yetkilendirme pratikte herkese açık. Herhangi biri giriş yapıp bu ucu döngüye sokup PO'nun kotasını/faturasını tüketebilirdi. `AsistanThrottle` (10/dk) eklendi.
+
+**Bulgu 2 (asıl olan) — hız sınırları Redis düştüğünde SESSİZCE devre dışı kalıyor.** Sınır yazıldıktan sonra test 11 isteğin 11'inin de 200 döndüğünü gösterdi. Sebep: DRF sayaçları cache'te tutuyor, cache `REDIS_URL` doluyken Upstash'e gidiyor ve `IGNORE_EXCEPTIONS=True` her cache işlemini sessizce no-op yapıyor — sayaç hiç artmıyor. Bu, `settings.py`'de kullanılabilirlik lehine **bilinçli olarak kabul edilmiş** bir fail-open kararıydı; kabul edilirken görülmeyen şey, aynı kararın *maliyet* korumasını da kapattığı: **Redis'in düştüğü an, anahtarı koruyan tek mekanizma da yok oluyor.**
+
+Çözüm, mevcut fail-open kararını tersine çevirmek değil (OTP/erişim-talebi sınırları güvenlik amaçlı ve o ödünleşim hâlâ geçerli) — maliyet sayacını dış servise bağımlı olmaktan çıkarmak: yeni `CACHES["throttle"]` alias'ı **her zaman süreç-içi LocMem**, `AsistanThrottle.cache` onu kullanıyor. Hiçbir dış servise bağlı olmadığı için asla fail-open olamaz. Sayaç worker başına ayrı; dağıtımda `GUNICORN_WORKERS=1` olduğundan (§7.16, bellek sınırı) pratikte global.
+
+**Doğrulama:** yeni test 11. isteğin 429 döndüğünü kanıtlıyor ve `caches["throttle"]`'ı temizleyerek hermetik kalıyor. Django paketi 67/67 OK.
+
+> Not: testler bu turda SQLite üzerinde koşuldu. Supabase'de önceki koşumlardan kalan `test_postgres`, session pooler bağlantıyı bırakmadığı için düşürülemiyordu (`database is being accessed by other users`). Django için SQLite standart test pratiği ve paketin tamamı Postgres'te de daha önce yeşil geçmişti (§7.15).
+
 ## 4. Research & experiment tasks
 
 | ID | Task | Prio | Status | Depends on | Owner | Expected outcome |
